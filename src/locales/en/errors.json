@@ -1,0 +1,9 @@
+{
+  "title": "FileMaster",
+  "error": "Something went wrong",
+  "errorMessage": "Sorry for this interruption. Please refresh to try again!",
+  "reload": "Refresh",
+  "internetError": "No Internet Connection",
+  "internetErrorMessage": "There seems to be a problem with your internet connection. Please check your internet connectivity and try again",
+  "newVersion": "A new version is available. Please reload the page to continue."
+}

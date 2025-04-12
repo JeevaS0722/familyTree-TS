@@ -1,0 +1,10 @@
+{
+  "prioriyRequired": "Please enter priority",
+  "dueDate": "Follow-Up Date",
+  "followUp": "Create Follow-Up For",
+  "priority": "Priority",
+  "followUpTask": "Assign Follow-Up Task",
+  "completeOffer": "Complete Offer",
+  "offerCompleteTitle": "Completing Offer for",
+  "invalidDate": "Please select valid date"
+}

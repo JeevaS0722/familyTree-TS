@@ -1,0 +1,16 @@
+{
+  "name": "Place Name",
+  "attn": "ATTN",
+  "address": "Address",
+  "city": "City",
+  "state": "State",
+  "zip": "Zip",
+  "county": "County",
+  "payee": "Make Checks Payable To",
+  "phone": "Phone",
+  "fax": "Fax",
+  "email": "Email",
+  "website": "Website",
+  "notes": "Notes",
+  "stateTooltipText": "The value is derived from the request state field"
+}

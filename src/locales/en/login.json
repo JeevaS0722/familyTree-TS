@@ -1,0 +1,11 @@
+{
+  "title": "FileMaster",
+  "username": "Username",
+  "password": "Password",
+  "submit": "Log In!",
+  "enerlex": "© 2019 Enerlex, Inc.",
+  "description": "Please log in below.",
+  "remember": "Stay logged in",
+  "logout": "Logging out",
+  "notificationRequired": "Please grant notification permission! If you would like to log in without being notified, click Continue"
+}

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Changed files are being scanned with eslint rules"
+
+# Get the list of staged files that are JS, JSX, TS, or TSX
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMRTUXB "*.js" "*.jsx" "*.ts" "*.tsx", "*.ts")
+
+if [ "$STAGED_FILES" != "" ]; then
+  # Run ESLint on the staged files and autofix what can be fixed
+  npx lint-staged $STAGED_FILES
+  # If ESLint returns a non-zero exit code (errors that couldn't be autofixed), prevent the commit
+  if [ $? -ne 0 ]; then
+    echo "ESLint has found issues in your changes. Please fix them before committing."
+    exit 1
+  fi
+fi

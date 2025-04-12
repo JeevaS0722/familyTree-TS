@@ -1,0 +1,17 @@
+{
+  "requestCheck": "Request Check",
+  "payee": "Payee",
+  "amt": "Amount",
+  "memo": "Memo",
+  "address": "Address",
+  "city": "City",
+  "state": "State",
+  "zip": "Zip",
+  "sendRequest": "Send Request",
+  "payableTo": "Payable To",
+  "addressOptional": "Address (Optional)",
+  "loading": "Loading...",
+  "zipValidation": "Zip code must contain only numbers",
+  "amountValidation": "Amount must be a numeric string",
+  "amountMaxLimit": "Amount length must be less than or equal to 17 digits along with 2 decimal places"
+}

@@ -1,0 +1,8 @@
+{
+  "ticklerDate": "Ticklered For Date",
+  "ticklerButton" : "Tickler Contacts",
+  "notes" : "Notes",
+  "ticklerTitle": "Tickler",
+  "invalidDate": "Please select valid date",
+  "ticklerDateRequired": "Ticklered For Date is required field"
+}

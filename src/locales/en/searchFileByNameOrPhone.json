@@ -1,0 +1,16 @@
+{
+  "fileName": "File Name",
+  "contactName": "Contact Name",
+  "legalsState": "Legals State",
+  "legalsCounty": "Legals County",
+  "buyer": "Buyer",
+  "deedReturned": "Deed Returned",
+  "phone": "Phone",
+  "searchNameOrPhone": "Search Name or Phone...",
+  "searchNameOrPhoneSmallScreen": "Name or Phone...",
+  "searchResults": "Search Results for {{searchFor}}",
+  "fileNotFound": "Sorry, no files were found with {{searchFor}} in them",
+  "contactNotFound": "Sorry, no contacts were found with {{searchFor}} in them",
+  "newDeedReturned": "New Deed Returned",
+  "main": "Main"
+}

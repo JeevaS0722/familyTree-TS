@@ -1,0 +1,19 @@
+{
+  "requestedByIsRequired": "Please select requested by",
+  "orderTypeIsRequired": "Please select order type",
+  "editOrder": "EDIT ORDER",
+  "type": "Type",
+  "orderFrom": "Order From",
+  "orderFromCounty": "County",
+  "orderFromState": "State",
+  "orderDate": "Order Date",
+  "requestedBy": "Requested By",
+  "caseNoIfKnown": "Case No",
+  "recDate": "Received Date",
+  "notApplicable": "Not Applicable",
+  "save": "Save",
+  "delete": "Delete",
+  "loading": "Loading...",
+  "invalidDate": "Please select valid date",
+  "deleteWarning": "Are you sure you want to delete this request?  This cannot be undone!"
+}

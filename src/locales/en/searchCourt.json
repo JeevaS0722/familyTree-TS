@@ -1,0 +1,16 @@
+{
+  "title": "SEARCH COURT ADDRESSES",
+  "state": "State",
+  "county": "County",
+  "createNewCourtAddress": "Create New Court Address",
+  "stateRequired": "Please select a state",
+  "find": "Find Courts",
+  "optional": "Optional",
+  "name": "Name",
+  "website": "WebSite",
+  "form": "Form",
+  "email": "Email",
+  "phone": "Phone",
+  "notes": "Notes",
+  "noAddressMsg":"Sorry, no court address were found in"
+}

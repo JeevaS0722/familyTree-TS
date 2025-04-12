@@ -1,0 +1,13 @@
+{
+  "loading": "Loading",
+  "fetchingData": "Fetching Data",
+  "copingData": "Coping Data",
+  "invalidCounty": "does not belong to any state selected. Either select the state or remove the county and save the details",
+  "stateRequired": "Please select a state to view county options.",
+  "dragDrop": "Drag & drop files here, or click to select files",
+  "attachmentInfo": "A screenshot will help us better understand your issue(optional)",
+  "desInfo": "Please don't include any sensitive information",
+  "invalidFile": "There is some invalid attachment in form",
+  "summeryRequired": "Summery is Required",
+  "descriptionRequired": "Description is Required"
+}

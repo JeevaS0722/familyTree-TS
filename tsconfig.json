@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "allowJs": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*",
+    "webpack.config.ts"
+  ],
+  "typeRoots": [ // Specifies root folders where the TypeScript compiler should look for type definitions
+    "./node_modules/@types",
+    "./public/*",
+    "./types"
+  ],
+}

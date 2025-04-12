@@ -1,0 +1,16 @@
+{
+  "fileMaster": "FILEMASTER",
+  "documentDirectory": "Documents in the directory ",
+  "dragAndDrop": "Drag and Drop documents here to upload, or click here to browse for documents ",
+  "retrunDeed": "Return To Deed ",
+  "retrunFile": "Return To File",
+  "upload": "Upload New Document",
+  "renameDocument": "Rename Document",
+  "rename": "Rename",
+  "save": "Save",
+  "delete": "Delete Document",
+  "deleteMsg": "Are you sure you want to delete this Document? This cannot be undone!",
+  "download": "Download Document",
+  "fetching": "Fetching Document Details...",
+  "noDocsMsg": "No document is available"
+}

@@ -1,0 +1,6 @@
+.graph-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  height: calc(100% - 40px); /* Adjust for padding in the Box */
+}

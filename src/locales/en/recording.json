@@ -1,0 +1,22 @@
+{
+  "allRecordingCompleted": "All Recording Completed",
+  "noRecordingsListed": "No recordings listed",
+  "ofRecordings": "# of Recordings",
+  "addRecording": "Add Recording",
+  "county": "County",
+  "state": "State",
+  "dateSent": "Date Sent",
+  "dateReturned": "Date Returned",
+  "book": "Book",
+  "page": "Page",
+  "save": "Save Recording",
+  "editRecording": "Edit Recording",
+  "newRecording": "New Recording",
+  "countyIsRequired": "Please enter county",
+  "invalidDate": "Please select valid date",
+  "fetchingRecordings": "Fetching Recordings...",
+  "loading": "Loading...",
+  "documentType": "Document Type",
+  "deleteRecording": "Delete Recording",
+  "delete": "Delete"
+}

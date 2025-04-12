@@ -1,0 +1,19 @@
+{
+  "title": "SEARCH FOR FILES",
+  "fileStatus": "Status",
+  "legalsState": "Legals State",
+  "legalsCounty": "Legals County",
+  "fileName": "File Name",
+  "mmSuspense": "MM/Suspense",
+  "mmDesc": "MM Desc",
+  "noteDate": "Note Date",
+  "researchNote": "Research Note",
+  "appraisedValue": "Appraised Value",
+  "find": "Find",
+  "optional": "optional",
+  "loading": "Loading",
+  "fileNotFound": "Sorry, No {{status}} files were found in",
+  "fileStatusRequired": "Please select a file status",
+  "state": "State",
+  "county": "County"
+}

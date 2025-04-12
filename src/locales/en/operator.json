@@ -1,0 +1,21 @@
+{
+  "companyName": "Company Name",
+  "contactName": "Contact Name",
+  "phone": "Phone",
+  "fax": "Fax",
+  "email": "Email",
+  "address": "Address",
+  "city": "City",
+  "state": "State",
+  "zip": "Zip",
+  "notes": "Notes",
+  "newOperator": "NEW OPERATOR",
+  "editOperator": "EDIT OPERATOR",
+  "save": "Save",
+  "companyNameRequired": "Please enter company name",
+  "emailValidation": "Please enter a valid email address",
+  "zipValidation": "Zip code must contain only numbers",
+  "phoneValidation": "Phone must contain only numbers",
+  "faxValidation": "Fax must contain only numbers",
+  "fetchingData": "Fetching operator data..."
+}

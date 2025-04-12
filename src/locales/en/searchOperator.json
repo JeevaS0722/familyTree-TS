@@ -1,0 +1,21 @@
+{
+  "fileMaster": "FILEMASTER",
+  "searchOperators": "SEARCH OPERATOR MASTER ",
+  "operatorName": "Operator Name",
+  "contactName": "Contact Name",
+  "companyName": "Company Name",
+  "phoneNumber": "Phone",
+  "fax": "Fax",
+  "email": "Email",
+  "address": "Address",
+  "city": "City",
+  "state": "State",
+  "zip": "Zip",
+  "notes": "Notes",
+  "findOperator": "Find Operator",
+  "createOperator": "Create New Operator Record",
+  "result": "Operator Search Results",
+  "or": "OR",
+  "operatorNameRequired": "Please enter a valid Operator Name",
+  "noOperatorMsg": "Sorry, no operator were found in"
+}

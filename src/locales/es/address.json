@@ -1,0 +1,16 @@
+{
+    "name": "Ponga su nombre",
+    "attn": "ATENCIÓN",
+    "address": "DIRECCIÓN",
+    "city": "ciudad",
+    "state": "Estado",
+    "zip": "Cremallera",
+    "county": "Condado",
+    "payee": "Cheques a nombre de",
+    "phone": "Teléfono",
+    "fax": "Fax",
+    "email": "Correo electrónico",
+    "website": "Sitio web",
+    "notes": "Notas",
+    "stateTooltipText": "El valor se deriva del campo de estado de la solicitud."
+}

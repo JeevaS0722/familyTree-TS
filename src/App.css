@@ -1,0 +1,196 @@
+::-webkit-scrollbar {
+  width: 20px;
+  height: 20px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f9f9f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #d6d6d6;
+  border-radius: 6px;
+  border: 3px solid #f9f9f9;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #b0b0b0;
+}
+
+/* Scrollbar styles for Firefox */
+html {
+  scrollbar-width: auto;
+  scrollbar-color: #d6d6d6 #f9f9f9;
+}
+
+.hover-link {
+  color: #1997c6 !important;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.hover-menu-active {
+  border-bottom: 4px solid #1997c6 !important;
+  color: #1997c6 !important;
+}
+
+.hover-menu-active button svg {
+  color: #1997c6;
+}
+
+.hover-menu-active label {
+  color: #1997c6;
+}
+
+.hover-menu-active p {
+  color: #1997c6;
+}
+
+.hover-menu-active div {
+  color: #1997c6 !important;
+}
+
+.hover-menu-active svg path {
+  color: #1997c6;
+}
+
+.hover-menu {
+  cursor: pointer;
+  border-radius: 0px !important;
+}
+
+.hover-menu:active {
+  color: #1997c6;
+}
+
+.hover-menu:active button svg {
+  color: #1997c6;
+}
+
+.hover-menu:active svg {
+  color: #1997c6;
+}
+
+.hover-link-red {
+  color: #ff0000 !important;
+  text-decoration: 'none';
+  cursor: 'pointer';
+}
+
+.hover-link-span {
+  color: #1997c6;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+@media only screen and (min-width: 900px) {
+
+  a:hover {
+    text-decoration: underline !important;
+    opacity: 80%;
+    color: #1997c6;
+  }
+
+  .hover-link:hover {
+    text-decoration: underline !important;
+    opacity: 80%;
+  }
+
+  .hover-tab:hover {
+    color: #1997c6 !important;
+  }
+
+  .hover-menu:hover {
+    color: #1997c6;
+  }
+
+  .hover-menu:hover button svg {
+    color: #1997c6;
+  }
+
+  .hover-menu:hover svg path {
+    color: #1997c6;
+  }
+
+  .hover-menu:hover div {
+    color: #1997c6;
+  }
+
+  .hover-menu:hover label {
+    color: #1997c6;
+  }
+
+  .hover-menu:hover p {
+    color: #1997c6;
+  }
+
+  .hover-link-red:hover {
+    text-decoration: underline !important;
+    opacity: 80%;
+  }
+
+  .hover-link-span:hover {
+    text-decoration: underline !important;
+    opacity: 80%;
+  }
+}
+
+.td-none {
+  text-decoration: none !important;
+}
+
+option {
+  background: #fff !important;
+  color: #464e5b !important;
+}
+
+.mlogo {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+}
+
+.wlogo {
+  width: 25px;
+  height: 25px;
+}
+
+.display-none {
+  display: none;
+}
+
+.display-block {
+  display: block;
+}
+
+.header-title-h6 {
+  display: block;
+  color: #a8a3a3 !important;
+  font-weight: 600 !important;
+  font-size: 85% !important;
+  letter-spacing: 1px !important;
+  margin-bottom: 2px !important;
+}
+
+.header-title-h3 {
+  display: block;
+  color: #a8a3a3 !important;
+  font-weight: 600 !important;
+  font-size: 100% !important;
+  letter-spacing: 1px !important;
+  margin-bottom: 5px !important;
+  margin-top: 5px !important;
+}
+
+.header-title-h4 {
+  color: white !important;
+  font-size: 24px !important;
+  text-align: center !important;
+}
+
+.text-decoration-none {
+  text-decoration: none !important;
+}

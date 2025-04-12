@@ -1,0 +1,9 @@
+{
+  "prioriyRequired": "Por favor ingresa prioridad",
+  "dueDate": "Fecha de seguimiento",
+  "followUp": "Crear seguimiento para",
+  "priority": "Prioridad",
+  "followUpTask": "Asignar tarea de seguimiento",
+  "completeOffer": "Crear escritura",
+  "offerCompleteTitle": "Completando oferta para"
+}
