@@ -1,0 +1,500 @@
+/* src/components/FamilyTree/FamilyTree.css */
+.f3 {
+    --female-color: rgb(196, 138, 146);
+    --male-color: rgb(120, 159, 172);
+    --background-color: rgb(33, 33, 33);
+    font-family: 'Roboto', sans-serif;
+}
+
+.f3 * {
+    box-sizing: border-box;
+}
+
+.f3.f3-cont {
+    width: 100%;
+    height: 900px;
+    max-height: 70vh;
+    background-color: var(--background-color);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.f3 .main_svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Card styling */
+.f3 .card-body-rect,
+.f3 .text-overflow-mask {
+    fill: var(--background-color);
+}
+
+.f3 .card-female .card-body-rect,
+.f3 .card-female .text-overflow-mask {
+    fill: var(--female-color);
+}
+
+.f3 .card-male .card-body-rect,
+.f3 .card-male .text-overflow-mask {
+    fill: var(--male-color);
+}
+
+.f3 .card-genderless .card-body-rect,
+.f3 .card-genderless .text-overflow-mask {
+    fill: lightgray;
+}
+
+.f3 .card_add .card-body-rect {
+    fill: #3b5560;
+    stroke-width: 4px;
+    stroke: #fff;
+    cursor: pointer;
+}
+
+.f3 .card-main-outline {
+    stroke: currentColor;
+    stroke-width: 3px;
+}
+
+.f3 .card-new-outline {
+    stroke-dasharray: 5, 3;
+    stroke: currentColor;
+    stroke-width: 2px;
+}
+
+.f3 .card-outline {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.2);
+    stroke-width: 1px;
+}
+
+.f3 .card_family_tree {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.f3 .card_family_tree:hover {
+    transform: scale(1.1);
+}
+
+.f3 .card_edit.pencil_icon,
+.f3 .card_add_relative {
+    color: #fff;
+    transition: color 0.3s ease;
+}
+
+.f3 .card_edit.pencil_icon:hover,
+.f3 .card_add_relative:hover {
+    color: #ddd;
+}
+
+/* Link styling */
+.f3 .link {
+    stroke: rgba(255, 255, 255, 0.6);
+    stroke-width: 1.5px;
+    fill: none;
+    transition: stroke-width 0.3s ease;
+}
+
+.f3 .link:hover,
+.f3 .link.highlighted {
+    stroke: #fff;
+    stroke-width: 2.5px;
+}
+
+.f3 path.link.f3-path-to-main {
+    stroke-width: 4px;
+    stroke: #fff;
+}
+
+/* Toolbar styles */
+.f3-toolbar {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 10;
+}
+
+.f3-toolbar-group {
+    display: flex;
+    gap: 5px;
+}
+
+.f3-toolbar-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.f3-toolbar-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.f3-toolbar-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Config panel styles */
+.f3-config-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    background-color: rgba(30, 30, 30, 0.9);
+    z-index: 20;
+    transition: transform 0.3s ease;
+    width: 300px;
+    transform: translateX(100%);
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.f3-config-panel.open {
+    transform: translateX(0);
+}
+
+.f3-config-toggle {
+    position: absolute;
+    left: -40px;
+    top: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px 0 0 4px;
+    background-color: rgba(30, 30, 30, 0.9);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.f3-config-content {
+    padding: 20px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.f3-config-section {
+    margin-bottom: 20px;
+}
+
+.f3-config-section h4 {
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 5px;
+}
+
+.f3-config-control {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.f3-config-control label {
+    margin-bottom: 5px;
+}
+
+.f3-config-control input[type="range"] {
+    width: 100%;
+}
+
+.f3-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.f3-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.f3-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #555;
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.f3-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+input:checked+.f3-slider {
+    background-color: #4CAF50;
+}
+
+input:checked+.f3-slider:before {
+    transform: translateX(26px);
+}
+
+.f3-config-apply {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Search bar styles */
+.f3-search-bar {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    z-index: 10;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    transition: width 0.3s ease;
+    width: 40px;
+    overflow: hidden;
+}
+
+.f3-search-bar.expanded {
+    width: 300px;
+}
+
+.f3-search-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.f3-search-toggle svg {
+    width: 24px;
+    height: 24px;
+}
+
+.f3-search-input-container {
+    width: 100%;
+    position: relative;
+}
+
+.f3-search-input {
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    padding: 10px;
+    outline: none;
+    height: 40px;
+}
+
+.f3-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: rgba(40, 40, 40, 0.95);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 5px;
+}
+
+.f3-search-result-item {
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.f3-search-result-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.f3-result-gender-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.f3-result-gender-indicator.male {
+    background-color: var(--male-color);
+}
+
+.f3-result-gender-indicator.female {
+    background-color: var(--female-color);
+}
+
+/* Edit form styles */
+.f3-edit-form-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.f3-edit-form {
+    background-color: var(--background-color);
+    border-radius: 8px;
+    padding: 20px;
+    width: 400px;
+    max-width: 90vw;
+    position: relative;
+    color: white;
+}
+
+.f3-edit-form-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: white;
+}
+
+.f3-form-section {
+    margin-bottom: 15px;
+}
+
+.f3-form-section label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.f3-form-section input[type="text"],
+.f3-form-section select {
+    width: 100%;
+    padding: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: white;
+}
+
+.f3-radio-group {
+    display: flex;
+    gap: 15px;
+}
+
+.f3-form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.f3-submit-btn,
+.f3-cancel-btn,
+.f3-delete-btn {
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+}
+
+.f3-submit-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.f3-cancel-btn {
+    background-color: #555;
+    color: white;
+}
+
+.f3-delete-btn {
+    background-color: transparent;
+    border: 1px solid #f44336;
+    color: #f44336;
+    margin-right: auto;
+}
+
+/* Addtional styles */
+/* Add to src/components/FamilyTree/FamilyTree.css */
+.f3-toolbar {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 10;
+}
+
+.f3-toolbar-group {
+    display: flex;
+    gap: 5px;
+}
+
+.f3-toolbar-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.f3-toolbar-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.f3-toolbar-button svg {
+    width: 24px;
+    height: 24px;
+}
