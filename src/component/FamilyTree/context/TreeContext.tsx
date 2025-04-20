@@ -60,26 +60,62 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         ...state,
         data: action.payload,
       };
-    case 'UPDATE_CONFIG':
+    case 'UPDATE_CONFIG': {
+      const newConfig = {
+        ...state.config,
+        ...action.payload,
+      };
+
+      // Immediate tree update for critical config changes
+      if (
+        action.payload.isHorizontal !== undefined ||
+        action.payload.nodeSeparation !== undefined ||
+        action.payload.levelSeparation !== undefined ||
+        action.payload.singleParentEmptyCard !== undefined
+      ) {
+        console.log('Critical config change - recalculating tree');
+
+        return {
+          ...state,
+          config: newConfig,
+          treeData: calculateTree({
+            data: state.data,
+            main_id: state.mainId,
+            node_separation: newConfig.nodeSeparation,
+            level_separation: newConfig.levelSeparation,
+            single_parent_empty_card: newConfig.singleParentEmptyCard,
+            is_horizontal: newConfig.isHorizontal,
+          }),
+        };
+      }
+      // Normal config change
       return {
         ...state,
-        config: {
-          ...state.config,
-          ...action.payload,
-        },
+        config: newConfig,
       };
-    case 'UPDATE_TREE':
+    }
+    // Update in TreeContext.tsx reducer:
+
+    case 'UPDATE_TREE': {
+      console.log('Calculating tree layout');
+
+      // Calculate new tree layout
+      const treeData = calculateTree({
+        data: state.data,
+        main_id: state.mainId,
+        node_separation: state.config.nodeSeparation,
+        level_separation: state.config.levelSeparation,
+        single_parent_empty_card: state.config.singleParentEmptyCard,
+        is_horizontal: state.config.isHorizontal,
+      });
+
+      console.log('Tree layout calculated with dimensions:', treeData.dim);
+
       return {
         ...state,
-        treeData: calculateTree({
-          data: state.data,
-          main_id: state.mainId,
-          node_separation: state.config.nodeSeparation,
-          level_separation: state.config.levelSeparation,
-          single_parent_empty_card: state.config.singleParentEmptyCard,
-          is_horizontal: state.config.isHorizontal,
-        }),
+        treeData,
       };
+    }
     default:
       return state;
   }

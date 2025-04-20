@@ -1,4 +1,4 @@
-// src/components/FamilyTree/TreeView.tsx
+// src/component/FamilyTree/components/FamilyTree/TreeView.tsx
 import React, {
   useEffect,
   useRef,
@@ -11,6 +11,7 @@ import { useTreeContext } from '../../context/TreeContext';
 import { useZoomPan } from '../../hooks/useZoomPan';
 import { PersonData, TreeNode, TreeLink } from '../../types/familyTree';
 import { createLinks } from '../../utils/linkCreator';
+import { calculateEnterAndExitPositions } from '../../utils/animationUtils';
 import Card from './Card';
 import Link from './Link';
 import SvgDefs from './SvgDefs';
@@ -30,27 +31,14 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
     const cardsViewRef = useRef<SVGGElement>(null);
     const linksViewRef = useRef<SVGGElement>(null);
     const highlightPathRef = useRef<string | null>(null);
-    const [containerSize, setContainerSize] = useState({
-      width: 1000,
-      height: 600,
-    });
+    const [isTreeCalculated, setIsTreeCalculated] = useState(false);
 
-    // Use a ref for viewport position to avoid re-renders
-    const viewportPositionRef = useRef({ x: 0, y: 0, scale: 1 });
-    const [, forceUpdate] = useState({});
+    // Keep track of exiting nodes and previously rendered nodes
+    const [exitingNodes, setExitingNodes] = useState<TreeNode[]>([]);
+    const prevNodesRef = useRef<TreeNode[]>([]);
 
-    // Throttle zoom updates
-    const handleZoom = useCallback((x: number, y: number, k: number) => {
-      // Store new position in ref without causing re-render
-      viewportPositionRef.current = { x, y, scale: k };
-
-      // Force re-render for virtualization, but throttled
-      requestAnimationFrame(() => {
-        forceUpdate({});
-      });
-    }, []);
-
-    const { fitTree, zoomIn, zoomOut } = useZoomPan({
+    // Initialize zoom and pan functionality
+    const { fitTree, zoomIn, zoomOut, isZoomReady } = useZoomPan({
       svgRef,
       viewRef,
       dimensions: state.treeData?.dim || {
@@ -62,51 +50,65 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       transitionTime: state.config.transitionTime,
     });
 
-    // Get virtualized nodes (only those in view)
-    const visibleNodes = useMemo(() => {
-      if (!state.treeData?.data) {
-        return [];
+    // Direct D3 zoom setup for the SVG - backup approach
+    useEffect(() => {
+      if (!svgRef.current || !viewRef.current) {
+        return;
       }
 
-      // If there are fewer than 100 nodes, don't virtualize
-      if (state.treeData.data.length < 100) {
-        return state.treeData.data;
+      try {
+        console.log('Setting up direct D3 zoom');
+
+        // Create zoom behavior
+        const zoom = d3
+          .zoom()
+          .scaleExtent([0.1, 3])
+          .on('zoom', event => {
+            if (!viewRef.current) {
+              return;
+            }
+
+            // Apply transform
+            viewRef.current.setAttribute(
+              'transform',
+              `translate(${event.transform.x}, ${event.transform.y}) scale(${event.transform.k})`
+            );
+          });
+
+        // Apply to SVG - explicitly set pointer-events
+        const svg = d3.select(svgRef.current);
+
+        // Clear any existing handlers
+        svg.on('.zoom', null);
+
+        // Apply new zoom behavior
+        svg.call(zoom);
+
+        // Store on DOM element for direct access
+        svgRef.current.__zoomObj = zoom;
+
+        // Log success
+        console.log('Direct D3 zoom setup complete');
+
+        return () => {
+          if (svgRef.current) {
+            svg.on('.zoom', null);
+          }
+        };
+      } catch (error) {
+        console.error('Error in direct D3 zoom setup:', error);
       }
+    }, [svgRef.current, viewRef.current]);
 
-      const vp = viewportPositionRef.current;
-
-      // Simple virtualization logic with buffer zone
-      const buffer = 300;
-      const viewportLeft = -vp.x / vp.scale - buffer;
-      const viewportTop = -vp.y / vp.scale - buffer;
-      const viewportRight =
-        viewportLeft + containerSize.width / vp.scale + buffer * 2;
-      const viewportBottom =
-        viewportTop + containerSize.height / vp.scale + buffer * 2;
-
-      return state.treeData.data.filter(node => {
-        const nodeLeft = node.x - 150; // Increased buffer for node width
-        const nodeTop = node.y - 75; // Increased buffer for node height
-        const nodeRight = node.x + 150;
-        const nodeBottom = node.y + 75;
-
-        return (
-          nodeRight >= viewportLeft &&
-          nodeLeft <= viewportRight &&
-          nodeBottom >= viewportTop &&
-          nodeTop <= viewportBottom
-        );
-      });
-    }, [state.treeData?.data, containerSize, forceUpdate]);
-
-    // Only create links for visible nodes
-    const links = React.useMemo(() => {
+    // Create links for all nodes
+    const links = useMemo(() => {
       if (!state.treeData?.data) {
         return [];
       }
 
       const allLinks: TreeLink[] = [];
 
+      // Create links for current nodes
       state.treeData.data.forEach(node => {
         createLinks({
           d: node,
@@ -122,63 +124,90 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       return allLinks;
     }, [state.treeData, state.config.isHorizontal]);
 
-    // Measure container size
+    // Process entering/exiting nodes
     useEffect(() => {
-      if (!svgRef.current) {
+      if (!state.treeData?.data) {
         return;
       }
 
-      const updateSize = () => {
-        if (svgRef.current) {
-          setContainerSize({
-            width: svgRef.current.clientWidth,
-            height: svgRef.current.clientHeight,
-          });
+      const currentIds = new Set(state.treeData.data.map(n => n.data.id));
+
+      // Calculate exiting nodes
+      const newExitingNodes = prevNodesRef.current
+        .filter(node => !currentIds.has(node.data.id))
+        .map(node => {
+          // Clone node to avoid mutating shared state
+          const exitingNode = { ...node, exiting: true };
+          calculateEnterAndExitPositions(
+            exitingNode,
+            false,
+            true,
+            prevNodesRef.current
+          );
+          return exitingNode;
+        });
+
+      // Mark entering nodes
+      state.treeData.data.forEach(node => {
+        if (!prevNodesRef.current.some(n => n.data.id === node.data.id)) {
+          calculateEnterAndExitPositions(
+            node,
+            true,
+            false,
+            state.treeData.data
+          );
         }
-      };
+      });
 
-      updateSize(); // Initial measurement
+      // Update exiting nodes - they'll animate out then be removed
+      setExitingNodes(newExitingNodes);
 
-      const resizeObserver = new ResizeObserver(updateSize);
-      resizeObserver.observe(svgRef.current);
+      // After transition time, clear exiting nodes
+      const timer = setTimeout(() => {
+        setExitingNodes([]);
+      }, state.config.transitionTime + 100);
 
-      return () => {
-        if (svgRef.current) {
-          resizeObserver.unobserve(svgRef.current);
-        }
-        resizeObserver.disconnect();
-      };
-    }, [svgRef.current]);
+      // Remember current nodes for next update
+      prevNodesRef.current = [...state.treeData.data];
+
+      return () => clearTimeout(timer);
+    }, [state.treeData?.data]);
 
     // Initialize tree on first render
     useEffect(() => {
-      console.log('Initializing tree');
+      console.log('First-time tree initialization');
+
+      // Initialize the tree
       updateTree({ initial: true });
+
+      // Mark tree as calculated
+      setIsTreeCalculated(true);
     }, []);
 
-    // Fit tree when dimensions change
+    // Fit tree when dimensions change or tree is calculated
     useEffect(() => {
-      if (state.treeData?.dim) {
-        console.log(
-          'Tree dimensions changed, fitting tree',
-          state.treeData.dim
-        );
-
-        // Slight delay to ensure DOM is ready
-        const timeoutId = setTimeout(() => {
-          console.log('Calling fitTree');
-          fitTree();
-        }, 200);
-
-        return () => clearTimeout(timeoutId);
+      if (!state.treeData?.dim || !isTreeCalculated || !isZoomReady) {
+        console.log('Waiting for tree dimensions or zoom to be ready');
+        return;
       }
-    }, [state.treeData?.dim, fitTree]);
+
+      console.log(
+        'Tree dimensions and zoom ready, fitting tree',
+        state.treeData.dim
+      );
+
+      // Delay fitting to ensure DOM has updated
+      const timeoutId = setTimeout(() => {
+        console.log('Calling fitTree after dimensions change');
+        fitTree();
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
+    }, [state.treeData?.dim, isTreeCalculated, isZoomReady]);
 
     // Handle person click
     const handlePersonClick = useCallback(
       (node: TreeNode) => {
-        console.log('Person clicked:', node.data.id);
-
         // Update main ID
         updateMainId(node.data.id);
 
@@ -193,7 +222,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       [updateMainId, updateTree, onPersonClick]
     );
 
-    // In TreeView.tsx - update the highlight function for smooth animation
+    // Handle path highlight
     const highlightPathToMain = useCallback(
       (node: TreeNode) => {
         if (!state.treeData || !cardsViewRef.current || !linksViewRef.current) {
@@ -203,14 +232,13 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
         // Find the main node
         const mainNode = state.treeData.data.find(n => n.data.main);
         if (!mainNode) {
-          console.error('Main node not found');
           return;
         }
 
-        // Store a reference to the hovered node for cancellation
+        // Store current hovered node for cancellation
         highlightPathRef.current = node.data.id;
 
-        // Find path from node to main
+        // Get path from node to main
         const { nodePath, linkPath } = findPathToMain(
           state.treeData.data,
           links,
@@ -218,13 +246,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
           mainNode
         );
 
-        // Calculate "distance" from hovered node for each element in the path
-        const nodeDistances = new Map<string, number>();
-        nodePath.forEach((pathNode, index) => {
-          nodeDistances.set(pathNode.data.id, index);
-        });
-
-        // Apply highlight classes with staggered animation
+        // Apply highlights with staggered animation
         nodePath.forEach((pathNode, index) => {
           const nodeElement = cardsViewRef.current!.querySelector(
             `[data-id="${pathNode.data.id}"]`
@@ -233,16 +255,12 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
           if (nodeElement) {
             const cardInner = nodeElement.querySelector('.card-inner');
             if (cardInner) {
-              // Calculate delay based on position in path
-              const delay = index * 150 + 50; // 200ms delay between each node
-
-              // Use d3 for a smooth transition
+              const delay = index * 150;
               d3.select(cardInner)
                 .transition()
                 .duration(0)
                 .delay(delay)
                 .on('end', function () {
-                  // Check if we're still highlighting the same path
                   if (highlightPathRef.current === node.data.id) {
                     cardInner.classList.add('f3-path-to-main');
                   }
@@ -258,28 +276,12 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
           );
 
           if (linkElement) {
-            // Calculate delay based on the nodes this link connects
-            let nodeIndex = 0;
-            if (Array.isArray(link.source)) {
-              // For links with multiple sources, find the earliest in the path
-              nodeIndex = Math.min(
-                ...link.source
-                  .map(s => nodeDistances.get(s.data.id) || Infinity)
-                  .filter(n => n !== Infinity)
-              );
-            } else {
-              nodeIndex = nodeDistances.get(link.source.data.id) || 0;
-            }
-
-            // Delay link highlighting to appear between node highlights
-            const delay = nodeIndex * 150; // 100ms after the source node
-
+            const delay = index * 150;
             d3.select(linkElement)
               .transition()
               .duration(0)
               .delay(delay)
               .on('end', function () {
-                // Check if we're still highlighting the same path
                 if (highlightPathRef.current === node.data.id) {
                   linkElement.classList.add('f3-path-to-main');
                 }
@@ -290,19 +292,19 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       [state.treeData, links]
     );
 
-    // Update clear highlight function
+    // Clear highlight
     const clearPathHighlight = useCallback(() => {
-      // Clear the current highlight reference
       highlightPathRef.current = null;
 
       if (!cardsViewRef.current || !linksViewRef.current) {
         return;
       }
 
-      // Clear card highlights with fade-out animation
+      // Clear all highlights with fade-out
       const highlightedCards = cardsViewRef.current.querySelectorAll(
         '.card-inner.f3-path-to-main'
       );
+
       highlightedCards.forEach(el => {
         d3.select(el)
           .transition()
@@ -312,10 +314,10 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
           });
       });
 
-      // Clear link highlights with fade-out animation
       const highlightedLinks = linksViewRef.current.querySelectorAll(
         '.link.f3-path-to-main'
       );
+
       highlightedLinks.forEach(el => {
         d3.select(el)
           .transition()
@@ -327,20 +329,44 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
     }, []);
 
     if (!state.treeData) {
-      return <div>Loading...</div>;
+      return <div>Loading tree data...</div>;
     }
 
     return (
       <>
-        <svg className="main_svg" ref={svgRef}>
+        <svg
+          className="main_svg"
+          ref={svgRef}
+          style={{
+            cursor: 'grab',
+            touchAction: 'none', // Prevents browser handling of drag gestures
+          }}
+          onMouseDown={() => {
+            // Change cursor on drag start
+            if (svgRef.current) {
+              svgRef.current.style.cursor = 'grabbing';
+            }
+          }}
+          onMouseUp={() => {
+            // Restore cursor on drag end
+            if (svgRef.current) {
+              svgRef.current.style.cursor = 'grab';
+            }
+          }}
+        >
           <SvgDefs cardDimensions={state.config.cardDimensions} />
+
+          {/* Background rect for pan/zoom */}
           <rect
             width="100%"
             height="100%"
             fill="transparent"
             pointerEvents="all"
           />
+
+          {/* Main view container - transformed by zoom */}
           <g className="view" ref={viewRef}>
+            {/* Links layer */}
             <g className="links_view" ref={linksViewRef}>
               {links.map(link => (
                 <Link
@@ -350,7 +376,10 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
                 />
               ))}
             </g>
+
+            {/* Cards layer */}
             <g className="cards_view" ref={cardsViewRef}>
+              {/* Render current nodes */}
               {state.treeData.data.map(node => (
                 <Card
                   key={node.data.id}
@@ -358,12 +387,25 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
                   cardDimensions={state.config.cardDimensions}
                   showMiniTree={state.config.showMiniTree}
                   transitionTime={state.config.transitionTime}
+                  treeData={state.treeData}
                   onClick={handlePersonClick}
                   onEdit={
                     onPersonEdit ? () => onPersonEdit(node.data) : undefined
                   }
-                  onMouseEnter={() => highlightPathToMain(node)}
+                  onMouseEnter={highlightPathToMain}
                   onMouseLeave={clearPathHighlight}
+                />
+              ))}
+
+              {/* Render exiting nodes */}
+              {exitingNodes.map(node => (
+                <Card
+                  key={`exit-${node.data.id}`}
+                  node={node}
+                  cardDimensions={state.config.cardDimensions}
+                  showMiniTree={false}
+                  transitionTime={state.config.transitionTime}
+                  treeData={state.treeData}
                 />
               ))}
             </g>

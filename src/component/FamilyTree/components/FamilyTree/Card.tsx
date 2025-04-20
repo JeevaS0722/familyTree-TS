@@ -1,15 +1,16 @@
-// src/components/FamilyTree/Card.tsx
-import React, { useRef, useEffect, memo, useCallback } from 'react';
-import * as d3 from 'd3';
-import { TreeNode, CardDimensions, PersonData } from '../../types/familyTree';
+// src/component/FamilyTree/components/FamilyTree/Card.tsx
+import React, { useRef, useCallback, memo } from 'react';
+import { TreeNode, CardDimensions, TreeData } from '../../types/familyTree';
+import { useNodeAnimation } from '../../hooks/useNodeAnimation';
 
 interface CardProps {
   node: TreeNode;
   cardDimensions: CardDimensions;
   showMiniTree: boolean;
   transitionTime: number;
+  treeData: TreeData | null;
   onClick?: (node: TreeNode) => void;
-  onEdit?: (person: PersonData) => void;
+  onEdit?: (node: TreeNode) => void;
   onMouseEnter?: (node: TreeNode) => void;
   onMouseLeave?: (node: TreeNode) => void;
 }
@@ -19,97 +20,47 @@ const Card: React.FC<CardProps> = ({
   cardDimensions,
   showMiniTree,
   transitionTime,
+  treeData,
   onClick,
   onEdit,
   onMouseEnter,
   onMouseLeave,
 }) => {
   const cardRef = useRef<SVGGElement>(null);
-  const entering = !!node._x;
-  const exiting = !!node.exiting;
 
-  function calculateDelay(node: TreeNode, transitionTime: number): number {
-    // Adapt the original delay calculation
-    const delay_level = transitionTime * 0.4;
-    let delay = node.depth * delay_level;
+  // Use animation hook - this handles all animation logic
+  useNodeAnimation(cardRef, node, transitionTime, treeData);
 
-    if ((node.depth !== 0 || !!node.spouse) && !node.is_ancestry) {
-      // Calculate delay using ancestry levels
-      const ancestry_levels = 3; // Default value - in real code get from tree data
-      delay += ancestry_levels * delay_level;
-      if (node.spouse) {
-        delay += delay_level;
-      }
-      delay += node.depth * delay_level;
-    }
-
-    return delay;
-  }
-
-  // Handle card animation
-  useEffect(() => {
-    if (!cardRef.current) {
-      return;
-    }
-
-    const cardElement = d3.select(cardRef.current);
-
-    // Calculate delay based on depth exactly as in original
-    const delay = calculateDelay(node, transitionTime);
-
-    if (entering || exiting) {
-      // Entry or exit animation
-      const startX = entering ? node._x! : node.x;
-      const startY = entering ? node._y! : node.y;
-      const endX = entering ? node.x : node._x!;
-      const endY = entering ? node.y : node._y!;
-
-      cardElement
-        .attr('transform', `translate(${startX}, ${startY})`)
-        .style('opacity', entering ? 0 : 1)
-        .transition()
-        .duration(transitionTime)
-        .delay(delay) // Apply delay from original code
-        .attr('transform', `translate(${endX}, ${endY})`)
-        .style('opacity', entering ? 1 : 0);
-    } else {
-      // Regular position update
-      cardElement
-        .transition()
-        .duration(transitionTime)
-        .delay(delay) // Apply delay from original code
-        .attr('transform', `translate(${node.x}, ${node.y})`)
-        .style('opacity', 1);
-    }
-  }, [node.x, node.y, node._x, node._y, transitionTime]);
-
-  // Get gender class for styling
-  const getGenderClass = () => {
-    if (node.data.data.gender === 'M') {
-      return 'card-male';
-    }
-    if (node.data.data.gender === 'F') {
-      return 'card-female';
-    }
-    return 'card-genderless';
-  };
-
-  // Handle card click
-  const handleClick = () => {
+  // Event handlers
+  const handleClick = useCallback(() => {
     if (onClick) {
       onClick(node);
     }
-  };
+  }, [onClick, node]);
 
-  // Handle edit click
-  const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onEdit) {
-      onEdit(node.data);
+  const handleEditClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (onEdit) {
+        onEdit(node);
+      }
+    },
+    [onEdit, node]
+  );
+
+  const handleMouseEnter = useCallback(() => {
+    if (!node.data.main && onMouseEnter) {
+      onMouseEnter(node);
     }
-  };
+  }, [node, onMouseEnter]);
 
-  // Display text for card
+  const handleMouseLeave = useCallback(() => {
+    if (!node.data.main && onMouseLeave) {
+      onMouseLeave(node);
+    }
+  }, [node, onMouseLeave]);
+
+  // Card text display function
   const displayText = () => {
     const { data } = node.data;
 
@@ -124,24 +75,23 @@ const Card: React.FC<CardProps> = ({
     return `${data['first name']} ${data['last name']}`;
   };
 
-  const handleMouseEnter = useCallback(() => {
-    if (!node.data.main && onMouseEnter) {
-      onMouseEnter(node);
+  // Get gender class for styling
+  const getGenderClass = () => {
+    if (node.data.data.gender === 'M') {
+      return 'card-male';
     }
-  }, [node, onMouseEnter]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (!node.data.main && onMouseLeave) {
-      onMouseLeave(node);
+    if (node.data.data.gender === 'F') {
+      return 'card-female';
     }
-  }, [node, onMouseLeave]);
+    return 'card-genderless';
+  };
 
   return (
     <g
       ref={cardRef}
       className={`card_cont ${node.data.main ? 'card-main' : ''}`}
-      transform={`translate(${node.x}, ${node.y})`}
-      style={{ opacity: 0 }}
+      transform={`translate(${node.x}, ${node.y})`} // Initial position before animation
+      style={{ opacity: 0 }} // Initial opacity
       data-id={node.data.id}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -187,6 +137,7 @@ const Card: React.FC<CardProps> = ({
               className="text-overflow-mask"
             />
           </g>
+
           {/* Card image */}
           {!node.data.to_add && !node.data._new_rel_data && (
             <g
@@ -221,6 +172,7 @@ const Card: React.FC<CardProps> = ({
               )}
             </g>
           )}
+
           {/* Edit pencil icon */}
           {!node.data.to_add && !node.data._new_rel_data && onEdit && (
             <g
@@ -237,6 +189,7 @@ const Card: React.FC<CardProps> = ({
               />
             </g>
           )}
+
           {/* Mini tree icon */}
           {showMiniTree &&
             !node.data.to_add &&

@@ -97,18 +97,12 @@
 .f3 .card-inner.f3-path-to-main {
     outline: 4px solid white;
     border-radius: 4px;
-    /* transition: outline 0.3s ease-in-out; */
 }
 
 .f3 .link.f3-path-to-main {
     stroke: white;
     stroke-width: 4px;
-    /* transition: stroke-width 0.3s ease-in-out, stroke 0.3s ease-in-out; */
 }
-
-/* .f3 .link {
-    transition: stroke-width 0.2s ease-in-out;
-} */
 
 /* Toolbar styles */
 .f3-toolbar {
@@ -498,4 +492,26 @@ input:checked+.f3-slider:before {
 .f3-toolbar-button svg {
     width: 24px;
     height: 24px;
+}
+
+/* new fix styles */
+/* Add to FamilyTree.css */
+.f3 .main_svg {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+}
+
+.f3 .main_svg:active {
+    cursor: grabbing;
+}
+
+/* Make sure cards can be clicked but don't interfere with dragging */
+.f3 .card_cont {
+    pointer-events: all;
+}
+
+/* Ensure the transparent rect can receive drag events */
+.f3 .main_svg>rect {
+    pointer-events: all;
 }
