@@ -22,20 +22,20 @@ type TreeAction =
   | { type: 'UPDATE_TREE'; payload?: { initial?: boolean } };
 
 const initialConfig: TreeConfig = {
-  nodeSeparation: 250,
-  levelSeparation: 150,
+  nodeSeparation: 400, // Increased for larger cards
+  levelSeparation: 300, // Increased for larger cards
   singleParentEmptyCard: true,
   isHorizontal: false,
-  transitionTime: 2000,
+  transitionTime: 1000,
   cardDimensions: {
-    w: 220,
-    h: 70,
-    text_x: 75,
-    text_y: 15,
-    img_w: 60,
-    img_h: 60,
-    img_x: 5,
-    img_y: 5,
+    w: 300, // From Figma 300px
+    h: 155, // From Figma 155px
+    text_x: 20,
+    text_y: 20,
+    relationship_batch_w: 128, // From Figma 141px
+    relationship_batch_h: 21, // From Figma 21px
+    relationship_batch_x: 0, // Position it above the card
+    relationship_batch_y: -25, // Position it above the card
   },
   showMiniTree: true,
   linkBreak: false,

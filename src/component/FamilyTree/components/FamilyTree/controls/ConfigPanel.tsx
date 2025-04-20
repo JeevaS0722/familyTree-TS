@@ -125,8 +125,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
             <label>Width: {state.config.cardDimensions.w}px</label>
             <input
               type="range"
-              min="150"
-              max="350"
+              min="300"
+              max="600"
               value={state.config.cardDimensions.w}
               onChange={e => handleCardDimRangeChange(e, 'w')}
             />
@@ -136,8 +136,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
             <label>Height: {state.config.cardDimensions.h}px</label>
             <input
               type="range"
-              min="50"
-              max="150"
+              min="155"
+              max="310"
               value={state.config.cardDimensions.h}
               onChange={e => handleCardDimRangeChange(e, 'h')}
             />
@@ -150,8 +150,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
             <label>Node Separation: {state.config.nodeSeparation}px</label>
             <input
               type="range"
-              min="150"
-              max="350"
+              min="350"
+              max="750"
               value={state.config.nodeSeparation}
               onChange={e => handleRangeChange(e, 'nodeSeparation')}
             />
@@ -161,8 +161,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
             <label>Level Separation: {state.config.levelSeparation}px</label>
             <input
               type="range"
-              min="100"
-              max="250"
+              min="250"
+              max="500"
               value={state.config.levelSeparation}
               onChange={e => handleRangeChange(e, 'levelSeparation')}
             />

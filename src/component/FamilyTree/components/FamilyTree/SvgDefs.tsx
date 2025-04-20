@@ -44,7 +44,7 @@ const SvgDefs: React.FC<SvgDefsProps> = ({ cardDimensions }) => {
       {/* Clip paths for various card elements */}
       <clipPath id="card_clip">
         <path
-          d={curvedRectPath({ w: cardDimensions.w, h: cardDimensions.h }, 5)}
+          d={curvedRectPath({ w: cardDimensions.w, h: cardDimensions.h }, 20)}
         />
       </clipPath>
 
@@ -52,21 +52,28 @@ const SvgDefs: React.FC<SvgDefsProps> = ({ cardDimensions }) => {
         <rect width={cardDimensions.w - 10} height={cardDimensions.h} />
       </clipPath>
 
-      <clipPath id="card_image_clip">
-        <path
-          d={`M0,0 Q 0,0 0,0 H${cardDimensions.img_w} V${cardDimensions.img_h} H0 Q 0,${cardDimensions.img_h} 0,${cardDimensions.img_h} z`}
+      {/* Relationship batch clip path */}
+      <clipPath id="relationship_batch_clip">
+        <rect
+          width={cardDimensions.relationship_batch_w}
+          height={cardDimensions.relationship_batch_h}
+          rx="10"
+          ry="10"
         />
       </clipPath>
 
-      <clipPath id="card_image_clip_curved">
-        <path
-          d={curvedRectPath(
-            { w: cardDimensions.img_w, h: cardDimensions.img_h },
-            5,
-            ['rx', 'ry']
-          )}
-        />
-      </clipPath>
+      {/* Drop shadow filter */}
+      <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+        <feOffset dx="0" dy="2" result="offsetblur" />
+        <feComponentTransfer>
+          <feFuncA type="linear" slope="0.2" />
+        </feComponentTransfer>
+        <feMerge>
+          <feMergeNode />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
     </defs>
   );
 };

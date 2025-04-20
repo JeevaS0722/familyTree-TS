@@ -24,10 +24,19 @@ const EditForm: React.FC<EditFormProps> = ({
   const { state } = useTreeContext();
   const [formData, setFormData] = useState<Partial<PersonData['data']>>({
     gender: '',
-    'first name': '',
-    'last name': '',
-    birthday: '',
-    avatar: '',
+    firstName: '',
+    lastName: '',
+    dOB: '',
+    decDt: null,
+    deceased: null,
+    age: null,
+    city: null,
+    state: null,
+    address: null,
+    fileId: 0,
+    heir: null,
+    research_inheritance: null,
+    is_new_notes: null,
   });
   const [otherParentId, setOtherParentId] = useState<string>('');
   const [availableParents, setAvailableParents] = useState<PersonData[]>([]);
@@ -46,10 +55,19 @@ const EditForm: React.FC<EditFormProps> = ({
             : '';
       setFormData({
         gender,
-        'first name': '',
-        'last name': '',
-        birthday: '',
-        avatar: '',
+        firstName: '',
+        lastName: '',
+        dOB: '',
+        decDt: null,
+        deceased: null,
+        age: null,
+        city: null,
+        state: null,
+        address: null,
+        fileId: 0,
+        heir: null,
+        research_inheritance: null,
+        is_new_notes: null,
       });
     }
   }, [person, relationType]);
@@ -75,10 +93,18 @@ const EditForm: React.FC<EditFormProps> = ({
 
   // Handle input changes
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle checkbox changes
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: checked }));
   };
 
   // Handle gender radio change
@@ -185,8 +211,8 @@ const EditForm: React.FC<EditFormProps> = ({
             <label>First Name</label>
             <input
               type="text"
-              name="first name"
-              value={formData['first name'] || ''}
+              name="firstName"
+              value={formData.firstName || ''}
               onChange={handleInputChange}
               placeholder="First Name"
             />
@@ -196,33 +222,138 @@ const EditForm: React.FC<EditFormProps> = ({
             <label>Last Name</label>
             <input
               type="text"
-              name="last name"
-              value={formData['last name'] || ''}
+              name="lastName"
+              value={formData.lastName || ''}
               onChange={handleInputChange}
               placeholder="Last Name"
             />
           </div>
 
           <div className="f3-form-section">
-            <label>Birthday</label>
+            <label>File ID</label>
             <input
-              type="text"
-              name="birthday"
-              value={formData.birthday || ''}
+              type="number"
+              name="fileId"
+              value={formData.fileId || 0}
               onChange={handleInputChange}
-              placeholder="Birthday"
+              placeholder="File ID"
             />
           </div>
 
           <div className="f3-form-section">
-            <label>Avatar URL</label>
+            <label>Age</label>
+            <input
+              type="number"
+              name="age"
+              value={formData.age || ''}
+              onChange={handleInputChange}
+              placeholder="Age"
+            />
+          </div>
+
+          <div className="f3-form-section">
+            <label>Date of Birth</label>
             <input
               type="text"
-              name="avatar"
-              value={formData.avatar || ''}
+              name="dOB"
+              value={formData.dOB || ''}
               onChange={handleInputChange}
-              placeholder="Avatar URL"
+              placeholder="MM/DD/YYYY"
             />
+          </div>
+
+          <div className="f3-form-section">
+            <label>
+              <input
+                type="checkbox"
+                name="deceased"
+                checked={!!formData.deceased}
+                onChange={handleCheckboxChange}
+              />
+              Deceased
+            </label>
+          </div>
+
+          {formData.deceased && (
+            <div className="f3-form-section">
+              <label>Date of Death</label>
+              <input
+                type="text"
+                name="decDt"
+                value={formData.decDt || ''}
+                onChange={handleInputChange}
+                placeholder="MM/DD/YYYY"
+              />
+            </div>
+          )}
+
+          <div className="f3-form-section">
+            <label>City</label>
+            <input
+              type="text"
+              name="city"
+              value={formData.city || ''}
+              onChange={handleInputChange}
+              placeholder="City"
+            />
+          </div>
+
+          <div className="f3-form-section">
+            <label>State</label>
+            <input
+              type="text"
+              name="state"
+              value={formData.state || ''}
+              onChange={handleInputChange}
+              placeholder="State"
+            />
+          </div>
+
+          <div className="f3-form-section">
+            <label>Address</label>
+            <textarea
+              name="address"
+              value={formData.address || ''}
+              onChange={handleInputChange}
+              placeholder="Address"
+              rows={3}
+            />
+          </div>
+
+          <div className="f3-form-section">
+            <label>
+              <input
+                type="checkbox"
+                name="heir"
+                checked={!!formData.heir}
+                onChange={handleCheckboxChange}
+              />
+              Heir
+            </label>
+          </div>
+
+          <div className="f3-form-section">
+            <label>
+              <input
+                type="checkbox"
+                name="research_inheritance"
+                checked={!!formData.research_inheritance}
+                onChange={handleCheckboxChange}
+              />
+              Research Inheritance
+            </label>
+          </div>
+
+          <div className="f3-form-section">
+            <label>
+              <input
+                type="checkbox"
+                name="is_new_notes"
+                checked={!!formData.is_new_notes}
+                onChange={handleCheckboxChange}
+              />
+              Has New Notes
+            </label>
           </div>
 
           {(relationType === 'son' || relationType === 'daughter') &&
@@ -236,7 +367,7 @@ const EditForm: React.FC<EditFormProps> = ({
                 >
                   {availableParents.map(parent => (
                     <option key={parent.id} value={parent.id}>
-                      {parent.data['first name']} {parent.data['last name']}
+                      {parent.data.firstName} {parent.data.lastName}
                     </option>
                   ))}
                   <option value="_new">Add New Parent</option>

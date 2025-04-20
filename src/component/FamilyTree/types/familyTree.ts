@@ -4,10 +4,19 @@ export interface PersonData {
   id: string;
   data: {
     gender: 'M' | 'F' | '';
-    'first name': string;
-    'last name': string;
-    birthday?: string;
-    avatar?: string;
+    firstName: string;
+    lastName: string;
+    dOB?: string;
+    decDt?: string | null;
+    deceased?: boolean | null;
+    age?: number | null;
+    city?: string | null;
+    state?: string | null;
+    address?: string | null;
+    fileId?: number;
+    heir?: boolean | null;
+    research_inheritance?: boolean | null;
+    is_new_notes?: boolean | null;
     [key: string]: any;
   };
   rels: {
@@ -20,6 +29,7 @@ export interface PersonData {
   main?: boolean;
   hide_rels?: boolean;
   to_add?: boolean;
+  relation_type?: string; // For displaying relationship to file
   _new_rel_data?: {
     rel_type: 'father' | 'mother' | 'spouse' | 'son' | 'daughter';
     label: string;
@@ -92,8 +102,8 @@ export interface CardDimensions {
   h: number;
   text_x: number;
   text_y: number;
-  img_w: number;
-  img_h: number;
-  img_x: number;
-  img_y: number;
+  relationship_batch_w: number;
+  relationship_batch_h: number;
+  relationship_batch_x: number;
+  relationship_batch_y: number;
 }

@@ -8,6 +8,7 @@ import TreeView from './TreeView';
 import ConfigPanel from './controls/ConfigPanel';
 import SearchBar from './controls/SearchBar';
 import EditForm from './EditForm';
+import { migratePersonData } from '../../utils/dataMigration';
 import './FamilyTree.css';
 
 interface FamilyTreeProps {
@@ -219,8 +220,10 @@ const FamilyTree: React.FC<FamilyTreeProps> = ({
   onPersonAdd,
   onPersonDelete,
 }) => {
+  // Migrate data to new structure if needed
+  const migratedData = migratePersonData(data);
   return (
-    <TreeProvider initialData={data} initialMainId={mainId}>
+    <TreeProvider initialData={migratedData} initialMainId={mainId}>
       <FamilyTreeContent />
     </TreeProvider>
   );

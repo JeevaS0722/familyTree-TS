@@ -31,11 +31,11 @@ export function useNodeVirtualization({
     const viewportBottom = viewportTop + visibleAreaHeight / scale + buffer * 2;
 
     const visible = allNodes.filter(node => {
-      // Account for node dimensions (assuming node width/height from card dimensions)
-      const nodeLeft = node.x - 110; // Half node width
-      const nodeTop = node.y - 35; // Half node height
-      const nodeRight = node.x + 110;
-      const nodeBottom = node.y + 35;
+      // Account for node dimensions - updated for larger card size (300x155)
+      const nodeLeft = node.x - 150; // Half node width
+      const nodeTop = node.y - 80; // Half node height + extra for relationship batch
+      const nodeRight = node.x + 150;
+      const nodeBottom = node.y + 80;
 
       // Check if node is within or overlapping the visible area
       return (

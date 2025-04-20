@@ -1,8 +1,11 @@
 /* src/components/FamilyTree/FamilyTree.css */
 .f3 {
-    --female-color: rgb(196, 138, 146);
-    --male-color: rgb(120, 159, 172);
+    --female-primary-color: #FF96BC;
+    --female-secondary-color: #FFC8DC;
+    --male-primary-color: #7EADFF;
+    --male-secondary-color: #C8DCFF;
     --background-color: rgb(33, 33, 33);
+    --deceased-border-color: #FF0000;
     font-family: 'Roboto', sans-serif;
 }
 
@@ -25,7 +28,6 @@
     height: 100%;
     cursor: grab;
     touch-action: none;
-    /* Prevents browser handling of drag gestures */
 }
 
 .f3 .main_svg:active {
@@ -33,31 +35,22 @@
 }
 
 /* Card styling */
-.f3 .card-body-rect,
-.f3 .text-overflow-mask {
-    fill: var(--background-color);
+.f3 .card-male .card-body-rect {
+    fill: var(--male-secondary-color);
 }
 
-.f3 .card-female .card-body-rect,
-.f3 .card-female .text-overflow-mask {
-    fill: var(--female-color);
+.f3 .card-female .card-body-rect {
+    fill: var(--female-secondary-color);
 }
 
-.f3 .card-male .card-body-rect,
-.f3 .card-male .text-overflow-mask {
-    fill: var(--male-color);
-}
-
-.f3 .card-genderless .card-body-rect,
-.f3 .card-genderless .text-overflow-mask {
+.f3 .card-genderless .card-body-rect {
     fill: lightgray;
 }
 
-.f3 .card_add .card-body-rect {
-    fill: #3b5560;
-    stroke-width: 4px;
-    stroke: #fff;
-    cursor: pointer;
+.f3 .card-outline {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.2);
+    stroke-width: 1px;
 }
 
 .f3 .card-main-outline {
@@ -71,19 +64,11 @@
     stroke-width: 2px;
 }
 
-.f3 .card-outline {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.2);
-    stroke-width: 1px;
-}
-
 /* Card interaction and animation */
 .f3 .card_cont {
     pointer-events: all;
     transform-origin: center center;
-    /* Critical for smooth scaling */
     will-change: transform, opacity;
-    /* Hardware acceleration hint */
 }
 
 .f3 .card_family_tree {
@@ -507,4 +492,263 @@ input:checked+.f3-slider:before {
 
 .f3-add-relation-buttons button:hover {
     background-color: rgba(50, 50, 50, 0.9);
+}
+
+/* Card header styling */
+.f3 .card-header {
+    cursor: pointer;
+}
+
+.f3 .file-name {
+    font-weight: 600;
+}
+
+/* Relationship batch styling */
+.f3 .relationship-batch {
+    fill: #E2E2E2;
+}
+
+.f3 .relationship-batch-text {
+    fill: #000;
+}
+
+.f3 .relationship-dropdown {
+    cursor: pointer;
+    z-index: 100;
+}
+
+/* File name styling */
+.f3 .file-name {
+    font-weight: 600;
+    font-size: 16px;
+    fill: #000;
+}
+
+/* Card details styling */
+.f3 .card-details {
+    font-size: 14px;
+    fill: #000;
+}
+
+/* Card icons */
+.f3 .card-icon {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.f3 .card-icon:hover {
+    transform: scale(1.1);
+}
+
+/* Card deceased styling */
+.f3 .card-deceased .card-outline {
+    stroke: var(--deceased-border-color);
+    stroke-width: 2px;
+}
+
+/* Popup styling for dollar icon hover */
+.f3 .offer-popup {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.f3 .offer-popup.show-popup {
+    opacity: 1;
+}
+
+/* Path highlighting */
+.f3 .card-inner {
+    outline: 0px solid rgba(255, 255, 255, 1);
+    transition: outline 0.2s ease-in-out;
+}
+
+.f3 .card-inner.f3-path-to-main {
+    outline: 4px solid white;
+}
+
+.f3 .link.f3-path-to-main {
+    stroke: white;
+    stroke-width: 4px;
+    transition: stroke-width 0.1s ease-in-out;
+}
+
+/* Update to src/component/FamilyTree/components/FamilyTree/FamilyTree.css */
+.f3 {
+    --female-primary-color: #FF96BC;
+    --female-secondary-color: #FFC8DC;
+    --male-primary-color: #7EADFF;
+    --male-secondary-color: #C8DCFF;
+    --background-color: rgb(33, 33, 33);
+    --deceased-border-color: #FF0000;
+    --relationship-badge-color: #E2E2E2;
+    --header-color: #FFFFFF;
+    --bottom-bar-color: #E9E9E9;
+    font-family: 'Roboto', sans-serif;
+}
+
+.f3 * {
+    box-sizing: border-box;
+}
+
+.f3.f3-cont {
+    width: 100%;
+    height: 900px;
+    max-height: 70vh;
+    background-color: var(--background-color);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.f3 .main_svg {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    touch-action: none;
+}
+
+.f3 .main_svg:active {
+    cursor: grabbing;
+}
+
+/* Card styling */
+.f3 .card-male .card-body-rect {
+    fill: var(--male-secondary-color);
+}
+
+.f3 .card-female .card-body-rect {
+    fill: var(--female-secondary-color);
+}
+
+.f3 .card-genderless .card-body-rect {
+    fill: lightgray;
+}
+
+.f3 .card-outline {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.2);
+    stroke-width: 1px;
+}
+
+.f3 .card-main-outline {
+    stroke: currentColor;
+    stroke-width: 3px;
+}
+
+.f3 .card-new-outline {
+    stroke-dasharray: 5, 3;
+    stroke: currentColor;
+    stroke-width: 2px;
+}
+
+/* Card deceased styling */
+.f3 .card-deceased .card-outline {
+    stroke: var(--deceased-border-color);
+    stroke-width: 3px;
+}
+
+/* Relationship batch styling */
+.f3 .relationship-batch {
+    fill: var(--relationship-badge-color);
+}
+
+.f3 .relationship-batch-text {
+    fill: #000;
+}
+
+.f3 .relationship-dropdown {
+    cursor: pointer;
+    z-index: 100;
+}
+
+.f3 .relationship-option:hover {
+    fill: rgba(0, 0, 0, 0.05);
+}
+
+/* Card header styling */
+.f3 .card-header {
+    cursor: pointer;
+}
+
+.f3 .file-name {
+    font-weight: 600;
+}
+
+/* Card interaction and animation */
+.f3 .card_cont {
+    pointer-events: all;
+    transform-origin: center center;
+    will-change: transform, opacity;
+}
+
+/* Card icons */
+.f3 .card-icon {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.f3 .card-icon:hover {
+    transform: scale(1.1);
+}
+
+/* Popup styling for dollar icon hover */
+.f3 .offer-popup {
+    opacity: 1;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+}
+
+/* Notes panel styling */
+.f3 .notes-panel {
+    transform-origin: bottom;
+    animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(120px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Header actions animation */
+.f3 .header-actions {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Path highlighting */
+.f3 .card-inner {
+    outline: 0px solid rgba(255, 255, 255, 1);
+    transition: outline 0.2s ease-in-out;
+}
+
+.f3 .card-inner.f3-path-to-main {
+    outline: 4px solid white;
+}
+
+.f3 .link.f3-path-to-main {
+    stroke: white;
+    stroke-width: 4px;
+    transition: stroke-width 0.1s ease-in-out;
+}
+
+/* Add filter for drop shadows */
+.f3 .main_svg defs {
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
 }
