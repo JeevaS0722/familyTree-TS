@@ -1,4 +1,4 @@
-// src/component/FamilyTree/components/FamilyTree/Card.tsx
+// src/components/FamilyTree/Card.tsx
 import React, { useRef, useCallback, memo } from 'react';
 import { TreeNode, CardDimensions, TreeData } from '../../types/familyTree';
 import { useNodeAnimation } from '../../hooks/useNodeAnimation';
@@ -72,7 +72,7 @@ const Card: React.FC<CardProps> = ({
       return node.data._new_rel_data.label;
     }
 
-    return `${data['first name']} ${data['last name']}`;
+    return `${data['first name'] || ''} ${data['last name'] || ''}`;
   };
 
   // Get gender class for styling

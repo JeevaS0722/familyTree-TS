@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { PersonData } from '../../types/familyTree';
 import { useTreeContext } from '../../context/TreeContext';
 import { createNewPerson } from '../../utils/personHelper';
-// import './EditForm.css';
 
 interface EditFormProps {
   person?: PersonData;

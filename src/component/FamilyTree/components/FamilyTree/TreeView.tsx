@@ -204,7 +204,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       }, 500);
 
       return () => clearTimeout(timeoutId);
-    }, [state.treeData?.dim, isTreeCalculated, isZoomReady]);
+    }, [state.treeData?.dim, isTreeCalculated, isZoomReady, fitTree]);
 
     // Handle person click
     const handlePersonClick = useCallback(
@@ -223,7 +223,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       [updateMainId, updateTree, onPersonClick]
     );
 
-    // In TreeView.tsx - highlighting path to main function
+    // Highlighting path to main function
     const highlightPathToMain = useCallback(
       (node: TreeNode) => {
         if (!state.treeData || !cardsViewRef.current || !linksViewRef.current) {

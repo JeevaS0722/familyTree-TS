@@ -1,7 +1,7 @@
 /* eslint-disable max-depth */
 /* eslint-disable complexity */
 // src/components/FamilyTree/FamilyTree.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { PersonData } from '../../types/familyTree';
 import { TreeProvider, useTreeContext } from '../../context/TreeContext';
 import TreeView from './TreeView';
@@ -21,14 +21,14 @@ interface FamilyTreeProps {
 
 const FamilyTreeContent: React.FC = () => {
   const { state, updateData, updateMainId, updateTree } = useTreeContext();
-  const [editFormOpen, setEditFormOpen] = useState(false);
-  const [currentPerson, setCurrentPerson] = useState<PersonData | undefined>(
-    undefined
-  );
-  const [relationType, setRelationType] = useState<
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [editFormOpen, setEditFormOpen] = React.useState(false);
+  const [currentPerson, setCurrentPerson] = React.useState<
+    PersonData | undefined
+  >(undefined);
+  const [relationType, setRelationType] = React.useState<
     'father' | 'mother' | 'spouse' | 'son' | 'daughter' | undefined
   >(undefined);
-  const svgRef = useRef<SVGSVGElement>(null);
 
   // Handle person click for editing
   const handlePersonEdit = (person: PersonData) => {
@@ -54,7 +54,6 @@ const FamilyTreeContent: React.FC = () => {
       // Handle new person/relation
       if (person._new_rel_data && state.mainId) {
         // This is a new relation to the main person
-        // In a real implementation, we would update the relationships between nodes
         const updatedData = [...state.data];
         const mainPerson = updatedData.find(p => p.id === state.mainId);
 
@@ -139,11 +138,7 @@ const FamilyTreeContent: React.FC = () => {
 
   // Delete person
   const handleDeletePerson = (personId: string) => {
-    // In a real implementation, we would:
-    // 1. Check if deleting this person would disconnect the tree
-    // 2. Update relationships between nodes
-    // 3. Possibly handle cleanup of orphaned branches
-
+    // Check if deleting would disconnect the tree
     const updatedData = state.data.filter(p => p.id !== personId);
 
     // Update references in other people
@@ -202,14 +197,16 @@ const FamilyTreeContent: React.FC = () => {
       )}
 
       {/* Edit Form */}
-      <EditForm
-        person={currentPerson}
-        relationType={relationType}
-        isOpen={editFormOpen}
-        onClose={() => setEditFormOpen(false)}
-        onSave={handleSavePerson}
-        onDelete={handleDeletePerson}
-      />
+      {editFormOpen && (
+        <EditForm
+          person={currentPerson}
+          relationType={relationType}
+          isOpen={editFormOpen}
+          onClose={() => setEditFormOpen(false)}
+          onSave={handleSavePerson}
+          onDelete={handleDeletePerson}
+        />
+      )}
     </div>
   );
 };

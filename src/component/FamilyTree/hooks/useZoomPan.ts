@@ -64,7 +64,7 @@ export function useZoomPan({
         selection.on('.zoom', null);
       }
     };
-  }, [svgRef.current, viewRef.current]);
+  }, [svgRef.current, viewRef.current, onZoom]);
 
   // Function to fit tree to view - IMPROVED TIMING
   const fitTree = useCallback(() => {

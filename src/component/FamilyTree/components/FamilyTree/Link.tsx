@@ -66,7 +66,7 @@ const Link: React.FC<LinkProps> = ({ link, transitionTime }) => {
       path.interrupt();
 
       // Calculate delay based on depth - matches original code
-      const delay = link.depth * (transitionTime * 0.3);
+      const delay = link.depth * (transitionTime * 0.4);
 
       // Set initial path for entering links if not already set
       if (!prevPathRef.current && entryExitPathData !== pathData) {

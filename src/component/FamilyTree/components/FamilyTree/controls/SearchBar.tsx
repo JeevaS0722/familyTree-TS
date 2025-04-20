@@ -1,8 +1,7 @@
 // src/components/FamilyTree/controls/SearchBar.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useTreeContext } from '../../../context/TreeContext';
-import { PersonData, TreeNode } from '../../../types/familyTree';
-// import './SearchBar.css';
+import { PersonData } from '../../../types/familyTree';
 
 interface SearchBarProps {
   onSelectPerson?: (personId: string) => void;

@@ -78,5 +78,6 @@ export function useNodeAnimation(
     node.exiting,
     node.data.id,
     transitionTime,
+    treeData,
   ]);
 }

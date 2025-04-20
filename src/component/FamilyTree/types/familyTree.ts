@@ -46,6 +46,7 @@ export interface TreeNode {
   added?: boolean;
   exiting?: boolean;
   all_rels_displayed?: boolean;
+  parent?: TreeNode; // D3 hierarchy parent reference
 }
 
 export interface TreeLink {

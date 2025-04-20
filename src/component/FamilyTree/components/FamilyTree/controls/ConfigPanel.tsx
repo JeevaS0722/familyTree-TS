@@ -1,7 +1,6 @@
 // src/components/FamilyTree/controls/ConfigPanel.tsx
 import React, { useState } from 'react';
 import { useTreeContext } from '../../../context/TreeContext';
-// import './ConfigPanel.css';
 
 interface ConfigPanelProps {
   // Add any props needed

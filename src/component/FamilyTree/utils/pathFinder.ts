@@ -1,4 +1,4 @@
-// src/utils/pathFinder.ts - Complete implementation
+// src/utils/pathFinder.ts
 import { TreeNode, TreeLink } from '../types/familyTree';
 
 export function findPathToMain(
@@ -35,7 +35,6 @@ export function findPathToMain(
 
   // Handle ancestry path (going up the tree)
   function traverseAncestry() {
-    console.log('Traversing ancestry path');
     let current = sourceNode;
 
     // Traverse up the tree until we reach the main node or run out of parents
@@ -81,7 +80,6 @@ export function findPathToMain(
 
   // Handle spouse relationship
   function traverseSpouse() {
-    console.log('Traversing spouse path');
     nodePath.push(sourceNode);
 
     // Find the spouse link
@@ -102,8 +100,6 @@ export function findPathToMain(
 
   // Handle descendant path (going down the tree)
   function traverseDescendants() {
-    console.log('Traversing descendant path');
-
     // First try to find a direct path up to common ancestor
     let pathToMain: {
       path: TreeNode[];

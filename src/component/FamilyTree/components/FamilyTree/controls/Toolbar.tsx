@@ -1,7 +1,6 @@
 // src/components/FamilyTree/controls/Toolbar.tsx
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { useTreeContext } from '../../../context/TreeContext';
-// import './Toolbar.css';
 
 interface ToolbarProps {
   zoomIn: () => void;
@@ -22,6 +21,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ zoomIn, zoomOut, fitTree }) => {
   // Toggle config panel
   const toggleConfigPanel = () => {
     // This will be implemented to toggle the config panel visibility
+    console.log('Config panel toggle clicked');
   };
 
   return (
