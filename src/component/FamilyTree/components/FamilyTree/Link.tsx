@@ -1,4 +1,4 @@
-// src/component/FamilyTree/components/FamilyTree/Link.tsx - SIMPLIFIED VERSION
+// src/component/FamilyTree/components/FamilyTree/Link.tsx
 import React, { useRef, useEffect, memo } from 'react';
 import * as d3 from 'd3';
 import { TreeLink } from '../../types/familyTree';
@@ -10,8 +10,9 @@ interface LinkProps {
 
 const Link: React.FC<LinkProps> = ({ link, transitionTime }) => {
   const linkRef = useRef<SVGPathElement>(null);
+  const prevPathRef = useRef<string>('');
 
-  // Create path data
+  // Create path data with proper curves matching original
   const createPathData = () => {
     try {
       if (Array.isArray(link.d)) {
@@ -25,7 +26,7 @@ const Link: React.FC<LinkProps> = ({ link, transitionTime }) => {
     return '';
   };
 
-  // Create path from points
+  // Create path from points with proper curve interpolation
   const createPathFromPoints = (points: [number, number][]) => {
     try {
       const line = link.curve
@@ -50,7 +51,7 @@ const Link: React.FC<LinkProps> = ({ link, transitionTime }) => {
     return createPathData();
   };
 
-  // Handle link animation
+  // Handle link animation with proper timing and interruption handling
   useEffect(() => {
     if (!linkRef.current) {
       return;
@@ -61,21 +62,27 @@ const Link: React.FC<LinkProps> = ({ link, transitionTime }) => {
       const pathData = createPathData();
       const entryExitPathData = createEntryExitPathData();
 
-      // Determine delay based on depth
+      // Interrupt any ongoing transitions
+      path.interrupt();
+
+      // Calculate delay based on depth - matches original code
       const delay = link.depth * (transitionTime * 0.3);
 
-      // Set initial path and animate
-      if (entryExitPathData !== pathData) {
+      // Set initial path for entering links if not already set
+      if (!prevPathRef.current && entryExitPathData !== pathData) {
         path.attr('d', entryExitPathData).style('opacity', 0);
       }
 
-      // Simple transition without storing reference
+      // NAMED TRANSITION for better interruption handling
       path
-        .transition()
+        .transition(`link-${link.id}`)
         .duration(transitionTime)
         .delay(delay)
         .attr('d', pathData)
-        .style('opacity', 1);
+        .style('opacity', 1)
+        .on('start', () => {
+          prevPathRef.current = pathData;
+        });
     } catch (e) {
       console.error('Error setting up link animation:', e);
     }

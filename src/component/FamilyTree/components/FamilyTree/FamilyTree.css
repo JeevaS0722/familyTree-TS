@@ -515,3 +515,52 @@ input:checked+.f3-slider:before {
 .f3 .main_svg>rect {
     pointer-events: all;
 }
+
+/* Add to FamilyTree.css */
+.f3 .card_cont {
+    pointer-events: all;
+    transform-origin: center center;
+    /* Critical for smooth scaling */
+    will-change: transform, opacity;
+    /* Hardware acceleration hint */
+}
+
+.f3 .link {
+    pointer-events: none;
+    /* Prevents links from interfering with card interactions */
+    will-change: d, opacity;
+    /* Hardware acceleration hint */
+    transition: stroke-width 0.1s ease-in-out;
+    /* Smoother stroke width changes */
+}
+
+.f3 .card-inner {
+    outline: 0px solid rgba(255, 255, 255, 1);
+    transition: outline 0.2s ease-in-out;
+    /* Smoother outline transitions */
+    transform-origin: center center;
+    will-change: transform;
+}
+
+.f3 .card-inner.f3-path-to-main {
+    outline: 4px solid white;
+    transition: outline 0.1s ease-in-out;
+}
+
+.f3 .link.f3-path-to-main {
+    stroke: white;
+    stroke-width: 4px;
+    transition: stroke-width 0.1s ease-in-out;
+}
+
+.f3 .main_svg {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    touch-action: none;
+    /* Prevents browser handling of drag gestures */
+}
+
+.f3 .main_svg:active {
+    cursor: grabbing;
+}

@@ -124,6 +124,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       return allLinks;
     }, [state.treeData, state.config.isHorizontal]);
 
+    // entering/exiting node handling
     // Process entering/exiting nodes
     useEffect(() => {
       if (!state.treeData?.data) {
@@ -132,7 +133,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
 
       const currentIds = new Set(state.treeData.data.map(n => n.data.id));
 
-      // Calculate exiting nodes
+      // Calculate exiting nodes and prepare them for exit animation
       const newExitingNodes = prevNodesRef.current
         .filter(node => !currentIds.has(node.data.id))
         .map(node => {
@@ -147,7 +148,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
           return exitingNode;
         });
 
-      // Mark entering nodes
+      // Mark entering nodes for entry animation
       state.treeData.data.forEach(node => {
         if (!prevNodesRef.current.some(n => n.data.id === node.data.id)) {
           calculateEnterAndExitPositions(
@@ -165,13 +166,13 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       // After transition time, clear exiting nodes
       const timer = setTimeout(() => {
         setExitingNodes([]);
-      }, state.config.transitionTime + 100);
+      }, state.config.transitionTime + 200); // Add extra time for safety
 
       // Remember current nodes for next update
       prevNodesRef.current = [...state.treeData.data];
 
       return () => clearTimeout(timer);
-    }, [state.treeData?.data]);
+    }, [state.treeData?.data, state.config.transitionTime]);
 
     // Initialize tree on first render
     useEffect(() => {
@@ -222,7 +223,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       [updateMainId, updateTree, onPersonClick]
     );
 
-    // Handle path highlight
+    // In TreeView.tsx - highlighting path to main function
     const highlightPathToMain = useCallback(
       (node: TreeNode) => {
         if (!state.treeData || !cardsViewRef.current || !linksViewRef.current) {
@@ -246,7 +247,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
           mainNode
         );
 
-        // Apply highlights with staggered animation
+        // Apply highlights with staggered animation - IMPROVED TIMING
         nodePath.forEach((pathNode, index) => {
           const nodeElement = cardsViewRef.current!.querySelector(
             `[data-id="${pathNode.data.id}"]`
@@ -255,12 +256,12 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
           if (nodeElement) {
             const cardInner = nodeElement.querySelector('.card-inner');
             if (cardInner) {
-              const delay = index * 150;
+              const delay = index * 80; // Faster staggering for more responsive feel
               d3.select(cardInner)
-                .transition()
-                .duration(0)
+                .transition('highlight') // Named transition
+                .duration(100) // Faster transition
                 .delay(delay)
-                .on('end', function () {
+                .on('start', function () {
                   if (highlightPathRef.current === node.data.id) {
                     cardInner.classList.add('f3-path-to-main');
                   }
@@ -276,12 +277,12 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
           );
 
           if (linkElement) {
-            const delay = index * 150;
+            const delay = index * 80; // Faster staggering
             d3.select(linkElement)
-              .transition()
-              .duration(0)
+              .transition('highlight') // Named transition
+              .duration(100) // Faster transition
               .delay(delay)
-              .on('end', function () {
+              .on('start', function () {
                 if (highlightPathRef.current === node.data.id) {
                   linkElement.classList.add('f3-path-to-main');
                 }
@@ -292,7 +293,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       [state.treeData, links]
     );
 
-    // Clear highlight
+    // Clear highlight with proper fade-out
     const clearPathHighlight = useCallback(() => {
       highlightPathRef.current = null;
 
@@ -307,8 +308,8 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
 
       highlightedCards.forEach(el => {
         d3.select(el)
-          .transition()
-          .duration(300)
+          .transition('unhighlight')
+          .duration(150) // Faster fade-out
           .on('end', function () {
             el.classList.remove('f3-path-to-main');
           });
@@ -320,8 +321,8 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
 
       highlightedLinks.forEach(el => {
         d3.select(el)
-          .transition()
-          .duration(200)
+          .transition('unhighlight')
+          .duration(150) // Faster fade-out
           .on('end', function () {
             el.classList.remove('f3-path-to-main');
           });

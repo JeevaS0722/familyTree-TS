@@ -1,4 +1,4 @@
-// src/component/FamilyTree/hooks/useNodeAnimation.ts - SIMPLIFIED VERSION
+// src/component/FamilyTree/hooks/useNodeAnimation.ts
 import { useRef, useEffect } from 'react';
 import * as d3 from 'd3';
 import { TreeNode, TreeData } from '../types/familyTree';
@@ -9,6 +9,9 @@ export function useNodeAnimation(
   transitionTime: number,
   treeData: TreeData | null
 ) {
+  // Keep track of previous position for interruption handling
+  const prevPositionRef = useRef({ x: node.x, y: node.y });
+
   useEffect(() => {
     if (!nodeRef.current || !treeData) {
       return;
@@ -16,36 +19,64 @@ export function useNodeAnimation(
 
     const nodeElement = d3.select(nodeRef.current);
 
-    // Calculate delay based on position in tree
+    // IMPROVED DELAY CALCULATION - matches original code exactly
     const ancestryLevels = Math.max(
-      ...treeData.data.map(d => (d.is_ancestry ? d.depth : 0)),
-      0
+      ...treeData.data.map(d => (d.is_ancestry ? d.depth : 0))
     );
-    const delayLevel = transitionTime * 0.4;
-    let delay = node.depth * delayLevel;
+    const delay_level = transitionTime * 0.4;
+    let delay = node.depth * delay_level;
 
     if ((node.depth !== 0 || !!node.spouse) && !node.is_ancestry) {
-      delay += ancestryLevels * delayLevel;
+      delay += ancestryLevels * delay_level; // Add delay for ancestry levels
       if (node.spouse) {
-        delay += delayLevel;
-      }
-      delay += node.depth * delayLevel;
+        delay += delay_level;
+      } // Spouse after bloodline
+      delay += node.depth * delay_level; // Double delay for each level
     }
 
-    // Set initial position
-    if (node._x !== undefined && node._y !== undefined) {
-      // Entry animation
+    // PROPER INTERRUPTION HANDLING
+    // Interrupt any ongoing transitions
+    nodeElement.interrupt();
+
+    // Set initial position for entering nodes
+    if (
+      node._x !== undefined &&
+      node._y !== undefined &&
+      !nodeElement.classed('already-entered')
+    ) {
       nodeElement
         .attr('transform', `translate(${node._x}, ${node._y})`)
-        .style('opacity', 0);
+        .style('opacity', 0)
+        .classed('already-entered', true);
     }
 
-    // Apply animation transition (no need to store reference)
+    // CREATE TRANSITION WITH PROPER NAMING - allows for interruption management
     nodeElement
-      .transition()
+      .transition(`node-${node.data.id}`)
       .duration(transitionTime)
       .delay(delay)
       .attr('transform', `translate(${node.x}, ${node.y})`)
-      .style('opacity', node.exiting ? 0 : 1);
-  }, [node.x, node.y, node.depth, node.exiting, transitionTime]);
+      .style('opacity', node.exiting ? 0 : 1)
+      .on('start', () => {
+        // Store new position on transition start
+        prevPositionRef.current = { x: node.x, y: node.y };
+      });
+
+    // Cleanup function
+    return () => {
+      if (nodeRef.current) {
+        nodeElement.interrupt();
+      }
+    };
+  }, [
+    node.x,
+    node.y,
+    node._x,
+    node._y,
+    node.depth,
+    node.is_ancestry,
+    node.exiting,
+    node.data.id,
+    transitionTime,
+  ]);
 }
