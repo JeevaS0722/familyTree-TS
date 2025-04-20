@@ -68,6 +68,7 @@ const Link: React.FC<LinkProps> = ({ link, transitionTime }) => {
       fill="none"
       stroke="#fff"
       strokeWidth={1}
+      data-link-id={link.id}
     />
   );
 };

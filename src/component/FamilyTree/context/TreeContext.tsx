@@ -98,13 +98,18 @@ const TreeContext = createContext<TreeContextValue | undefined>(undefined);
 export function TreeProvider({
   children,
   initialData,
+  initialMainId,
 }: {
   children: React.ReactNode;
   initialData?: PersonData[];
+  initialMainId?: string;
 }) {
   const [state, dispatch] = useReducer(treeReducer, {
     ...initialState,
     data: initialData || [],
+    mainId:
+      initialMainId ||
+      (initialData && initialData.length > 0 ? initialData[0].id : null),
   });
 
   const updateMainId = useCallback((id: string) => {

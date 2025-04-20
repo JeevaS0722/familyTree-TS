@@ -71,7 +71,6 @@
 }
 
 .f3 .card_family_tree {
-    cursor: pointer;
     transition: transform 0.3s ease;
 }
 
@@ -91,23 +90,25 @@
 }
 
 /* Link styling */
-.f3 .link {
-    stroke: rgba(255, 255, 255, 0.6);
-    stroke-width: 1.5px;
-    fill: none;
-    transition: stroke-width 0.3s ease;
+.f3 .card-inner {
+    outline: 0px solid rgba(255, 255, 255, 1);
 }
 
-.f3 .link:hover,
-.f3 .link.highlighted {
-    stroke: #fff;
-    stroke-width: 2.5px;
+.f3 .card-inner.f3-path-to-main {
+    outline: 4px solid white;
+    border-radius: 4px;
+    /* transition: outline 0.3s ease-in-out; */
 }
 
-.f3 path.link.f3-path-to-main {
+.f3 .link.f3-path-to-main {
+    stroke: white;
     stroke-width: 4px;
-    stroke: #fff;
+    /* transition: stroke-width 0.3s ease-in-out, stroke 0.3s ease-in-out; */
 }
+
+/* .f3 .link {
+    transition: stroke-width 0.2s ease-in-out;
+} */
 
 /* Toolbar styles */
 .f3-toolbar {

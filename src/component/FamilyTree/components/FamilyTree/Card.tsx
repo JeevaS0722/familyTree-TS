@@ -1,5 +1,5 @@
 // src/components/FamilyTree/Card.tsx
-import React, { useRef, useEffect, memo } from 'react';
+import React, { useRef, useEffect, memo, useCallback } from 'react';
 import * as d3 from 'd3';
 import { TreeNode, CardDimensions, PersonData } from '../../types/familyTree';
 
@@ -10,6 +10,8 @@ interface CardProps {
   transitionTime: number;
   onClick?: (node: TreeNode) => void;
   onEdit?: (person: PersonData) => void;
+  onMouseEnter?: (node: TreeNode) => void;
+  onMouseLeave?: (node: TreeNode) => void;
 }
 
 const Card: React.FC<CardProps> = ({
@@ -19,10 +21,30 @@ const Card: React.FC<CardProps> = ({
   transitionTime,
   onClick,
   onEdit,
+  onMouseEnter,
+  onMouseLeave,
 }) => {
   const cardRef = useRef<SVGGElement>(null);
   const entering = !!node._x;
   const exiting = !!node.exiting;
+
+  function calculateDelay(node: TreeNode, transitionTime: number): number {
+    // Adapt the original delay calculation
+    const delay_level = transitionTime * 0.4;
+    let delay = node.depth * delay_level;
+
+    if ((node.depth !== 0 || !!node.spouse) && !node.is_ancestry) {
+      // Calculate delay using ancestry levels
+      const ancestry_levels = 3; // Default value - in real code get from tree data
+      delay += ancestry_levels * delay_level;
+      if (node.spouse) {
+        delay += delay_level;
+      }
+      delay += node.depth * delay_level;
+    }
+
+    return delay;
+  }
 
   // Handle card animation
   useEffect(() => {
@@ -31,6 +53,9 @@ const Card: React.FC<CardProps> = ({
     }
 
     const cardElement = d3.select(cardRef.current);
+
+    // Calculate delay based on depth exactly as in original
+    const delay = calculateDelay(node, transitionTime);
 
     if (entering || exiting) {
       // Entry or exit animation
@@ -44,6 +69,7 @@ const Card: React.FC<CardProps> = ({
         .style('opacity', entering ? 0 : 1)
         .transition()
         .duration(transitionTime)
+        .delay(delay) // Apply delay from original code
         .attr('transform', `translate(${endX}, ${endY})`)
         .style('opacity', entering ? 1 : 0);
     } else {
@@ -51,19 +77,11 @@ const Card: React.FC<CardProps> = ({
       cardElement
         .transition()
         .duration(transitionTime)
+        .delay(delay) // Apply delay from original code
         .attr('transform', `translate(${node.x}, ${node.y})`)
         .style('opacity', 1);
     }
-  }, [
-    node.x,
-    node.y,
-    node._x,
-    node._y,
-    node.exiting,
-    entering,
-    exiting,
-    transitionTime,
-  ]);
+  }, [node.x, node.y, node._x, node._y, transitionTime]);
 
   // Get gender class for styling
   const getGenderClass = () => {
@@ -106,12 +124,27 @@ const Card: React.FC<CardProps> = ({
     return `${data['first name']} ${data['last name']}`;
   };
 
+  const handleMouseEnter = useCallback(() => {
+    if (!node.data.main && onMouseEnter) {
+      onMouseEnter(node);
+    }
+  }, [node, onMouseEnter]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (!node.data.main && onMouseLeave) {
+      onMouseLeave(node);
+    }
+  }, [node, onMouseLeave]);
+
   return (
     <g
       ref={cardRef}
       className={`card_cont ${node.data.main ? 'card-main' : ''}`}
       transform={`translate(${node.x}, ${node.y})`}
       style={{ opacity: 0 }}
+      data-id={node.data.id}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <g
         className={`card ${getGenderClass()}`}
@@ -126,7 +159,6 @@ const Card: React.FC<CardProps> = ({
             ry="4"
             className={`card-outline ${node.data.main ? 'card-main-outline' : ''} ${node.data._new_rel_data ? 'card-new-outline' : ''}`}
           />
-
           {/* Card body */}
           <g className="card-body" onClick={handleClick}>
             <rect
@@ -155,7 +187,6 @@ const Card: React.FC<CardProps> = ({
               className="text-overflow-mask"
             />
           </g>
-
           {/* Card image */}
           {!node.data.to_add && !node.data._new_rel_data && (
             <g
@@ -190,7 +221,6 @@ const Card: React.FC<CardProps> = ({
               )}
             </g>
           )}
-
           {/* Edit pencil icon */}
           {!node.data.to_add && !node.data._new_rel_data && onEdit && (
             <g
@@ -207,7 +237,6 @@ const Card: React.FC<CardProps> = ({
               />
             </g>
           )}
-
           {/* Mini tree icon */}
           {showMiniTree &&
             !node.data.to_add &&

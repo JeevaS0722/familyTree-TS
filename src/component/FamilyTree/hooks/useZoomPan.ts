@@ -1,4 +1,4 @@
-// src/hooks/useZoomPan.ts
+// src/hooks/useZoomPan.ts - Complete rewrite for reliability
 import { useRef, useEffect, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { TreeDimensions } from '../types/familyTree';
@@ -11,12 +11,6 @@ interface UseZoomPanParams {
   onZoom?: (x: number, y: number, k: number) => void;
 }
 
-interface ZoomState {
-  scale: number;
-  x: number;
-  y: number;
-}
-
 export function useZoomPan({
   svgRef,
   viewRef,
@@ -24,99 +18,92 @@ export function useZoomPan({
   transitionTime = 2000,
   onZoom,
 }: UseZoomPanParams) {
-  const [zoomState, setZoomState] = useState<ZoomState>({
-    scale: 1,
-    x: 0,
-    y: 0,
-  });
+  // Store zoom behavior in a ref so it persists across renders
   const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown>>();
-  const isZoomingRef = useRef(false);
-  const lastTransformRef = useRef({ x: 0, y: 0, k: 1 });
 
-  // Initialize zoom behavior
+  // Flag to track if zoom behavior is initialized
+  const isInitializedRef = useRef(false);
+
+  // Initialize zoom behavior ONCE and store it
   useEffect(() => {
+    // Only initialize once
+    if (isInitializedRef.current) {
+      return;
+    }
+
     if (!svgRef.current || !viewRef.current) {
       return;
     }
 
-    // Create the zoom behavior if it doesn't exist
-    if (!zoomBehaviorRef.current) {
-      const zoom = d3
-        .zoom<SVGSVGElement, unknown>()
-        .scaleExtent([0.1, 3])
-        .on('start', () => {
-          isZoomingRef.current = true;
-        })
-        .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-          if (!viewRef.current) {
-            return;
-          }
+    console.log('Initializing zoom behavior');
 
-          const { transform } = event;
-          lastTransformRef.current = {
-            x: transform.x,
-            y: transform.y,
-            k: transform.k,
-          };
+    // Create zoom behavior
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 3])
+      .on('zoom', event => {
+        if (!viewRef.current) {
+          return;
+        }
 
-          // Apply transform directly using D3
-          d3.select(viewRef.current).attr(
-            'transform',
-            `translate(${transform.x}, ${transform.y}) scale(${transform.k})`
-          );
+        // Apply transform
+        d3.select(viewRef.current).attr(
+          'transform',
+          `translate(${event.transform.x}, ${event.transform.y}) scale(${event.transform.k})`
+        );
 
-          if (!isZoomingRef.current || event.sourceEvent === null) {
-            setZoomState({
-              scale: transform.k,
-              x: transform.x,
-              y: transform.y,
-            });
+        // Notify listeners
+        if (onZoom) {
+          onZoom(event.transform.x, event.transform.y, event.transform.k);
+        }
+      });
 
-            if (onZoom) {
-              requestAnimationFrame(() => {
-                onZoom(transform.x, transform.y, transform.k);
-              });
-            }
-          }
-        })
-        .on('end', () => {
-          isZoomingRef.current = false;
+    // Store zoom behavior in ref
+    zoomBehaviorRef.current = zoom;
 
-          const { x, y, k } = lastTransformRef.current;
-          setZoomState({ scale: k, x, y });
+    // CRITICAL: Directly attach to DOM element for debugging and direct access
+    svgRef.current.__zoomObj = zoom;
 
-          if (onZoom) {
-            onZoom(x, y, k);
-          }
-        });
+    // Apply zoom behavior to SVG element
+    d3.select(svgRef.current).call(zoom);
 
-      zoomBehaviorRef.current = zoom;
+    // Mark as initialized
+    isInitializedRef.current = true;
 
-      // Apply zoom behavior to SVG
-      d3.select(svgRef.current).call(zoom);
-
-      // For debugging
-      if (svgRef.current) {
-        svgRef.current.__zoomObj = zoom;
-      }
-    }
+    console.log('Zoom behavior initialized', zoom);
 
     return () => {
       if (svgRef.current) {
         try {
           d3.select(svgRef.current).on('.zoom', null);
         } catch (e) {
-          console.error('Error removing zoom behavior:', e);
+          console.error('Error removing zoom:', e);
         }
       }
     };
-  }, [svgRef.current, viewRef.current]); // Use refs directly to prevent recreation
+  }, [svgRef.current, viewRef.current, onZoom]);
 
-  // Function to fit tree within viewport
+  // Fit tree function with robust error handling
   const fitTree = useCallback(() => {
-    if (!svgRef.current || !zoomBehaviorRef.current || !dimensions) {
+    if (!svgRef.current) {
+      console.error('SVG ref not available for fitTree');
       return;
     }
+
+    if (!dimensions) {
+      console.error('Dimensions not available for fitTree');
+      return;
+    }
+
+    // RELIABLE way to get zoom behavior - try ref first, then DOM
+    const zoom = zoomBehaviorRef.current || svgRef.current.__zoomObj;
+
+    if (!zoom) {
+      console.error('Zoom behavior not found for fitTree');
+      return;
+    }
+
+    console.log('Fitting tree with zoom:', zoom);
 
     const svg = svgRef.current;
     const svgWidth = svg.clientWidth;
@@ -126,7 +113,7 @@ export function useZoomPan({
     const scale = Math.min(
       svgWidth / dimensions.width,
       svgHeight / dimensions.height,
-      1 // Cap scale at 1
+      0.95 // Limit scale for padding
     );
 
     // Calculate position to center tree
@@ -135,126 +122,72 @@ export function useZoomPan({
     const y =
       dimensions.y_off + (svgHeight - dimensions.height * scale) / scale / 2;
 
-    // Apply transform with transition
-    isZoomingRef.current = true;
-
     try {
+      // Apply transform with transition
       d3.select(svg)
         .transition()
         .duration(transitionTime)
-        .call(
-          zoomBehaviorRef.current.transform,
-          d3.zoomIdentity.scale(scale).translate(x, y)
-        )
-        .on('end', () => {
-          isZoomingRef.current = false;
-          setZoomState({ scale, x, y });
+        .call(zoom.transform, d3.zoomIdentity.scale(scale).translate(x, y));
 
-          if (onZoom) {
-            onZoom(x, y, scale);
-          }
-        });
+      console.log('Tree fitted with transform:', { scale, x, y });
     } catch (e) {
       console.error('Error during fit tree:', e);
-      isZoomingRef.current = false;
     }
-  }, [dimensions, transitionTime, onZoom]);
+  }, [dimensions, transitionTime, zoomBehaviorRef.current, svgRef.current]);
 
-  // Function to zoom in
-  const zoomIn = useCallback((factor = 1.3) => {
-    if (!svgRef.current || !zoomBehaviorRef.current) {
+  // Zoom in function with robust error handling
+  const zoomIn = useCallback(() => {
+    if (!svgRef.current) {
+      console.error('SVG ref not available for zoomIn');
       return;
     }
 
+    // RELIABLE way to get zoom behavior - try ref first, then DOM
+    const zoom = zoomBehaviorRef.current || svgRef.current.__zoomObj;
+
+    if (!zoom) {
+      console.error('Zoom behavior not found for zoom in');
+      return;
+    }
+
+    console.log('Zooming in with zoom:', zoom);
+
     try {
-      isZoomingRef.current = true;
       d3.select(svgRef.current)
         .transition()
         .duration(300)
-        .call(zoomBehaviorRef.current.scaleBy, factor)
-        .on('end', () => {
-          isZoomingRef.current = false;
-        });
+        .call(zoom.scaleBy, 1.3);
     } catch (e) {
       console.error('Error during zoom in:', e);
-      isZoomingRef.current = false;
     }
-  }, []);
+  }, [zoomBehaviorRef.current, svgRef.current]);
 
-  // Function to zoom out
-  const zoomOut = useCallback((factor = 0.7) => {
-    if (!svgRef.current || !zoomBehaviorRef.current) {
+  // Zoom out function with robust error handling
+  const zoomOut = useCallback(() => {
+    if (!svgRef.current) {
+      console.error('SVG ref not available for zoomOut');
       return;
     }
 
+    // RELIABLE way to get zoom behavior - try ref first, then DOM
+    const zoom = zoomBehaviorRef.current || svgRef.current.__zoomObj;
+
+    if (!zoom) {
+      console.error('Zoom behavior not found for zoom out');
+      return;
+    }
+
+    console.log('Zooming out with zoom:', zoom);
+
     try {
-      isZoomingRef.current = true;
       d3.select(svgRef.current)
         .transition()
         .duration(300)
-        .call(zoomBehaviorRef.current.scaleBy, factor)
-        .on('end', () => {
-          isZoomingRef.current = false;
-        });
+        .call(zoom.scaleBy, 0.7);
     } catch (e) {
       console.error('Error during zoom out:', e);
-      isZoomingRef.current = false;
     }
-  }, []);
+  }, [zoomBehaviorRef.current, svgRef.current]);
 
-  // Function to center on a specific node
-  const centerNode = useCallback(
-    (x: number, y: number, scale = 1) => {
-      if (!svgRef.current || !zoomBehaviorRef.current) {
-        return;
-      }
-
-      const svg = svgRef.current;
-      const svgWidth = svg.clientWidth;
-      const svgHeight = svg.clientHeight;
-
-      const centerX = svgWidth / 2 - x * scale;
-      const centerY = svgHeight / 2 - y * scale;
-
-      isZoomingRef.current = true;
-
-      try {
-        d3.select(svg)
-          .transition()
-          .duration(transitionTime)
-          .call(
-            zoomBehaviorRef.current.transform,
-            d3.zoomIdentity
-              .scale(scale)
-              .translate(centerX / scale, centerY / scale)
-          )
-          .on('end', () => {
-            isZoomingRef.current = false;
-            setZoomState({ scale, x: centerX / scale, y: centerY / scale });
-
-            if (onZoom) {
-              onZoom(centerX / scale, centerY / scale, scale);
-            }
-          });
-      } catch (e) {
-        console.error('Error centering node:', e);
-        isZoomingRef.current = false;
-      }
-    },
-    [transitionTime, onZoom]
-  );
-
-  // Get the current zoom behavior (for external use)
-  const getZoomBehavior = useCallback(() => {
-    return zoomBehaviorRef.current;
-  }, []);
-
-  return {
-    zoomState,
-    fitTree,
-    centerNode,
-    zoomIn,
-    zoomOut,
-    getZoomBehavior,
-  };
+  return { fitTree, zoomIn, zoomOut };
 }

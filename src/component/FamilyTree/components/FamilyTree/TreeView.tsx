@@ -15,6 +15,7 @@ import Card from './Card';
 import Link from './Link';
 import SvgDefs from './SvgDefs';
 import Toolbar from './controls/Toolbar';
+import { findPathToMain } from '../../utils/pathFinder';
 
 interface TreeViewProps {
   svgRef: React.RefObject<SVGSVGElement>;
@@ -24,10 +25,11 @@ interface TreeViewProps {
 
 const TreeView: React.FC<TreeViewProps> = React.memo(
   ({ svgRef, onPersonClick, onPersonEdit }) => {
-    const { state, updateTree } = useTreeContext();
+    const { state, updateTree, updateMainId } = useTreeContext();
     const viewRef = useRef<SVGGElement>(null);
     const cardsViewRef = useRef<SVGGElement>(null);
     const linksViewRef = useRef<SVGGElement>(null);
+    const highlightPathRef = useRef<string | null>(null);
     const [containerSize, setContainerSize] = useState({
       width: 1000,
       height: 600,
@@ -48,19 +50,17 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       });
     }, []);
 
-    const { fitTree, centerNode, zoomIn, zoomOut, getZoomBehavior } =
-      useZoomPan({
-        svgRef,
-        viewRef,
-        dimensions: state.treeData?.dim || {
-          width: 0,
-          height: 0,
-          x_off: 0,
-          y_off: 0,
-        },
-        transitionTime: state.config.transitionTime,
-        onZoom: handleZoom,
-      });
+    const { fitTree, zoomIn, zoomOut } = useZoomPan({
+      svgRef,
+      viewRef,
+      dimensions: state.treeData?.dim || {
+        width: 0,
+        height: 0,
+        x_off: 0,
+        y_off: 0,
+      },
+      transitionTime: state.config.transitionTime,
+    });
 
     // Get virtualized nodes (only those in view)
     const visibleNodes = useMemo(() => {
@@ -100,22 +100,19 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
     }, [state.treeData?.data, containerSize, forceUpdate]);
 
     // Only create links for visible nodes
-    const links = useMemo(() => {
-      if (!state.treeData) {
+    const links = React.useMemo(() => {
+      if (!state.treeData?.data) {
         return [];
       }
 
       const allLinks: TreeLink[] = [];
-      const visibleNodeIds = new Set(visibleNodes.map(node => node.data.id));
 
-      // Only create links for nodes that are visible
-      visibleNodes.forEach(node => {
+      state.treeData.data.forEach(node => {
         createLinks({
           d: node,
           tree: state.treeData!.data,
           is_horizontal: state.config.isHorizontal,
         }).forEach(link => {
-          // Check if link is already in our collection to avoid duplicates
           if (!allLinks.some(l => l.id === link.id)) {
             allLinks.push(link);
           }
@@ -123,7 +120,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       });
 
       return allLinks;
-    }, [visibleNodes, state.treeData, state.config.isHorizontal]);
+    }, [state.treeData, state.config.isHorizontal]);
 
     // Measure container size
     useEffect(() => {
@@ -155,30 +152,179 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
 
     // Initialize tree on first render
     useEffect(() => {
+      console.log('Initializing tree');
       updateTree({ initial: true });
     }, []);
 
-    // Fit tree when it changes
+    // Fit tree when dimensions change
     useEffect(() => {
-      if (state.treeData) {
-        // Wait for a short delay to ensure all components are rendered
+      if (state.treeData?.dim) {
+        console.log(
+          'Tree dimensions changed, fitting tree',
+          state.treeData.dim
+        );
+
+        // Slight delay to ensure DOM is ready
         const timeoutId = setTimeout(() => {
+          console.log('Calling fitTree');
           fitTree();
-        }, 100);
+        }, 200);
 
         return () => clearTimeout(timeoutId);
       }
-    }, [state.treeData, fitTree]);
+    }, [state.treeData?.dim, fitTree]);
 
     // Handle person click
     const handlePersonClick = useCallback(
       (node: TreeNode) => {
+        console.log('Person clicked:', node.data.id);
+
+        // Update main ID
+        updateMainId(node.data.id);
+
+        // Update tree
+        updateTree({});
+
+        // Call external handler if provided
         if (onPersonClick) {
           onPersonClick(node.data.id);
         }
       },
-      [onPersonClick]
+      [updateMainId, updateTree, onPersonClick]
     );
+
+    // In TreeView.tsx - update the highlight function for smooth animation
+    const highlightPathToMain = useCallback(
+      (node: TreeNode) => {
+        if (!state.treeData || !cardsViewRef.current || !linksViewRef.current) {
+          return;
+        }
+
+        // Find the main node
+        const mainNode = state.treeData.data.find(n => n.data.main);
+        if (!mainNode) {
+          console.error('Main node not found');
+          return;
+        }
+
+        // Store a reference to the hovered node for cancellation
+        highlightPathRef.current = node.data.id;
+
+        // Find path from node to main
+        const { nodePath, linkPath } = findPathToMain(
+          state.treeData.data,
+          links,
+          node,
+          mainNode
+        );
+
+        // Calculate "distance" from hovered node for each element in the path
+        const nodeDistances = new Map<string, number>();
+        nodePath.forEach((pathNode, index) => {
+          nodeDistances.set(pathNode.data.id, index);
+        });
+
+        // Apply highlight classes with staggered animation
+        nodePath.forEach((pathNode, index) => {
+          const nodeElement = cardsViewRef.current!.querySelector(
+            `[data-id="${pathNode.data.id}"]`
+          );
+
+          if (nodeElement) {
+            const cardInner = nodeElement.querySelector('.card-inner');
+            if (cardInner) {
+              // Calculate delay based on position in path
+              const delay = index * 150 + 50; // 200ms delay between each node
+
+              // Use d3 for a smooth transition
+              d3.select(cardInner)
+                .transition()
+                .duration(0)
+                .delay(delay)
+                .on('end', function () {
+                  // Check if we're still highlighting the same path
+                  if (highlightPathRef.current === node.data.id) {
+                    cardInner.classList.add('f3-path-to-main');
+                  }
+                });
+            }
+          }
+        });
+
+        // Apply highlight to links with staggered animation
+        linkPath.forEach((link, index) => {
+          const linkElement = linksViewRef.current!.querySelector(
+            `[data-link-id="${link.id}"]`
+          );
+
+          if (linkElement) {
+            // Calculate delay based on the nodes this link connects
+            let nodeIndex = 0;
+            if (Array.isArray(link.source)) {
+              // For links with multiple sources, find the earliest in the path
+              nodeIndex = Math.min(
+                ...link.source
+                  .map(s => nodeDistances.get(s.data.id) || Infinity)
+                  .filter(n => n !== Infinity)
+              );
+            } else {
+              nodeIndex = nodeDistances.get(link.source.data.id) || 0;
+            }
+
+            // Delay link highlighting to appear between node highlights
+            const delay = nodeIndex * 150; // 100ms after the source node
+
+            d3.select(linkElement)
+              .transition()
+              .duration(0)
+              .delay(delay)
+              .on('end', function () {
+                // Check if we're still highlighting the same path
+                if (highlightPathRef.current === node.data.id) {
+                  linkElement.classList.add('f3-path-to-main');
+                }
+              });
+          }
+        });
+      },
+      [state.treeData, links]
+    );
+
+    // Update clear highlight function
+    const clearPathHighlight = useCallback(() => {
+      // Clear the current highlight reference
+      highlightPathRef.current = null;
+
+      if (!cardsViewRef.current || !linksViewRef.current) {
+        return;
+      }
+
+      // Clear card highlights with fade-out animation
+      const highlightedCards = cardsViewRef.current.querySelectorAll(
+        '.card-inner.f3-path-to-main'
+      );
+      highlightedCards.forEach(el => {
+        d3.select(el)
+          .transition()
+          .duration(300)
+          .on('end', function () {
+            el.classList.remove('f3-path-to-main');
+          });
+      });
+
+      // Clear link highlights with fade-out animation
+      const highlightedLinks = linksViewRef.current.querySelectorAll(
+        '.link.f3-path-to-main'
+      );
+      highlightedLinks.forEach(el => {
+        d3.select(el)
+          .transition()
+          .duration(200)
+          .on('end', function () {
+            el.classList.remove('f3-path-to-main');
+          });
+      });
+    }, []);
 
     if (!state.treeData) {
       return <div>Loading...</div>;
@@ -205,7 +351,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
               ))}
             </g>
             <g className="cards_view" ref={cardsViewRef}>
-              {visibleNodes.map(node => (
+              {state.treeData.data.map(node => (
                 <Card
                   key={node.data.id}
                   node={node}
@@ -216,6 +362,8 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
                   onEdit={
                     onPersonEdit ? () => onPersonEdit(node.data) : undefined
                   }
+                  onMouseEnter={() => highlightPathToMain(node)}
+                  onMouseLeave={clearPathHighlight}
                 />
               ))}
             </g>

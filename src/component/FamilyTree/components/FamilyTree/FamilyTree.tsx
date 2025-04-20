@@ -223,7 +223,7 @@ const FamilyTree: React.FC<FamilyTreeProps> = ({
   onPersonDelete,
 }) => {
   return (
-    <TreeProvider initialData={data}>
+    <TreeProvider initialData={data} initialMainId={mainId}>
       <FamilyTreeContent />
     </TreeProvider>
   );
