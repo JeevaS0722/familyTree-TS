@@ -1,5 +1,5 @@
 // src/component/FamilyTree/hooks/useZoomPan.ts
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import * as d3 from 'd3';
 import { TreeDimensions } from '../types/familyTree';
 
@@ -18,16 +18,16 @@ export function useZoomPan({
   transitionTime = 2000,
   onZoom,
 }: UseZoomPanParams) {
-  const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown>>();
-  const [isZoomReady, setIsZoomReady] = useState(false);
+  const isInitialFit = useRef(true);
+  const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown>>();
 
-  // Create and initialize zoom behavior
+  // Initialize zoom behavior - only once
   useEffect(() => {
     if (!svgRef.current || !viewRef.current) {
       return;
     }
 
-    // Create and configure zoom behavior
+    // Create zoom behavior
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 3])
@@ -36,37 +36,35 @@ export function useZoomPan({
           return;
         }
 
-        const transform = event.transform;
+        // Apply transform to view
+        const { x, y, k } = event.transform;
         viewRef.current.setAttribute(
           'transform',
-          `translate(${transform.x}, ${transform.y}) scale(${transform.k})`
+          `translate(${x}, ${y}) scale(${k})`
         );
 
         if (onZoom) {
-          onZoom(transform.x, transform.y, transform.k);
+          onZoom(x, y, k);
         }
       });
 
-    // Store on DOM element for direct access - THIS IS CRITICAL
+    // Store reference to zoom behavior on DOM element
+    // This matches the original implementation's pattern
     svgRef.current.__zoomObj = zoom;
+    zoomBehaviorRef.current = zoom;
 
-    // Apply zoom behavior to SVG element
-    const selection = d3.select(svgRef.current);
-    selection.on('.zoom', null); // Clear any existing handlers
-    selection.call(zoom);
-
-    // Store zoom in ref
-    zoomRef.current = zoom;
-    setIsZoomReady(true);
+    // Apply to SVG
+    d3.select(svgRef.current).call(zoom);
 
     return () => {
       if (svgRef.current) {
-        selection.on('.zoom', null);
+        // Clean up
+        d3.select(svgRef.current).on('.zoom', null);
       }
     };
-  }, [svgRef.current, viewRef.current, onZoom]);
+  }, [svgRef.current, viewRef.current]);
 
-  // Function to fit tree to view - IMPROVED TIMING
+  // Fit tree function - perfectly matched to original behavior
   const fitTree = useCallback(() => {
     if (
       !svgRef.current ||
@@ -78,7 +76,7 @@ export function useZoomPan({
     }
 
     const svg = svgRef.current;
-    const zoom = svg.__zoomObj || zoomRef.current;
+    const zoom = svg.__zoomObj || zoomBehaviorRef.current;
     if (!zoom) {
       return;
     }
@@ -89,34 +87,37 @@ export function useZoomPan({
     const svgHeight = svgRect.height;
 
     // Calculate scale to fit tree
-    const scaleX = svgWidth / (dimensions.width + 50); // Add padding
-    const scaleY = svgHeight / (dimensions.height + 50);
-    const scale = Math.min(scaleX, scaleY, 1); // Don't zoom in more than 1x
+    let k = Math.min(
+      svgWidth / dimensions.width,
+      svgHeight / dimensions.height
+    );
+    if (k > 1) {
+      k = 1;
+    } // Don't scale up beyond 100%
 
-    // Calculate center position - CRITICAL FOR SMOOTH CENTERING
-    const centerX =
-      dimensions.x_off + (svgWidth - dimensions.width * scale) / (2 * scale);
-    const centerY =
-      dimensions.y_off + (svgHeight - dimensions.height * scale) / (2 * scale);
+    // Calculate center position - exactly like original implementation
+    const x = dimensions.x_off + (svgWidth - dimensions.width * k) / k / 2;
+    const y = dimensions.y_off + (svgHeight - dimensions.height * k) / k / 2;
 
-    // Apply transform with transition AND DELAY - key to smooth animation
+    // Get current transform or create new identity transform
+    const initialDuration = isInitialFit.current ? 0 : transitionTime;
+
+    // Apply transform with appropriate timing
     d3.select(svg)
       .transition()
-      .duration(transitionTime)
-      .delay(100) // This 100ms delay is crucial for smooth animation
-      .call(
-        zoom.transform,
-        d3.zoomIdentity.translate(centerX, centerY).scale(scale)
-      );
+      .duration(initialDuration)
+      .call(zoom.transform, d3.zoomIdentity.scale(k).translate(x, y));
+
+    // Mark that we've done the initial fit
+    isInitialFit.current = false;
   }, [dimensions, transitionTime]);
 
-  // Zoom in function with smoother animation
+  // Zoom in/out functions
   const zoomIn = useCallback(() => {
     if (!svgRef.current) {
       return;
     }
-
-    const zoom = svgRef.current.__zoomObj || zoomRef.current;
+    const zoom = svgRef.current.__zoomObj || zoomBehaviorRef.current;
     if (!zoom) {
       return;
     }
@@ -127,13 +128,11 @@ export function useZoomPan({
       .call(zoom.scaleBy, 1.2);
   }, []);
 
-  // Zoom out function with smoother animation
   const zoomOut = useCallback(() => {
     if (!svgRef.current) {
       return;
     }
-
-    const zoom = svgRef.current.__zoomObj || zoomRef.current;
+    const zoom = svgRef.current.__zoomObj || zoomBehaviorRef.current;
     if (!zoom) {
       return;
     }
@@ -144,10 +143,5 @@ export function useZoomPan({
       .call(zoom.scaleBy, 0.8);
   }, []);
 
-  return {
-    fitTree,
-    zoomIn,
-    zoomOut,
-    isZoomReady,
-  };
+  return { fitTree, zoomIn, zoomOut };
 }

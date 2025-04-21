@@ -2,32 +2,26 @@
 import React, { useRef, useEffect, memo } from 'react';
 import * as d3 from 'd3';
 import { TreeLink } from '../../types/familyTree';
+import { calculateAnimationDelay } from '../../utils/animationUtils';
 
 interface LinkProps {
   link: TreeLink;
   transitionTime: number;
+  treeData: TreeNode[];
+  initialRender: boolean;
 }
 
-const Link: React.FC<LinkProps> = ({ link, transitionTime }) => {
+const Link: React.FC<LinkProps> = ({
+  link,
+  transitionTime,
+  treeData,
+  initialRender,
+}) => {
   const linkRef = useRef<SVGPathElement>(null);
-  const prevPathRef = useRef<string>('');
+  const animationStarted = useRef(false);
 
-  // Create path data with proper curves matching original
-  const createPathData = () => {
-    try {
-      if (Array.isArray(link.d)) {
-        return createPathFromPoints(link.d);
-      } else if (typeof link.d === 'function') {
-        return createPathFromPoints(link.d(link, 0));
-      }
-    } catch (e) {
-      console.error('Error creating path data:', e);
-    }
-    return '';
-  };
-
-  // Create path from points with proper curve interpolation
-  const createPathFromPoints = (points: [number, number][]) => {
+  // Create path with proper curve interpolation
+  const createPathData = (points: [number, number][]) => {
     try {
       const line = link.curve
         ? d3.line().curve(d3.curveBasis)
@@ -39,54 +33,66 @@ const Link: React.FC<LinkProps> = ({ link, transitionTime }) => {
     }
   };
 
-  // Create entry/exit path data
-  const createEntryExitPathData = () => {
-    try {
-      if (typeof link._d === 'function') {
-        return createPathFromPoints(link._d());
-      }
-    } catch (e) {
-      console.error('Error creating entry/exit path:', e);
+  // Get the final path data
+  const getFinalPathData = () => {
+    if (Array.isArray(link.d)) {
+      return createPathData(link.d);
+    } else if (typeof link.d === 'function') {
+      return createPathData(link.d(link, 0));
     }
-    return createPathData();
+    return '';
   };
 
-  // Handle link animation with proper timing and interruption handling
+  // Get the initial (entry/exit) path data
+  const getInitialPathData = () => {
+    if (typeof link._d === 'function') {
+      return createPathData(link._d());
+    }
+    return getFinalPathData();
+  };
+
+  // Handle animation
   useEffect(() => {
     if (!linkRef.current) {
       return;
     }
 
-    try {
-      const path = d3.select(linkRef.current);
-      const pathData = createPathData();
-      const entryExitPathData = createEntryExitPathData();
+    const path = d3.select(linkRef.current);
+    const finalPathData = getFinalPathData();
+    const initialPathData = getInitialPathData();
 
-      // Interrupt any ongoing transitions
-      path.interrupt();
+    // Calculate delay - use same logic as nodes for synchronization
+    const delay = initialRender
+      ? calculateAnimationDelay(
+          Array.isArray(link.source) ? link.source[0] : link.source,
+          transitionTime,
+          treeData
+        )
+      : 0;
 
-      // Calculate delay based on depth - matches original code
-      const delay = link.depth * (transitionTime * 0.4);
+    // Interrupt any ongoing animations
+    path.interrupt();
 
-      // Set initial path for entering links if not already set
-      if (!prevPathRef.current && entryExitPathData !== pathData) {
-        path.attr('d', entryExitPathData).style('opacity', 0);
-      }
-
-      // NAMED TRANSITION for better interruption handling
-      path
-        .transition(`link-${link.id}`)
-        .duration(transitionTime)
-        .delay(delay)
-        .attr('d', pathData)
-        .style('opacity', 1)
-        .on('start', () => {
-          prevPathRef.current = pathData;
-        });
-    } catch (e) {
-      console.error('Error setting up link animation:', e);
+    // Set initial path data if not yet animated
+    if (!animationStarted.current && initialPathData !== finalPathData) {
+      path.attr('d', initialPathData).style('opacity', 0);
     }
-  }, [link, transitionTime]);
+
+    // Animate to final path
+    path
+      .transition()
+      .duration(transitionTime)
+      .delay(delay)
+      .attr('d', finalPathData)
+      .style('opacity', 1)
+      .on('start', () => {
+        animationStarted.current = true;
+      });
+
+    return () => {
+      path.interrupt();
+    };
+  }, [link, transitionTime, treeData, initialRender]);
 
   return (
     <path

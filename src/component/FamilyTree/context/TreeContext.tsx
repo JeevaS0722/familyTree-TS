@@ -1,9 +1,11 @@
-// src/context/TreeContext.tsx
+// src/component/FamilyTree/context/TreeContext.tsx
 import React, {
   createContext,
   useContext,
   useReducer,
   useCallback,
+  useRef,
+  useEffect,
 } from 'react';
 import { PersonData, TreeData, TreeConfig } from '../types/familyTree';
 import { calculateTree } from '../utils/treeCalculator';
@@ -13,34 +15,37 @@ interface TreeState {
   mainId: string | null;
   config: TreeConfig;
   treeData: TreeData | null;
+  isInitialRender: boolean;
 }
 
 type TreeAction =
   | { type: 'UPDATE_MAIN_ID'; payload: string }
   | { type: 'UPDATE_DATA'; payload: PersonData[] }
   | { type: 'UPDATE_CONFIG'; payload: Partial<TreeConfig> }
-  | { type: 'UPDATE_TREE'; payload?: { initial?: boolean } };
+  | { type: 'UPDATE_TREE'; payload?: { initial?: boolean } }
+  | { type: 'SET_INITIAL_RENDER_COMPLETE' };
 
+// Initial configuration
 const initialConfig: TreeConfig = {
-  nodeSeparation: 400, // Increased for larger cards
-  levelSeparation: 300, // Increased for larger cards
+  nodeSeparation: 400,
+  levelSeparation: 300,
   singleParentEmptyCard: true,
   isHorizontal: false,
   transitionTime: 1000,
   cardDimensions: {
-    w: 300, // From Figma 300px
-    h: 155, // From Figma 155px
+    w: 300,
+    h: 155,
     text_x: 20,
     text_y: 20,
-    relationship_batch_w: 128, // From Figma 141px
-    relationship_batch_h: 21, // From Figma 21px
-    relationship_batch_x: 0, // Position it above the card
-    relationship_batch_y: -25, // Position it above the card
+    relationship_batch_w: 128,
+    relationship_batch_h: 21,
+    relationship_batch_x: 0,
+    relationship_batch_y: -25,
   },
   showMiniTree: true,
   linkBreak: false,
-  highlightHoverPath: true, // Default to true for path highlighting
-  viewMode: false, // Default to edit mode
+  highlightHoverPath: true,
+  viewMode: false,
 };
 
 const initialState: TreeState = {
@@ -48,8 +53,10 @@ const initialState: TreeState = {
   mainId: null,
   config: initialConfig,
   treeData: null,
+  isInitialRender: true,
 };
 
+// Enhanced reducer that handles orientation changes properly
 function treeReducer(state: TreeState, action: TreeAction): TreeState {
   switch (action.type) {
     case 'UPDATE_MAIN_ID':
@@ -57,18 +64,20 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         ...state,
         mainId: action.payload,
       };
+
     case 'UPDATE_DATA':
       return {
         ...state,
         data: action.payload,
       };
+
     case 'UPDATE_CONFIG': {
       const newConfig = {
         ...state.config,
         ...action.payload,
       };
 
-      // Immediate tree update for critical config changes
+      // Critical config changes requiring immediate tree recalculation
       if (
         action.payload.isHorizontal !== undefined ||
         action.payload.nodeSeparation !== undefined ||
@@ -77,26 +86,31 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       ) {
         console.log('Critical config change - recalculating tree');
 
+        // Calculate new tree with updated config
+        const newTreeData = calculateTree({
+          data: state.data,
+          main_id: state.mainId,
+          node_separation: newConfig.nodeSeparation,
+          level_separation: newConfig.levelSeparation,
+          single_parent_empty_card: newConfig.singleParentEmptyCard,
+          is_horizontal: newConfig.isHorizontal,
+        });
+
         return {
           ...state,
           config: newConfig,
-          treeData: calculateTree({
-            data: state.data,
-            main_id: state.mainId,
-            node_separation: newConfig.nodeSeparation,
-            level_separation: newConfig.levelSeparation,
-            single_parent_empty_card: newConfig.singleParentEmptyCard,
-            is_horizontal: newConfig.isHorizontal,
-          }),
+          treeData: newTreeData,
+          // Set isInitialRender to false to prevent initial animation
+          isInitialRender: false,
         };
       }
-      // Normal config change
+
+      // Regular config changes that don't require tree recalculation
       return {
         ...state,
         config: newConfig,
       };
     }
-    // Update in TreeContext.tsx reducer:
 
     case 'UPDATE_TREE': {
       console.log('Calculating tree layout');
@@ -116,8 +130,17 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       return {
         ...state,
         treeData,
+        // If initial is true, set isInitialRender to true
+        isInitialRender: action.payload?.initial === true,
       };
     }
+
+    case 'SET_INITIAL_RENDER_COMPLETE':
+      return {
+        ...state,
+        isInitialRender: false,
+      };
+
     default:
       return state;
   }
@@ -129,6 +152,7 @@ interface TreeContextValue {
   updateData: (data: PersonData[]) => void;
   updateConfig: (config: Partial<TreeConfig>) => void;
   updateTree: (props?: { initial?: boolean }) => void;
+  setInitialRenderComplete: () => void;
 }
 
 const TreeContext = createContext<TreeContextValue | undefined>(undefined);
@@ -166,6 +190,17 @@ export function TreeProvider({
     dispatch({ type: 'UPDATE_TREE', payload: props });
   }, []);
 
+  const setInitialRenderComplete = useCallback(() => {
+    dispatch({ type: 'SET_INITIAL_RENDER_COMPLETE' });
+  }, []);
+
+  // Initialize tree on component mount
+  useEffect(() => {
+    if (initialData && initialData.length > 0 && !state.treeData) {
+      updateTree({ initial: true });
+    }
+  }, []);
+
   return (
     <TreeContext.Provider
       value={{
@@ -174,6 +209,7 @@ export function TreeProvider({
         updateData,
         updateConfig,
         updateTree,
+        setInitialRenderComplete,
       }}
     >
       {children}

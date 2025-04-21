@@ -1,5 +1,5 @@
 // src/component/FamilyTree/components/FamilyTree/Card/index.tsx
-import React, { useRef, useCallback, useState, useEffect } from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import { useNodeAnimation } from '../../../hooks/useNodeAnimation';
 import { CardProps } from './types';
 import RelationshipBadge from './RelationshipBadge';
@@ -7,21 +7,6 @@ import CardHeader from './CardHeader';
 import CardBody from './CardBody';
 import BottomBar from './BottomBar';
 import NotesPanel from './NotesPanel';
-import {
-  useLazyGetContactNoteListQuery,
-  useAddContactNoteMutation,
-} from '../../../../../store/Services/noteService';
-
-const NOTE_TYPES = [
-  'Research Update',
-  'Call',
-  'Email',
-  'Meeting',
-  'Task',
-  'Offer Sent',
-  'DC Ordered',
-  'Other',
-];
 
 const Card: React.FC<CardProps> = ({
   node,
@@ -29,6 +14,7 @@ const Card: React.FC<CardProps> = ({
   showMiniTree,
   transitionTime,
   treeData,
+  initialRender = false,
   onClick,
   onEdit,
   onMouseEnter,
@@ -50,47 +36,17 @@ const Card: React.FC<CardProps> = ({
   const [badgeHovered, setBadgeHovered] = useState(false);
 
   // Notes state
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [activeTab, setActiveTab] = useState<'list' | 'create'>('list');
+  const [notes, setNotes] = useState<any[]>([]);
   const [newNote, setNewNote] = useState({
     type: 'Research Update',
     content: '',
   });
-  const [activeTab, setActiveTab] = useState<'list' | 'create'>('list');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // API hooks
-  const [getContactNoteList, { data: notesData, isLoading }] =
-    useLazyGetContactNoteListQuery();
-  const [addContactNote] = useAddContactNoteMutation();
-
-  // Animation hook
-  useNodeAnimation(cardRef, node, transitionTime, treeData);
-
-  // Fetch notes
-  useEffect(() => {
-    if (showNotesPanel && node.data.data.contactId) {
-      getContactNoteList({
-        contactId: Number(node.data.data.contactId),
-        orderBy: 'dateCompleted,dateCreated',
-        order: 'desc',
-      });
-    }
-  }, [showNotesPanel, node.data.data.contactId, getContactNoteList]);
-
-  // Transform API notes
-  useEffect(() => {
-    if (notesData?.rows) {
-      const transformedNotes = notesData.rows.map(note => ({
-        id: note.noteId.toString(),
-        type: note.type,
-        content: note.notes,
-        createdBy: note.fromUserId,
-        createdDate: new Date(note.dateCompleted).toISOString().split('T')[0],
-      }));
-      setNotes(transformedNotes);
-    }
-  }, [notesData]);
+  // Animation hook - pass initialRender flag
+  useNodeAnimation(cardRef, node, transitionTime, treeData, initialRender);
 
   // Event handlers
   const handleClick = useCallback(() => {
@@ -165,64 +121,50 @@ const Card: React.FC<CardProps> = ({
     }
   }, [showNotesPanel]);
 
-  const handleSaveNote = async () => {
+  const handleSaveNote = useCallback(() => {
+    // Mock implementation - replace with actual API call
     if (!newNote.content.trim()) {
       setError('Note content is required');
       return;
     }
-    if (!node.data.data.contactId) {
-      setError('Contact ID is missing');
-      return;
-    }
-    setIsSaving(true);
-    setError(null);
-    try {
-      const notePayload = {
-        contactId: node.data.data.contactId,
-        type: newNote.type,
-        memo: newNote.content,
-      };
-      const response = await addContactNote(notePayload).unwrap();
-      if (response?.success) {
-        getContactNoteList({
-          contactId: Number(node.data.data.contactId),
-          orderBy: 'dateCompleted,dateCreated',
-          order: 'desc',
-        });
-        setNewNote({ type: 'Research Update', content: '' });
-        setActiveTab('list');
-      } else {
-        setError('Failed to add note');
-      }
-    } catch (err) {
-      setError('Error saving note. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
-  const handleCancelCreate = () => {
+    setIsSaving(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      const newNoteWithId = {
+        id: Date.now().toString(),
+        type: newNote.type,
+        content: newNote.content,
+        createdBy: 'Current User',
+        createdDate: new Date().toISOString().split('T')[0],
+      };
+
+      setNotes([newNoteWithId, ...notes]);
+      setNewNote({ type: 'Research Update', content: '' });
+      setActiveTab('list');
+      setIsSaving(false);
+    }, 500);
+  }, [newNote, notes]);
+
+  const handleCancelCreate = useCallback(() => {
     setActiveTab('list');
     setNewNote({ type: 'Research Update', content: '' });
     setError(null);
-  };
-
-  // Gender colors
-  const getGenderColors = () => {
-    if (node.data.data.gender === 'M') {
-      return {
-        primary: 'var(--male-primary-color)',
-        secondary: 'var(--male-secondary-color)',
-      };
-    }
-    return {
-      primary: 'var(--female-primary-color)',
-      secondary: 'var(--female-secondary-color)',
-    };
-  };
+  }, []);
 
   // Prepare data
-  const colors = getGenderColors();
+  const colors =
+    node.data.data.gender === 'M'
+      ? {
+          primary: 'var(--male-primary-color)',
+          secondary: 'var(--male-secondary-color)',
+        }
+      : {
+          primary: 'var(--female-primary-color)',
+          secondary: 'var(--female-secondary-color)',
+        };
+
   const isDeceased = !!node.data.data.deceased;
   const hasNotes = !!node.data.data.is_new_notes;
   const showCountyOfDeath =
@@ -317,23 +259,25 @@ const Card: React.FC<CardProps> = ({
       </g>
 
       {/* Notes Panel */}
-      <NotesPanel
-        node={node}
-        cardDimensions={cardDimensions}
-        showNotesPanel={showNotesPanel}
-        notesPanelClosing={notesPanelClosing}
-        toggleNotesPanel={toggleNotesPanel}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        notes={notes}
-        newNote={newNote}
-        setNewNote={setNewNote}
-        isSaving={isSaving}
-        error={error}
-        onSaveNote={handleSaveNote}
-        onCancelCreate={handleCancelCreate}
-        isLoading={isLoading}
-      />
+      {showNotesPanel && (
+        <NotesPanel
+          node={node}
+          cardDimensions={cardDimensions}
+          showNotesPanel={showNotesPanel}
+          notesPanelClosing={notesPanelClosing}
+          toggleNotesPanel={toggleNotesPanel}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          notes={notes}
+          newNote={newNote}
+          setNewNote={setNewNote}
+          isSaving={isSaving}
+          error={error}
+          onSaveNote={handleSaveNote}
+          onCancelCreate={handleCancelCreate}
+          isLoading={false}
+        />
+      )}
     </g>
   );
 };

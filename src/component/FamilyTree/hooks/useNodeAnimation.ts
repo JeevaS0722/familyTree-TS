@@ -1,16 +1,22 @@
 // src/component/FamilyTree/hooks/useNodeAnimation.ts
-import { useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { TreeNode, TreeData } from '../types/familyTree';
+import { calculateAnimationDelay } from '../utils/animationUtils';
 
+/**
+ * Hook to handle node animation for a single tree node
+ * Closely matches the behavior of the original D3 implementation
+ */
 export function useNodeAnimation(
   nodeRef: React.RefObject<SVGGElement>,
   node: TreeNode,
   transitionTime: number,
-  treeData: TreeData | null
+  treeData: TreeData | null,
+  initialRender: boolean = false
 ) {
-  // Keep track of previous position for interruption handling
-  const prevPositionRef = useRef({ x: node.x, y: node.y });
+  // Keep track of animation state
+  const animationStarted = useRef(false);
 
   useEffect(() => {
     if (!nodeRef.current || !treeData) {
@@ -19,65 +25,48 @@ export function useNodeAnimation(
 
     const nodeElement = d3.select(nodeRef.current);
 
-    // IMPROVED DELAY CALCULATION - matches original code exactly
-    const ancestryLevels = Math.max(
-      ...treeData.data.map(d => (d.is_ancestry ? d.depth : 0))
-    );
-    const delay_level = transitionTime * 0.4;
-    let delay = node.depth * delay_level;
+    // Calculate the delay for this node's animation
+    const delay = initialRender
+      ? calculateAnimationDelay(node, transitionTime, treeData.data)
+      : 0;
 
-    if ((node.depth !== 0 || !!node.spouse) && !node.is_ancestry) {
-      delay += ancestryLevels * delay_level; // Add delay for ancestry levels
-      if (node.spouse) {
-        delay += delay_level;
-      } // Spouse after bloodline
-      delay += node.depth * delay_level; // Double delay for each level
-    }
-
-    // PROPER INTERRUPTION HANDLING
-    // Interrupt any ongoing transitions
+    // Step 1: Ensure we handle interruption properly
     nodeElement.interrupt();
 
-    // Set initial position for entering nodes
+    // Step 2: Set initial position if entering and not yet animated
     if (
+      !animationStarted.current &&
       node._x !== undefined &&
-      node._y !== undefined &&
-      !nodeElement.classed('already-entered')
+      node._y !== undefined
     ) {
       nodeElement
         .attr('transform', `translate(${node._x}, ${node._y})`)
-        .style('opacity', 0)
-        .classed('already-entered', true);
+        .style('opacity', 0);
     }
 
-    // CREATE TRANSITION WITH PROPER NAMING - allows for interruption management
+    // Step 3: Animate to final position
     nodeElement
-      .transition(`node-${node.data.id}`)
+      .transition()
       .duration(transitionTime)
       .delay(delay)
       .attr('transform', `translate(${node.x}, ${node.y})`)
       .style('opacity', node.exiting ? 0 : 1)
       .on('start', () => {
-        // Store new position on transition start
-        prevPositionRef.current = { x: node.x, y: node.y };
+        animationStarted.current = true;
       });
 
-    // Cleanup function
+    // Cleanup
     return () => {
-      if (nodeRef.current) {
-        nodeElement.interrupt();
-      }
+      nodeElement.interrupt();
     };
   }, [
     node.x,
     node.y,
     node._x,
     node._y,
-    node.depth,
-    node.is_ancestry,
     node.exiting,
-    node.data.id,
     transitionTime,
     treeData,
+    initialRender,
   ]);
 }
