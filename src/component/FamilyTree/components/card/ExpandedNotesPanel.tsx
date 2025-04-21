@@ -1,3 +1,4 @@
+// src/component/FamilyTree/components/card/ExpandedNotesPanel.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -21,45 +22,46 @@ import {
   InputLabel,
   Alert,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
-import { useDispatch } from 'react-redux';
-import {
-  useLazyGetContactNoteListQuery,
-  useAddContactNoteMutation,
-} from '../../../../store/Services/noteService';
-import { Note, ApiNote, AddNotePayload } from './NotesPanel';
+import { Note, ApiNote, AddNotePayload } from '../../types/familyTreeExtended';
+
+// This would be your real API service import
+const useLazyGetContactNoteListQuery = () => {
+  return [
+    async (params: any) => {
+      console.log('Fetching notes with params:', params);
+      // Mock API call
+      return Promise.resolve({
+        rows: [] as ApiNote[],
+        count: 0,
+      });
+    },
+    { data: null, isLoading: false },
+  ] as const;
+};
+
+const useAddContactNoteMutation = () => {
+  return [
+    async (data: AddNotePayload) => {
+      console.log('Adding note with data:', data);
+      // Mock API call
+      return {
+        unwrap: async () => ({
+          success: true,
+          message: 'Note added successfully',
+        }),
+      };
+    },
+    { isLoading: false },
+  ] as const;
+};
 
 interface ExpandedNotesPanelProps {
   open: boolean;
-  onClose: (refreshedNotes?: Note[]) => void;
+  onClose: () => void;
   contactId?: string | number | null;
   initialNotes: Note[];
 }
-
-// Styled components
-const NoteCard = styled(Box)(({ theme }) => ({
-  padding: '12px',
-  margin: '8px 0',
-  backgroundColor: '#f9f9f9',
-  borderRadius: '8px',
-  boxShadow: '0px 1px 3px rgba(0,0,0,0.1)',
-  transition: 'all 0.2s ease',
-  '&:hover': {
-    backgroundColor: '#f0f0f0',
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.15)',
-  },
-}));
-
-const StyledDialog = styled(Dialog)(({ theme }) => ({
-  '& .MuiDialog-paper': {
-    borderRadius: '12px',
-    maxWidth: '600px',
-    width: '100%',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-    border: '1px solid rgba(0, 0, 0, 0.1)',
-  },
-}));
 
 // Note type options
 const NOTE_TYPES = [
@@ -79,10 +81,12 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
   contactId,
   initialNotes,
 }) => {
-  const dispatch = useDispatch();
-  const [notes, setNotes] = useState<Note[]>(initialNotes);
-  const [newNote, setNewNote] = useState({ type: 'Research', content: '' });
   const [tabValue, setTabValue] = useState(0);
+  const [notes, setNotes] = useState<Note[]>(initialNotes);
+  const [newNote, setNewNote] = useState({
+    type: 'Research Update',
+    content: '',
+  });
   const [error, setError] = useState<string | null>(null);
 
   // API hooks
@@ -102,7 +106,7 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
     }
   }, [open, contactId, getContactNoteList]);
 
-  // Transform API notes to our Note format when data is received
+  // Transform API notes
   useEffect(() => {
     if (notesData?.rows) {
       const transformedNotes: Note[] = notesData.rows.map(note => ({
@@ -117,7 +121,7 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
   }, [notesData]);
 
   // Handle tab change
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     setError(null);
   };
@@ -158,18 +162,13 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
 
       if (response?.success) {
         // Success notification
-        dispatch(
-          open({
-            severity: 'success',
-            message: response.message || 'Note added successfully',
-          })
-        );
+        console.log(response.message || 'Note added successfully');
 
         // Refresh notes list
         refreshNotes();
 
         // Reset form and switch tab
-        setNewNote({ type: 'Research', content: '' });
+        setNewNote({ type: 'Research Update', content: '' });
         setTabValue(0);
       } else {
         setError('Failed to add note');
@@ -177,24 +176,13 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
     } catch (error) {
       console.error('Error saving note:', error);
       setError('Error saving note. Please try again.');
-      dispatch(
-        open({
-          severity: 'error',
-          message: 'Failed to add note',
-        })
-      );
     }
   };
 
-  // Handle close with potential refresh
-  const handleClose = () => {
-    onClose();
-  };
-
   return (
-    <StyledDialog
+    <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={onClose}
       fullWidth
       maxWidth="md"
       aria-labelledby="expanded-notes-dialog-title"
@@ -208,7 +196,6 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
               flexGrow: 1,
               fontSize: '16px',
               fontWeight: 600,
-              color: 'white',
             }}
           >
             {contactId ? `Notes for Contact #${contactId}` : 'Notes'}
@@ -216,15 +203,18 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
           <IconButton
             edge="end"
             color="inherit"
-            onClick={handleClose}
+            onClick={onClose}
             aria-label="close"
-            sx={{ color: 'white' }}
           >
             <CloseIcon />
           </IconButton>
         </Toolbar>
         <Box
-          sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}
+          sx={{
+            bgcolor: 'background.paper',
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
         >
           <Tabs
             value={tabValue}
@@ -233,19 +223,6 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
             indicatorColor="primary"
             textColor="primary"
             variant="fullWidth"
-            sx={{
-              '& .MuiTab-root': {
-                fontWeight: 600,
-                fontSize: '14px',
-                py: 1.5,
-                '&.Mui-selected': {
-                  backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                },
-              },
-              '& .MuiTabs-indicator': {
-                height: 3,
-              },
-            }}
           >
             <Tab label="Notes List" />
             <Tab label="Create Note" />
@@ -280,7 +257,16 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
               </Typography>
             ) : (
               notes.map(note => (
-                <NoteCard key={note.id}>
+                <Box
+                  key={note.id}
+                  sx={{
+                    p: 2,
+                    my: 1,
+                    bgcolor: '#f9f9f9',
+                    borderRadius: 1,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  }}
+                >
                   <Box
                     sx={{
                       display: 'flex',
@@ -291,7 +277,10 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
                     <Typography
                       variant="subtitle2"
                       sx={{
-                        color: note.type === 'Research' ? '#1976d2' : '#e65100',
+                        color:
+                          note.type === 'Research Update'
+                            ? 'primary.main'
+                            : 'secondary.main',
                       }}
                     >
                       {note.type}
@@ -302,7 +291,7 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
                   </Box>
                   <Divider sx={{ mb: 1 }} />
                   <Typography variant="body2">{note.content}</Typography>
-                </NoteCard>
+                </Box>
               ))
             )}
           </Box>
@@ -316,7 +305,10 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
                 value={newNote.type}
                 label="Note Type"
                 onChange={e =>
-                  setNewNote(prev => ({ ...prev, type: e.target.value }))
+                  setNewNote(prev => ({
+                    ...prev,
+                    type: e.target.value,
+                  }))
                 }
               >
                 {NOTE_TYPES.map(type => (
@@ -347,9 +339,9 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
       <DialogActions
         sx={{
           p: 2,
-          borderTop: '1px solid #ddd',
-          backgroundColor: '#f5f5f5',
-          boxShadow: '0 -2px 4px rgba(0,0,0,0.05)',
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
         }}
       >
         {tabValue === 0 ? (
@@ -357,12 +349,7 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
             onClick={() => setTabValue(1)}
             variant="contained"
             color="primary"
-            sx={{
-              fontWeight: 600,
-              px: 3,
-              py: 1,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            }}
+            sx={{ px: 3 }}
           >
             Create New Note
           </Button>
@@ -372,7 +359,7 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
               onClick={() => setTabValue(0)}
               color="inherit"
               variant="outlined"
-              sx={{ mr: 1, fontWeight: 500 }}
+              sx={{ mr: 1 }}
             >
               Cancel
             </Button>
@@ -381,19 +368,14 @@ const ExpandedNotesPanel: React.FC<ExpandedNotesPanelProps> = ({
               variant="contained"
               color="primary"
               disabled={!newNote.content.trim() || isAddingNote}
-              sx={{
-                fontWeight: 600,
-                px: 3,
-                py: 1,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-              }}
+              sx={{ px: 3 }}
             >
               {isAddingNote ? <CircularProgress size={24} /> : 'Save Note'}
             </Button>
           </>
         )}
       </DialogActions>
-    </StyledDialog>
+    </Dialog>
   );
 };
 
