@@ -23,6 +23,7 @@ const Card: React.FC<CardProps> = ({
   onAddPartner,
   onDelete,
   onUpdateRelationship,
+  onPersonAdd,
 }) => {
   const cardRef = useRef<SVGGElement>(null);
 
@@ -68,11 +69,11 @@ const Card: React.FC<CardProps> = ({
   const handleAddClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (onAddPartner) {
-        onAddPartner(node);
+      if (onPersonAdd) {
+        onPersonAdd(node);
       }
     },
-    [onAddPartner, node]
+    [onPersonAdd, node]
   );
 
   const handleDeleteClick = useCallback(

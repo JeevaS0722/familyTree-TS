@@ -1,0 +1,133 @@
+import { PersonData } from '../../../../component/FamilyTree';
+import { formatDateToMonthDayYear } from '../../../../utils/GeneralUtil';
+import { Contact, ContactApiResponse } from '../types';
+
+export const determineGender = (contact: Contact): 'M' | 'F' => {
+  const relationship = contact.relationship?.toLowerCase() || '';
+
+  if (
+    relationship.includes('husband') ||
+    relationship.includes('father') ||
+    relationship.includes('son')
+  ) {
+    return 'M';
+  }
+
+  if (
+    relationship.includes('wife') ||
+    relationship.includes('mother') ||
+    relationship.includes('daughter')
+  ) {
+    return 'F';
+  }
+
+  // Default based on ID being even/odd as a fallback (arbitrary)
+  return 'M';
+};
+
+export const calculateAge = (birthDateStr: string): string => {
+  try {
+    if (
+      !birthDateStr ||
+      birthDateStr === '0000-00-00' ||
+      moment(birthDateStr).isValid() === false
+    ) {
+      return '00';
+    }
+    const birthDate = moment(birthDateStr, 'YYYY-MM-DD');
+    const today = moment();
+    const age = today.diff(birthDate, 'years');
+    return age < 0 ? '00' : age.toString();
+  } catch (e) {
+    return '00';
+  }
+};
+
+export const contactsToFamilyTreemapper = (
+  rootContact: Contact,
+  fileId?: string | number,
+  isMain?: boolean = false
+): PersonData => ({
+  id: rootContact.contactID.toString(),
+  data: {
+    fileId: Number(fileId),
+    gender: determineGender(rootContact),
+    firstName: rootContact.firstName || '',
+    lastName: rootContact.lastName || '',
+    dOB: formatDateToMonthDayYear(rootContact.dOB),
+    decDt: formatDateToMonthDayYear(rootContact.decDt),
+    deceased: rootContact.deceased || null,
+    age: calculateAge(rootContact.dOB || ''),
+    city: rootContact.city || null,
+    state: rootContact.state || null,
+    address: [
+      rootContact.address,
+      rootContact.city,
+      rootContact.state,
+      rootContact.zip,
+    ]
+      .filter(Boolean)
+      .join(', '),
+    heir: null,
+    research_inheritance: null,
+    is_new_notes:
+      Array.isArray(rootContact.TasksModels) &&
+      rootContact.TasksModels.length > 0,
+    ownership: `${parseFloat(rootContact.ownership).toFixed(4)} %`,
+    division_of_interest: 'Interest',
+    contactId: rootContact.contactID,
+  },
+  rels: {},
+  main: isMain,
+});
+
+export const mapContactsToFamilyTree = (
+  response: ContactApiResponse,
+  decodedFileName: string,
+  fileId?: string | number
+): PersonData | null => {
+  // Check if the response contains contacts
+  if (!response.data?.contact) {
+    console.error('No contacts found in the response.');
+    return null;
+  }
+  // 1. First check for a contact with relationship containing "self"
+  const contacts: Contact[] = response.data.contact;
+  let rootContact: Contact | undefined = contacts.find((contact: Contact) =>
+    contact.relationship?.toLowerCase()?.includes('self')
+  );
+  if (!rootContact && decodedFileName) {
+    rootContact = contacts.find(contact => {
+      const fileNameLower = decodedFileName.toLowerCase().trim();
+
+      // Create different name combinations to check
+      const firstLastName =
+        `${contact.firstName || ''} ${contact.lastName || ''}`
+          .toLowerCase()
+          .trim();
+      const lastFirstName =
+        `${contact.lastName || ''} ${contact.firstName || ''}`
+          .toLowerCase()
+          .trim();
+
+      // Check if any name combination matches or is contained in the filename
+      return (
+        firstLastName.includes(fileNameLower) ||
+        fileNameLower.includes(firstLastName) ||
+        lastFirstName.includes(fileNameLower) ||
+        fileNameLower.includes(lastFirstName)
+      );
+    });
+  }
+  if (!rootContact) {
+    return null;
+  }
+  // Convert the single root contact to a FamilyMember
+  const rootFamilyMember: PersonData = contactsToFamilyTreemapper(
+    rootContact,
+    fileId,
+    true
+  );
+
+  return rootFamilyMember;
+};

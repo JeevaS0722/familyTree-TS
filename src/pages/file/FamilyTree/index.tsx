@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+/* eslint-disable no-console */
+import React, { useEffect, useState } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 import { FamilyTree } from '../../../component/FamilyTree';
 import { PersonData } from '../../../component/FamilyTree/types/familyTree';
+import { useLazyGetContactsByFileQuery } from '../../../store/Services/contactService';
+import { Contact, ContactApiResponse } from './types';
+import { Box, CircularProgress } from '@mui/material';
+import { mapContactsToFamilyTree } from './utils/mapper';
+import InitialNodeDialog from './components/InitialNodeDialog';
+import EditDialog from './components/EditDialog';
 
 // Sample family tree data
 const sampleFamilyData: PersonData[] = [
@@ -210,7 +218,129 @@ const sampleFamilyData: PersonData[] = [
 ];
 
 const App: React.FC = () => {
-  const [familyData, setFamilyData] = useState<PersonData[]>(sampleFamilyData);
+  // Get parameters from URL
+  const { fileId } = useParams<{ fileId: string }>();
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const filename = query.get('filename');
+  const decodedFileName = filename ? decodeURIComponent(filename) : '';
+  const [contactsData, setContactsData] = useState<Contact[]>([]);
+  const [familyData, setFamilyData] = useState<PersonData[]>([]);
+  const [rootMember, setRootMember] = useState<PersonData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showInitialDialog, setShowInitialDialog] = useState<boolean>(false);
+  const [showEditDialog, setShowEditDialog] = useState<boolean>(false);
+  const [currentPerson, setCurrentPerson] = useState<PersonData | null>(null);
+
+  // RTK Query hook
+  const [getContactsByFile, { data: contactsResponse, isFetching, isLoading }] =
+    useLazyGetContactsByFileQuery();
+
+  // Initial fetch of contacts
+  useEffect(() => {
+    setLoading(true);
+    void getContactsByFile({
+      fileid: Number(fileId),
+      sortBy: 'deceased, lastName, firstName',
+      sortOrder: 'asc',
+    })
+      .unwrap()
+      .then(response => {
+        try {
+          console.log('API Response:', response);
+
+          // Store the raw contacts for autocomplete in dialogs
+          if (response.data?.contact) {
+            // Cast through unknown first to satisfy TypeScript when types don't overlap sufficiently
+            const contacts = response.data.contact as unknown as Contact[]; // Assert type to match state
+            setContactsData(contacts);
+
+            // Try to build a family tree from the contacts using only our two specific checks
+            const builtFamilyTree = mapContactsToFamilyTree(
+              response as unknown as ContactApiResponse, // Cast to the expected type
+              decodedFileName,
+              fileId
+            );
+
+            if (builtFamilyTree) {
+              // We successfully found a root based on the two checks
+              console.log(
+                'Found root node based on relationship or filename:',
+                builtFamilyTree
+              );
+              setRootMember(builtFamilyTree);
+              setFamilyData([builtFamilyTree]);
+              setShowInitialDialog(false);
+            } else {
+              // Neither check succeeded - show the initial dialog
+              console.log(
+                'No contact matching criteria found. Showing initial dialog.'
+              );
+              setShowInitialDialog(true);
+            }
+          } else {
+            // No contacts - definitely show initial dialog
+            setContactsData([]);
+            setShowInitialDialog(true);
+          }
+        } catch (err) {
+          console.error('Error processing contact data:', err);
+          setShowInitialDialog(true);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching contacts:', err);
+        setShowInitialDialog(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [fileId, decodedFileName]);
+
+  // The refreshContacts function now preserves familyData
+  const refreshContacts = async () => {
+    console.log('Refreshing contacts...');
+    console.log('Current familyData before refresh:', familyData);
+
+    // Set loading without unmounting the tree component
+    setLoading(true);
+
+    try {
+      const response = await getContactsByFile({
+        fileid: Number(fileId),
+        sortBy: 'deceased, lastName, firstName',
+        sortOrder: 'asc',
+      }).unwrap();
+
+      console.log('Refresh API Response:', response);
+
+      if (response.data?.contact) {
+        // Update the contacts data
+        setContactsData(response.data.contact as unknown as Contact[]);
+        console.log(
+          'Updated contactsData with fresh data:',
+          response.data.contact
+        );
+
+        // Finish loading
+        setLoading(false);
+        return response.data.contact as unknown as Contact[];
+      } else {
+        console.warn('No contact data in response');
+        setContactsData([]);
+
+        // Finish loading
+        setLoading(false);
+        return [];
+      }
+    } catch (err) {
+      console.error('Error fetching contacts:', err);
+
+      // Finish loading
+      setLoading(false);
+      return [];
+    }
+  };
 
   // Handle person click
   const handlePersonClick = (personId: string) => {
@@ -232,9 +362,10 @@ const App: React.FC = () => {
   // Handle person add
   const handlePersonAdd = (person: PersonData) => {
     console.log('Person added:', person);
-
+    setCurrentPerson(person);
+    setShowEditDialog(true);
     // Add the new person to the data
-    setFamilyData([...familyData, person]);
+    // setFamilyData([...familyData, person]);
   };
 
   // Handle person delete
@@ -245,17 +376,75 @@ const App: React.FC = () => {
     setFamilyData(familyData.filter(p => p.id !== personId));
   };
 
-  return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <FamilyTree
-        data={familyData}
-        mainId="1"
-        onPersonClick={handlePersonClick}
-        onPersonEdit={handlePersonEdit}
-        onPersonAdd={handlePersonAdd}
-        onPersonDelete={handlePersonDelete}
+  const handleRootmemberAdd = (newRootMember: PersonData) => {
+    console.log('Root member add:', newRootMember);
+    setShowInitialDialog(false);
+    setFamilyData([newRootMember]);
+    setRootMember(newRootMember);
+  };
+
+  const handleAddNewNode = (newNode: PersonData) => {
+    console.log('New node added:', newNode);
+    setFamilyData(prevData => [...prevData, newNode]);
+    setShowEditDialog(false);
+  };
+
+  if (showInitialDialog) {
+    return (
+      <InitialNodeDialog
+        open={showInitialDialog}
+        onClose={() => setShowInitialDialog(false)}
+        onSave={handleRootmemberAdd}
+        isFirstNode={familyData.length === 0}
+        contactList={contactsData}
       />
-    </div>
+    );
+  }
+
+  return (
+    <Box position="relative" width="100%" height="100%">
+      {familyData?.length > 0 && (
+        <FamilyTree
+          data={familyData}
+          mainId={rootMember?.id || ''}
+          onPersonClick={handlePersonClick}
+          onPersonEdit={handlePersonEdit}
+          onPersonAdd={handlePersonAdd}
+          onPersonDelete={handlePersonDelete}
+        />
+      )}
+      {(loading || isFetching) && (
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          bgcolor="rgba(0,0,0,0.6)"
+          zIndex={1000}
+        >
+          <CircularProgress style={{ color: '#FFFFFF' }} />
+        </Box>
+      )}
+      <EditDialog
+        open={showEditDialog}
+        onClose={() => setShowEditDialog(false)}
+        onSave={handleAddNewNode}
+        // onSave={(updatedPerson: PersonData) => {
+        //   setFamilyData(prevData =>
+        //     prevData.map(p => (p.id === updatedPerson.id ? updatedPerson : p))
+        //   );
+        //   setShowEditDialog(false);
+        // }}
+        existingFamilyMembers={familyData}
+        parentMember={currentPerson}
+        refreshContacts={refreshContacts}
+        contactList={contactsData}
+      />
+    </Box>
   );
 };
 

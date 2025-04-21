@@ -24,6 +24,7 @@ export interface CardProps {
   onAddPartner?: (node: TreeNode) => void;
   onDelete?: (nodeId: string) => void;
   onUpdateRelationship?: (node: TreeNode, newType: string) => void;
+  onPersonAdd?: (node: TreeNode) => void;
 }
 
 export interface RelationshipBadgeProps {

@@ -20,7 +20,19 @@ interface FamilyTreeProps {
   onPersonDelete?: (personId: string) => void;
 }
 
-const FamilyTreeContent: React.FC = () => {
+interface FamilyTreeContentProps {
+  onPersonClick?: (personId: string) => void;
+  onPersonEdit?: (person: PersonData) => void;
+  onPersonAdd?: (person: PersonData) => void;
+  onPersonDelete?: (personId: string) => void;
+}
+
+const FamilyTreeContent: React.FC<FamilyTreeContentProps> = ({
+  onPersonClick,
+  onPersonEdit,
+  onPersonAdd,
+  onPersonDelete,
+}) => {
   const { state, updateData, updateMainId, updateTree } = useTreeContext();
   const svgRef = useRef<SVGSVGElement>(null);
   const [editFormOpen, setEditFormOpen] = React.useState(false);
@@ -174,7 +186,11 @@ const FamilyTreeContent: React.FC = () => {
 
   return (
     <div className="f3 f3-cont">
-      <TreeView svgRef={svgRef} onPersonEdit={handlePersonEdit} />
+      <TreeView
+        svgRef={svgRef}
+        onPersonEdit={handlePersonEdit}
+        onPersonAdd={onPersonAdd}
+      />
       <ConfigPanel />
       <SearchBar />
 
@@ -224,7 +240,12 @@ const FamilyTree: React.FC<FamilyTreeProps> = ({
   const migratedData = migratePersonData(data);
   return (
     <TreeProvider initialData={migratedData} initialMainId={mainId}>
-      <FamilyTreeContent />
+      <FamilyTreeContent
+        onPersonAdd={onPersonAdd}
+        onPersonClick={onPersonClick}
+        onPersonEdit={onPersonEdit}
+        onPersonDelete={onPersonDelete}
+      />
     </TreeProvider>
   );
 };

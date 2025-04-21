@@ -6,17 +6,20 @@ export interface PersonData {
     gender: 'M' | 'F' | '';
     firstName: string;
     lastName: string;
-    dOB?: string;
+    dOB?: string | null;
     decDt?: string | null;
     deceased?: boolean | null;
-    age?: number | null;
+    age?: number | string | null;
     city?: string | null;
     state?: string | null;
     address?: string | null;
     fileId?: number;
+    contactId?: number;
     heir?: boolean | null;
     research_inheritance?: boolean | null;
     is_new_notes?: boolean | null;
+    division_of_interest?: string | null;
+    ownership?: string | null;
     [key: string]: any;
   };
   rels: {

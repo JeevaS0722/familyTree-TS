@@ -22,10 +22,11 @@ interface TreeViewProps {
   svgRef: React.RefObject<SVGSVGElement>;
   onPersonClick?: (personId: string) => void;
   onPersonEdit?: (person: PersonData) => void;
+  onPersonAdd?: (person: PersonData) => void;
 }
 
 const TreeView: React.FC<TreeViewProps> = React.memo(
-  ({ svgRef, onPersonClick, onPersonEdit }) => {
+  ({ svgRef, onPersonClick, onPersonEdit, onPersonAdd }: TreeViewProps) => {
     const { state, updateTree, updateMainId, setInitialRenderComplete } =
       useTreeContext();
     const viewRef = useRef<SVGGElement>(null);
@@ -350,6 +351,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
                   }
                   onMouseEnter={highlightPathToMain}
                   onMouseLeave={clearPathHighlight}
+                  onPersonAdd={onPersonAdd}
                 />
               ))}
 
