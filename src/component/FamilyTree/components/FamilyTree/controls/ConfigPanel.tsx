@@ -65,6 +65,35 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
       <div className="f3-config-content">
         <h3>Tree Configuration</h3>
 
+        {/* NEW SECTION: Interaction Mode */}
+        <div className="f3-config-section">
+          <h4>Interaction Mode</h4>
+          <div className="f3-config-control">
+            <label>View/Edit Mode</label>
+            <label className="f3-switch">
+              <input
+                type="checkbox"
+                checked={state.config.viewMode}
+                onChange={e => handleCheckboxChange(e, 'viewMode')}
+              />
+              <span className="f3-slider"></span>
+            </label>
+            <span>{state.config.viewMode ? 'View Mode' : 'Edit Mode'}</span>
+          </div>
+
+          <div className="f3-config-control">
+            <label>Highlight Path on Hover</label>
+            <label className="f3-switch">
+              <input
+                type="checkbox"
+                checked={state.config.highlightHoverPath}
+                onChange={e => handleCheckboxChange(e, 'highlightHoverPath')}
+              />
+              <span className="f3-slider"></span>
+            </label>
+          </div>
+        </div>
+
         <div className="f3-config-section">
           <h4>Orientation</h4>
           <div className="f3-config-control">

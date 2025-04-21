@@ -209,24 +209,29 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
     // Handle person click
     const handlePersonClick = useCallback(
       (node: TreeNode) => {
-        // Update main ID
+        // Always update main ID
         updateMainId(node.data.id);
 
         // Update tree
         updateTree({});
 
-        // Call external handler if provided
-        if (onPersonClick) {
+        // Call external handler only if not in view mode
+        if (onPersonClick && !state.config.viewMode) {
           onPersonClick(node.data.id);
         }
       },
-      [updateMainId, updateTree, onPersonClick]
+      [updateMainId, updateTree, onPersonClick, state.config.viewMode]
     );
 
     // Highlighting path to main function
     const highlightPathToMain = useCallback(
       (node: TreeNode) => {
-        if (!state.treeData || !cardsViewRef.current || !linksViewRef.current) {
+        if (
+          !state.treeData ||
+          !cardsViewRef.current ||
+          !linksViewRef.current ||
+          !state.config.highlightHoverPath // Only highlight if the option is enabled
+        ) {
           return;
         }
 
@@ -290,7 +295,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
           }
         });
       },
-      [state.treeData, links]
+      [state.treeData, links, state.config.highlightHoverPath] // Add dependency on highlightHoverPath
     );
 
     // Clear highlight with proper fade-out

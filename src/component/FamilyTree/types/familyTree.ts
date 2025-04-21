@@ -95,6 +95,8 @@ export interface TreeConfig {
   cardDimensions: CardDimensions;
   showMiniTree: boolean;
   linkBreak: boolean;
+  highlightHoverPath: boolean; // New toggle for path highlighting on hover
+  viewMode: boolean; // New toggle for view/edit mode
 }
 
 export interface CardDimensions {

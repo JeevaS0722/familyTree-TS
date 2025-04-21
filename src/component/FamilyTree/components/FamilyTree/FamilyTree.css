@@ -6,6 +6,9 @@
     --male-secondary-color: #C8DCFF;
     --background-color: rgb(33, 33, 33);
     --deceased-border-color: #FF0000;
+    --relationship-badge-color: #E2E2E2;
+    --header-color: #FFFFFF;
+    --bottom-bar-color: #E9E9E9;
     font-family: 'Roboto', sans-serif;
 }
 
@@ -64,7 +67,12 @@
     stroke-width: 2px;
 }
 
-/* Card interaction and animation */
+.f3 .card-deceased .card-outline {
+    stroke: var(--deceased-border-color);
+    stroke-width: 3px;
+}
+
+/* Card interaction */
 .f3 .card_cont {
     pointer-events: all;
     transform-origin: center center;
@@ -93,11 +101,8 @@
 /* Link styling */
 .f3 .link {
     pointer-events: none;
-    /* Prevents links from interfering with card interactions */
     will-change: d, opacity;
-    /* Hardware acceleration hint */
     transition: stroke-width 0.1s ease-in-out;
-    /* Smoother stroke width changes */
     stroke: #fff;
     stroke-width: 1px;
     fill: none;
@@ -106,14 +111,12 @@
 .f3 .card-inner {
     outline: 0px solid rgba(255, 255, 255, 1);
     transition: outline 0.2s ease-in-out;
-    /* Smoother outline transitions */
     transform-origin: center center;
-    will-change: transform;
+    will-change: outline, transform;
 }
 
 .f3 .card-inner.f3-path-to-main {
     outline: 4px solid white;
-    transition: outline 0.1s ease-in-out;
 }
 
 .f3 .link.f3-path-to-main {
@@ -494,160 +497,6 @@ input:checked+.f3-slider:before {
     background-color: rgba(50, 50, 50, 0.9);
 }
 
-/* Card header styling */
-.f3 .card-header {
-    cursor: pointer;
-}
-
-.f3 .file-name {
-    font-weight: 600;
-}
-
-/* Relationship batch styling */
-.f3 .relationship-batch {
-    fill: #E2E2E2;
-}
-
-.f3 .relationship-batch-text {
-    fill: #000;
-}
-
-.f3 .relationship-dropdown {
-    cursor: pointer;
-    z-index: 100;
-}
-
-/* File name styling */
-.f3 .file-name {
-    font-weight: 600;
-    font-size: 16px;
-    fill: #000;
-}
-
-/* Card details styling */
-.f3 .card-details {
-    font-size: 14px;
-    fill: #000;
-}
-
-/* Card icons */
-.f3 .card-icon {
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.f3 .card-icon:hover {
-    transform: scale(1.1);
-}
-
-/* Card deceased styling */
-.f3 .card-deceased .card-outline {
-    stroke: var(--deceased-border-color);
-    stroke-width: 2px;
-}
-
-/* Popup styling for dollar icon hover */
-.f3 .offer-popup {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-}
-
-.f3 .offer-popup.show-popup {
-    opacity: 1;
-}
-
-/* Path highlighting */
-.f3 .card-inner {
-    outline: 0px solid rgba(255, 255, 255, 1);
-    transition: outline 0.2s ease-in-out;
-}
-
-.f3 .card-inner.f3-path-to-main {
-    outline: 4px solid white;
-}
-
-.f3 .link.f3-path-to-main {
-    stroke: white;
-    stroke-width: 4px;
-    transition: stroke-width 0.1s ease-in-out;
-}
-
-/* Update to src/component/FamilyTree/components/FamilyTree/FamilyTree.css */
-.f3 {
-    --female-primary-color: #FF96BC;
-    --female-secondary-color: #FFC8DC;
-    --male-primary-color: #7EADFF;
-    --male-secondary-color: #C8DCFF;
-    --background-color: rgb(33, 33, 33);
-    --deceased-border-color: #FF0000;
-    --relationship-badge-color: #E2E2E2;
-    --header-color: #FFFFFF;
-    --bottom-bar-color: #E9E9E9;
-    font-family: 'Roboto', sans-serif;
-}
-
-.f3 * {
-    box-sizing: border-box;
-}
-
-.f3.f3-cont {
-    width: 100%;
-    height: 900px;
-    max-height: 70vh;
-    background-color: var(--background-color);
-    color: #fff;
-    position: relative;
-    overflow: hidden;
-}
-
-.f3 .main_svg {
-    width: 100%;
-    height: 100%;
-    cursor: grab;
-    touch-action: none;
-}
-
-.f3 .main_svg:active {
-    cursor: grabbing;
-}
-
-/* Card styling */
-.f3 .card-male .card-body-rect {
-    fill: var(--male-secondary-color);
-}
-
-.f3 .card-female .card-body-rect {
-    fill: var(--female-secondary-color);
-}
-
-.f3 .card-genderless .card-body-rect {
-    fill: lightgray;
-}
-
-.f3 .card-outline {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.2);
-    stroke-width: 1px;
-}
-
-.f3 .card-main-outline {
-    stroke: currentColor;
-    stroke-width: 3px;
-}
-
-.f3 .card-new-outline {
-    stroke-dasharray: 5, 3;
-    stroke: currentColor;
-    stroke-width: 2px;
-}
-
-/* Card deceased styling */
-.f3 .card-deceased .card-outline {
-    stroke: var(--deceased-border-color);
-    stroke-width: 3px;
-}
-
 /* Relationship batch styling */
 .f3 .relationship-batch {
     fill: var(--relationship-badge-color);
@@ -658,12 +507,23 @@ input:checked+.f3-slider:before {
 }
 
 .f3 .relationship-dropdown {
+    position: absolute;
+    z-index: 200;
     cursor: pointer;
-    z-index: 100;
+    will-change: transform;
+    animation: fadeIn 0.3s ease-out forwards;
 }
 
-.f3 .relationship-option:hover {
-    fill: rgba(0, 0, 0, 0.05);
+.f3 .relationship-option:hover .option-bg {
+    fill: rgba(0, 0, 0, 0.08);
+}
+
+.f3 .relationship-option:active .option-bg {
+    fill: rgba(25, 118, 210, 0.12);
+}
+
+.f3 .relationship-batch-container.pulse {
+    animation: pulse 1s ease infinite;
 }
 
 /* Card header styling */
@@ -673,55 +533,35 @@ input:checked+.f3-slider:before {
 
 .f3 .file-name {
     font-weight: 600;
+    font-size: 16px;
+    fill: #000;
+    max-width: 75%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Card interaction and animation */
-.f3 .card_cont {
-    pointer-events: all;
-    transform-origin: center center;
-    will-change: transform, opacity;
-}
-
-/* Card icons */
-.f3 .card-icon {
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.f3 .card-icon:hover {
-    transform: scale(1.1);
-}
-
-/* Popup styling for dollar icon hover */
-.f3 .offer-popup {
-    opacity: 1;
-    pointer-events: none;
-    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+/* Card details styling */
+.f3 .card-details {
+    font-size: 14px;
+    fill: #000;
 }
 
 /* Notes panel styling */
 .f3 .notes-panel {
-    transform-origin: bottom;
+    transform-origin: top;
+    will-change: transform, opacity;
+}
+
+.f3 .notes-panel.open {
+    animation: slideDown 0.3s ease-out forwards;
+}
+
+.f3 .notes-panel.closing {
     animation: slideUp 0.3s ease-out forwards;
 }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(120px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-/* Header actions animation */
-.f3 .header-actions {
-    animation: fadeIn 0.3s ease-out forwards;
-}
-
+/* Animations */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -732,23 +572,100 @@ input:checked+.f3-slider:before {
     }
 }
 
-/* Path highlighting */
-.f3 .card-inner {
-    outline: 0px solid rgba(255, 255, 255, 1);
-    transition: outline 0.2s ease-in-out;
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
-.f3 .card-inner.f3-path-to-main {
-    outline: 4px solid white;
+@keyframes slideDown {
+    from {
+        transform: translateY(0);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(18px);
+        opacity: 1;
+    }
 }
 
-.f3 .link.f3-path-to-main {
-    stroke: white;
-    stroke-width: 4px;
-    transition: stroke-width 0.1s ease-in-out;
+@keyframes slideUp {
+    from {
+        transform: translateY(18px);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 0;
+    }
 }
 
-/* Add filter for drop shadows */
-.f3 .main_svg defs {
-    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+@keyframes rotateArrow {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(180deg);
+    }
+}
+
+/* Icon styling */
+.f3 .card-icon {
+    cursor: pointer;
+    will-change: transform;
+}
+
+.f3 .card-icon:hover {
+    fill: var(--icon-hover-color, #1976d2);
+}
+
+.f3 .card-icon.notes-icon svg {
+    fill: var(--notes-icon-color, #000000);
+}
+
+.f3 .card-icon.notes-icon.has-notes svg {
+    fill: #FF0000;
+}
+
+.f3 .card-icon.document-icon svg,
+.f3 .card-icon.doc-dollar-icon svg {
+    fill: #000000;
+}
+
+/* Offer popup styling */
+.f3 .offer-popup {
+    position: absolute;
+    z-index: 100;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2));
+}
+
+.f3 .offer-popup text[style*="cursor: pointer"] {
+    pointer-events: auto;
+}
+
+/* Bottom bar styling */
+.f3 .bottom-bar-rect {
+    rx: 0 0 16px 16px;
+    ry: 0 0 16px 16px;
+}
+
+/* Arrow styling */
+.f3 .bottom-bar .arrow-icon {
+    transition: transform 0.3s ease;
+}
+
+.f3 .bottom-bar .arrow-icon.rotated {
+    transform: rotate(180deg);
 }

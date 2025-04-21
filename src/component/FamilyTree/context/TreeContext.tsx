@@ -39,6 +39,8 @@ const initialConfig: TreeConfig = {
   },
   showMiniTree: true,
   linkBreak: false,
+  highlightHoverPath: true, // Default to true for path highlighting
+  viewMode: false, // Default to edit mode
 };
 
 const initialState: TreeState = {
