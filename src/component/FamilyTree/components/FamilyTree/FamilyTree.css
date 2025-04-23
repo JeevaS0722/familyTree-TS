@@ -72,13 +72,6 @@
     stroke-width: 3px;
 }
 
-/* Card interaction */
-.f3 .card_cont {
-    pointer-events: all;
-    transform-origin: center center;
-    will-change: transform, opacity;
-}
-
 .f3 .card_family_tree {
     transition: transform 0.3s ease;
 }
@@ -527,9 +520,6 @@ input:checked+.f3-slider:before {
 }
 
 /* Card header styling */
-.f3 .card-header {
-    cursor: pointer;
-}
 
 .f3 .file-name {
     font-weight: 600;
@@ -668,4 +658,123 @@ input:checked+.f3-slider:before {
 
 .f3 .bottom-bar .arrow-icon.rotated {
     transform: rotate(180deg);
+}
+
+
+
+
+/* New Card styles */
+
+/* Add these styles to your FamilyTree.css file */
+
+.f3 .card-body-rect {
+    fill: #D9D9D9;
+    stroke: rgba(0, 0, 0, 0.2);
+    stroke-width: 1px;
+}
+
+.f3 .card-male .left-column rect {
+    fill: #7EADFF;
+}
+
+.f3 .card-male .right-column rect:first-child {
+    fill: #C8DCFF;
+}
+
+.f3 .card-female .left-column rect {
+    fill: #FF96BC;
+}
+
+.f3 .card-female .right-column rect:first-child {
+    fill: #FFC8DC;
+}
+
+.f3 .card-header rect {
+    fill: white;
+}
+
+.f3 .card-header text {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+}
+
+.f3 .card-details text {
+    font-family: 'Roboto', sans-serif;
+}
+
+.f3 .relationship-badge {
+    fill: #E2E2E2;
+    stroke: rgba(0, 0, 0, 0.2);
+    stroke-width: 1px;
+}
+
+.f3 .relationship-badge-text {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 600;
+    fill: black;
+}
+
+.f3 .card-deceased .relationship-badge {
+    stroke: #FF0000;
+    stroke-width: 2px;
+}
+
+.f3 .card-deceased .card-body-rect {
+    stroke: #FF0000;
+    stroke-width: 2px;
+}
+
+.f3 .division-interest-rect,
+.f3 .percentage-rect {
+    fill: transparent;
+    stroke: black;
+    stroke-width: 1.5px;
+    rx: 5;
+    ry: 5;
+}
+
+.f3 .division-interest-text,
+.f3 .percentage-text {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 600;
+    fill: black;
+}
+
+.f3 .bottom-bar path {
+    transition: transform 0.3s ease;
+}
+
+.f3 .bottom-bar path.rotated {
+    transform: rotate(180deg);
+}
+
+.f3 .card-icon {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.f3 .card-icon:hover {
+    transform: scale(1.1);
+}
+
+.f3 .notes-circle {
+    fill: #00BF0A;
+}
+
+.f3 .offer-popup {
+    filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1));
+    pointer-events: none;
+}
+
+/* Animation for card entry/exit */
+.f3 .card_cont {
+    transform-origin: center center;
+    will-change: transform, opacity;
+    transition: opacity 0.3s ease;
+    cursor: auto;
+}
+
+/* Hover effects */
+.f3 .card:hover {
+    filter: brightness(1.03);
 }
