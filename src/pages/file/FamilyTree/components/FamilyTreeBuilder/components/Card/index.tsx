@@ -94,7 +94,7 @@ const Card: React.FC<CardProps> = ({
             displayName: formatedData.displayName,
             personId: node.data.id,
           }}
-          onPersonAdd={onPersonAdd}
+          onPersonAdd={e => onPersonAdd && onPersonAdd(node, e)}
           onPersonDelete={onPersonDelete}
           cardWidth={cardWidth}
         />

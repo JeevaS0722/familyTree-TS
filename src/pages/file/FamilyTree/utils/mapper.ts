@@ -172,3 +172,24 @@ export const mapContactsToFamilyTree = (
 
   return rootFamilyMember;
 };
+
+export const mapRelationshipType = (
+  type: string | null
+): 'partner' | 'child' | null => {
+  if (!type) {
+    return null;
+  }
+
+  switch (type) {
+    case 'father':
+    case 'mother':
+      return 'partner'; // Parents are added as partners of the opposite parent
+    case 'spouse':
+      return 'partner';
+    case 'son':
+    case 'daughter':
+      return 'child';
+    default:
+      return null;
+  }
+};

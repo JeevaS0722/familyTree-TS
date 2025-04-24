@@ -17,11 +17,12 @@ import Link from './Link';
 import SvgDefs from './SvgDefs';
 import Toolbar from './controls/Toolbar';
 import { findPathToMain } from '../utils/pathFinder';
+import RelationshipMenu from './RelationshipMenu';
 
 interface TreeViewProps {
   svgRef: React.RefObject<SVGSVGElement>;
   onPersonClick?: (personId: string) => void;
-  onPersonAdd?: (personId: string) => void;
+  onPersonAdd?: (personId: string, relationType: string) => void;
   onPersonDelete?: (personId: string) => void;
 }
 
@@ -37,6 +38,8 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
 
     // Keep track of exiting nodes and previously rendered nodes
     const [exitingNodes, setExitingNodes] = useState<TreeNode[]>([]);
+    const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
+    const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const prevNodesRef = useRef<TreeNode[]>([]);
 
     // Initialize zoom and pan functionality
@@ -156,22 +159,28 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       state.config.levelSeparation,
     ]);
 
-    // Handle person click
-    const handlePersonClick = useCallback(
-      (node: TreeNode) => {
-        // Update main ID
-        updateMainId(node.data.id);
+    const handlePersonAdd = (node: TreeNode, event: React.MouseEvent) => {
+      event.stopPropagation(); // Prevent clicks from propagating
+      setSelectedNode(node);
+      setMenuPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+    };
 
-        // Update tree without initial animation
-        updateTree({});
-
-        // Call external handler if provided
-        if (onPersonClick && !state.config.viewMode) {
-          onPersonClick(node.data.id);
-        }
-      },
-      [updateMainId, updateTree, onPersonClick, state.config.viewMode]
-    );
+    // Handle relationship selection
+    const handleAddRelative = (relationType: string) => {
+      if (!selectedNode) {
+        return;
+      }
+      console.log(
+        `Adding relationship: ${relationType} to node ${selectedNode.data.id}`
+      );
+      if (onPersonAdd && selectedNode?.data?.id) {
+        onPersonAdd(selectedNode.data.id, relationType);
+      }
+      setSelectedNode(null);
+    };
 
     // Highlight path to main node function
     const highlightPathToMain = useCallback(
@@ -346,7 +355,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
                   initialRender={state.isInitialRender}
                   onMouseEnter={highlightPathToMain}
                   onMouseLeave={clearPathHighlight}
-                  onPersonAdd={onPersonAdd}
+                  onPersonAdd={handlePersonAdd}
                   onPersonDelete={onPersonDelete}
                 />
               ))}
@@ -365,8 +374,18 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
             </g>
           </g>
         </svg>
-
+        {/* Toolbar for zoom and fit controls */}
         <Toolbar zoomIn={zoomIn} zoomOut={zoomOut} fitTree={fitTree} />
+        {/* Relationship Menu */}
+        {selectedNode && (
+          <RelationshipMenu
+            node={selectedNode}
+            position={menuPosition}
+            existingFamilyMembers={state.treeData?.data || []}
+            onAddRelative={handleAddRelative}
+            onClose={() => setSelectedNode(null)}
+          />
+        )}
       </>
     );
   }

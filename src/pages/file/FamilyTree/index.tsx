@@ -29,6 +29,7 @@ const App: React.FC = () => {
   const [showInitialDialog, setShowInitialDialog] = useState<boolean>(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [currentParentId, setCurrentParentId] = useState<string | null>(null);
+  const [relationshipType, setRelationshipType] = useState<string | null>(null);
 
   // Get context from FamilyTree component
   const handleContextRef = useCallback((context: any) => {
@@ -97,11 +98,16 @@ const App: React.FC = () => {
   }, [fileId, decodedFileName]);
 
   // Handle person add
-  const handlePersonAdd = useCallback((personId: string) => {
-    console.log('Person added:', personId);
-    setCurrentParentId(personId);
-    setShowAddDialog(true);
-  }, []);
+  const handlePersonAdd = useCallback(
+    (personId: string, relationType: string) => {
+      console.log('Person added:', personId);
+      console.log('Relation type:', relationType);
+      setCurrentParentId(personId);
+      setRelationshipType(relationType);
+      setShowAddDialog(true);
+    },
+    []
+  );
 
   // Enhanced handleSaveNewMember function
   const handleSaveNewMember = useCallback(
@@ -216,10 +222,15 @@ const App: React.FC = () => {
       {/* Add Person Dialog */}
       <AddPersonDialog
         open={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
+        onClose={() => {
+          setShowAddDialog(false);
+          setRelationshipType(null); // Reset on close
+        }}
         onSave={handleSaveNewMember}
         contactList={contactsData}
         existingFamilyMembers={familyData}
+        initialRelationshipType={relationshipType} // Pass to dialog
+        parentMember={familyData.find(m => m.id === currentParentId)}
       />
       {/* Loading indicator */}
       {loading && <OverlayLoader open loadingText="Loading..." />}

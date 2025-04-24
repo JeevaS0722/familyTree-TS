@@ -25,8 +25,11 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import { Contact } from '../types';
 import { useCreateContactMutation } from '../../../../store/Services/contactService';
-import { PersonData as FamilyMember } from '../../../../component/FamilyTree';
-import { contactsToFamilyTreemapper } from '../utils/mapper';
+import { PersonData as FamilyMember } from './FamilyTreeBuilder/types/familyTree';
+import {
+  contactsToFamilyTreemapper,
+  mapRelationshipType,
+} from '../utils/mapper';
 
 interface EditDialogProps {
   open: boolean;
@@ -36,6 +39,7 @@ interface EditDialogProps {
   contactList?: Contact[];
   existingFamilyMembers?: FamilyMember[];
   refreshContacts?: () => Promise<Contact[]>;
+  initialRelationshipType?: string;
 }
 
 const EditDialog: React.FC<EditDialogProps> = ({
@@ -46,6 +50,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
   contactList = [],
   existingFamilyMembers = [],
   refreshContacts = async () => [],
+  initialRelationshipType,
 }) => {
   // Get fileId from URL params
   const { fileId } = useParams<{ fileId: string }>();
@@ -110,6 +115,26 @@ const EditDialog: React.FC<EditDialogProps> = ({
       });
     }
   }, [open]);
+
+  // When dialog opens, set the relationship type based on initialRelationshipType
+  useEffect(() => {
+    if (open && initialRelationshipType) {
+      setRelationshipType(mapRelationshipType(initialRelationshipType));
+
+      // Pre-select gender based on relationship type
+      if (
+        initialRelationshipType === 'father' ||
+        initialRelationshipType === 'son'
+      ) {
+        setGender('M');
+      } else if (
+        initialRelationshipType === 'mother' ||
+        initialRelationshipType === 'daughter'
+      ) {
+        setGender('F');
+      }
+    }
+  }, [open, initialRelationshipType]);
 
   const validateSelectContactInputs = (): boolean => {
     const errors: {
@@ -198,7 +223,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
       // Create contact data object
       const contactData = {
         fileID: Number(fileId),
-        relationship: newContactForm.relationship,
+        relationship: initialRelationshipType || newContactForm.relationship,
         ownership: newContactForm.ownership,
         lastName: newContactForm.lastName,
         firstName: newContactForm.firstName,

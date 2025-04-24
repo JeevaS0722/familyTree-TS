@@ -12,13 +12,13 @@ import './FamilyTree.css';
 interface FamilyTreeProps {
   data: PersonData[];
   mainId?: string;
-  onPersonAdd?: (personId: string) => void;
+  onPersonAdd?: (personId: string, relationType: string) => void;
   onPersonDelete?: (personId: string) => void;
   contextRef?: (context: any) => void;
 }
 
 interface FamilyTreeContentProps {
-  onPersonAdd?: (personId: string) => void;
+  onPersonAdd?: (personId: string, relationType: string) => void;
   onPersonDelete?: (personId: string) => void;
 }
 

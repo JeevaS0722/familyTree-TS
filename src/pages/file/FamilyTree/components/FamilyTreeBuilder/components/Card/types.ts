@@ -11,7 +11,10 @@ export interface CardProps {
   onClick?: (node: TreeNode) => void;
   onMouseEnter?: (node: TreeNode) => void;
   onMouseLeave?: (node: TreeNode) => void;
-  onPersonAdd?: (personId: string) => void;
+  onPersonAdd?: (
+    node: TreeNode,
+    event: React.MouseEvent<HTMLDivElement>
+  ) => void;
   onPersonDelete?: (personId: string) => void;
 }
 
@@ -25,7 +28,7 @@ export interface CardHeaderProps {
     displayName: string;
     personId: string;
   };
-  onPersonAdd?: (personId: string) => void;
+  onPersonAdd?: (e: React.MouseEvent<HTMLDivElement>) => void;
   onPersonDelete?: (personId: string) => void;
   cardWidth: number;
 }

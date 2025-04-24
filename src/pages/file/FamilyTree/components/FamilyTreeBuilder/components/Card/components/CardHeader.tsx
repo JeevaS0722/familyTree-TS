@@ -40,9 +40,8 @@ const CardHeader: React.FC<CardHeaderProps> = ({
       <g
         transform="translate(220, 6)"
         onClick={e => {
-          e.stopPropagation();
           if (onPersonAdd) {
-            onPersonAdd(personId);
+            onPersonAdd(e);
           }
         }}
         onMouseEnter={() => setAddIconHovered(true)}
