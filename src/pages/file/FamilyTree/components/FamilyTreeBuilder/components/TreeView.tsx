@@ -27,14 +27,8 @@ interface TreeViewProps {
 
 const TreeView: React.FC<TreeViewProps> = React.memo(
   ({ svgRef, onPersonClick, onPersonAdd, onPersonDelete }: TreeViewProps) => {
-    const {
-      state,
-      updateTree,
-      updateMainId,
-      setInitialRenderComplete,
-      activateAddRelative,
-      deactivateAddRelative,
-    } = useTreeContext();
+    const { state, updateTree, updateMainId, setInitialRenderComplete } =
+      useTreeContext();
     const viewRef = useRef<SVGGElement>(null);
     const cardsViewRef = useRef<SVGGElement>(null);
     const linksViewRef = useRef<SVGGElement>(null);
@@ -87,10 +81,6 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       if (!state.treeData?.data) {
         return;
       }
-      console.log(
-        'Processing entering/exiting nodes for animation',
-        state.treeData.data
-      );
 
       const currentIds = new Set(state.treeData.data.map(n => n.data.id));
 
@@ -166,45 +156,21 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       state.config.levelSeparation,
     ]);
 
-    // Function to open edit form for placeholder
-    const openEditFormForPlaceholder = (node: TreeNode) => {
-      // Extract relationship info from placeholder
-      const relType = node._new_rel_data?.rel_type;
-      const otherParentId = node._new_rel_data?.other_parent_id;
-
-      // You can integrate this with your existing edit dialog
-      // by setting appropriate initial values and relationship info
-      // setShowEditDialog(true);
-      // setEditingRelationType(relType);
-      // setOtherParentId(otherParentId);
-    };
-    // Handle card click
-    const handleCardClick = useCallback(
+    // Handle person click
+    const handlePersonClick = useCallback(
       (node: TreeNode) => {
-        console.log('Card clicked:', node);
-        console.log('Add relative mode:', state);
-        if (state.addRelativeMode) {
-          // If in add mode and clicked on a placeholder, open edit form
-          if (node.to_add) {
-            // Open edit form for this specific relationship
-            openEditFormForPlaceholder(node);
-          } else {
-            // If clicked on regular node while in add mode, exit add mode
-            deactivateAddRelative();
-          }
-        } else {
-          // Regular node click - make it main or activate add mode
-          if (node.data.id === state.mainId) {
-            console.log('Clicked on main node:', node.data.id);
-            // If clicked on main node, activate add relative mode
-            activateAddRelative(node.data.id);
-          } else {
-            // If clicked on different node, make it main
-            updateMainId(node.data.id);
-          }
+        // Update main ID
+        updateMainId(node.data.id);
+
+        // Update tree without initial animation
+        updateTree({});
+
+        // Call external handler if provided
+        if (onPersonClick && !state.config.viewMode) {
+          onPersonClick(node.data.id);
         }
       },
-      [state.addRelativeMode, state.mainId]
+      [updateMainId, updateTree, onPersonClick, state.config.viewMode]
     );
 
     // Highlight path to main node function
@@ -380,7 +346,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
                   initialRender={state.isInitialRender}
                   onMouseEnter={highlightPathToMain}
                   onMouseLeave={clearPathHighlight}
-                  onPersonAdd={handleCardClick}
+                  onPersonAdd={onPersonAdd}
                   onPersonDelete={onPersonDelete}
                 />
               ))}
