@@ -1,10 +1,6 @@
 // src/component/FamilyTree/utils/animationUtils.ts
 import { TreeNode } from '../types/familyTree';
 
-/**
- * Calculate enter and exit positions for nodes
- * This function closely matches the original D3 implementation behavior
- */
 export function calculateEnterAndExitPositions(
   node: TreeNode,
   entering: boolean,
@@ -13,30 +9,45 @@ export function calculateEnterAndExitPositions(
   node.exiting = exiting;
 
   if (entering) {
-    // Main node (depth 0) with no spouse - start at target position
-    if (node.depth === 0 && !node.spouse) {
+    try {
+      // Main node (depth 0) with no spouse - start at target position
+      if (node.depth === 0 && !node.spouse) {
+        node._x = node.x;
+        node._y = node.y;
+      }
+      // Spouse node - start at spouse position
+      else if (node.spouse) {
+        node._x = node.spouse.x;
+        node._y = node.spouse.y;
+      }
+      // Ancestry node (parents, grandparents) - start at child position
+      else if (node.is_ancestry && node.parent) {
+        node._x = node.parent.x;
+        node._y = node.parent.y;
+      }
+      // Children - start at parent-spouse position
+      else if (node.psx !== undefined && node.psy !== undefined) {
+        node._x = node.psx;
+        node._y = node.psy;
+      }
+      // Fallback - use parent position if available
+      else if (node.parent) {
+        node._x = node.parent.x;
+        node._y = node.parent.y;
+      }
+      // Last resort fallback
+      else {
+        // Start slightly offset from final position
+        const offsetX = node.x > 0 ? -100 : 100;
+        const offsetY = node.y > 0 ? -100 : 100;
+        node._x = node.x + offsetX;
+        node._y = node.y + offsetY;
+      }
+    } catch (e) {
+      // Emergency fallback in case of any errors
       node._x = node.x;
       node._y = node.y;
-    }
-    // Spouse node - start at spouse position
-    else if (node.spouse) {
-      node._x = node.spouse.x;
-      node._y = node.spouse.y;
-    }
-    // Ancestry node (parents, grandparents) - start at child position
-    else if (node.is_ancestry && node.parent) {
-      node._x = node.parent.x;
-      node._y = node.parent.y;
-    }
-    // Children - start at parent-spouse position
-    else if (node.psx !== undefined && node.psy !== undefined) {
-      node._x = node.psx;
-      node._y = node.psy;
-    }
-    // Fallback - starts at normal position (should rarely happen)
-    else {
-      node._x = node.x;
-      node._y = node.y;
+      console.warn('Error setting animation position:', e);
     }
   }
   // Exiting nodes - fly away from center
@@ -50,7 +61,8 @@ export function calculateEnterAndExitPositions(
 
 /**
  * Calculate delay for sequential animations
- * This precisely matches the original implementation's timing logic
+ * This precisely matches the original implementation's timing logic with
+ * added minimum delay for non-initial animations
  */
 export function calculateAnimationDelay(
   node: TreeNode,
@@ -82,5 +94,6 @@ export function calculateAnimationDelay(
     delay += node.depth * delay_level;
   }
 
-  return delay;
+  // Ensure a minimum delay for better visibility
+  return Math.max(delay, 100);
 }

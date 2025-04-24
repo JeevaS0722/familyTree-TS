@@ -27,7 +27,7 @@ const FamilyTreeContent: React.FC<FamilyTreeContentProps> = ({
   onPersonDelete,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-
+  console.log('Rendering FamilyTreeContent');
   return (
     <div className="f3 f3-cont">
       <TreeView
@@ -50,7 +50,7 @@ const ContextBridge: React.FC<{
     if (contextRef) {
       contextRef(context);
     }
-  }, [context, contextRef]);
+  }, [contextRef]);
 
   return null;
 };
@@ -62,6 +62,7 @@ const FamilyTree: React.FC<FamilyTreeProps> = ({
   onPersonDelete,
   contextRef,
 }) => {
+  console.log('Rendering FamilyTree');
   return (
     <TreeProvider initialData={data} initialMainId={mainId}>
       {/* Bridge to expose context */}

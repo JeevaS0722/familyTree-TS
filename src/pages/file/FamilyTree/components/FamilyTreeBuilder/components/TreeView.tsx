@@ -18,6 +18,7 @@ import SvgDefs from './SvgDefs';
 import Toolbar from './controls/Toolbar';
 import { findPathToMain } from '../utils/pathFinder';
 import RelationshipMenu from './RelationshipMenu';
+import { safeCloneNodes } from '../utils/general';
 
 interface TreeViewProps {
   svgRef: React.RefObject<SVGSVGElement>;
@@ -79,13 +80,13 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       return allLinks;
     }, [state.treeData, state.config.isHorizontal]);
 
-    // Processing entering/exiting nodes for animation
     useEffect(() => {
       if (!state.treeData?.data) {
         return;
       }
 
       const currentIds = new Set(state.treeData.data.map(n => n.data.id));
+      const prevIds = new Set(prevNodesRef.current.map(n => n.data.id));
 
       // Handle exiting nodes
       const newExitingNodes = prevNodesRef.current
@@ -99,8 +100,17 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
 
       // Mark entering nodes
       state.treeData.data.forEach(node => {
-        if (!prevNodesRef.current.some(n => n.data.id === node.data.id)) {
+        if (!prevIds.has(node.data.id)) {
+          // This is a new node
           calculateEnterAndExitPositions(node, true, false);
+
+          // Log for debugging
+          console.log(`New node added: ${node.data.id}`, {
+            x: node.x,
+            y: node.y,
+            _x: node._x,
+            _y: node._y,
+          });
         }
       });
 
@@ -112,11 +122,15 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
         setExitingNodes([]);
       }, state.config.transitionTime + 100);
 
-      // Save current nodes for next update
-      prevNodesRef.current = [...state.treeData.data];
+      // Save current nodes for next update - make a deep copy
+      prevNodesRef.current = safeCloneNodes(state.treeData.data);
 
       return () => clearTimeout(timer);
-    }, [state.treeData?.data, state.config.transitionTime]);
+    }, [
+      state.treeData?.data,
+      state.config.transitionTime,
+      calculateEnterAndExitPositions,
+    ]);
 
     // Fit tree when dimensions change
     useEffect(() => {
@@ -297,6 +311,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       return <div>Loading tree data...</div>;
     }
 
+    console.log('Rendering TreeView');
     return (
       <>
         <svg

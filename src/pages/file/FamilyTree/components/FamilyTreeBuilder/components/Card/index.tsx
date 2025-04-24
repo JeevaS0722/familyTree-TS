@@ -1,4 +1,5 @@
-import React, { useRef, useCallback } from 'react';
+// Update the Card component to ensure visibility and proper animation
+import React, { useRef, useCallback, useEffect } from 'react';
 import { useNodeAnimation } from '../../hooks/useNodeAnimation';
 import { CardProps } from './types';
 import RelationshipBadge from './components/RelationshipBadge';
@@ -9,6 +10,8 @@ import CardFooter from './components/CardFooter';
 
 const Card: React.FC<CardProps> = ({
   node,
+  showMiniTree = false,
+  transitionTime = 1000,
   treeData,
   initialRender = false,
   onMouseEnter,
@@ -19,7 +22,21 @@ const Card: React.FC<CardProps> = ({
   const cardRef = useRef<SVGGElement>(null);
 
   // Animation hook - pass initialRender flag
-  useNodeAnimation(cardRef, node, treeData, initialRender);
+  useNodeAnimation(cardRef, node, transitionTime, treeData, initialRender);
+
+  // Log node state for debugging
+  useEffect(() => {
+    if (node && !node.exiting) {
+      console.log(`Rendering node: ${node.data.id}`, {
+        x: node.x,
+        y: node.y,
+        _x: node._x,
+        _y: node._y,
+        exiting: node.exiting,
+        initialRender,
+      });
+    }
+  }, [node, initialRender]);
 
   const handleMouseEnter = useCallback(() => {
     if (!node.data.main && onMouseEnter) {
@@ -56,12 +73,18 @@ const Card: React.FC<CardProps> = ({
   const cardHeight = 160;
   const leftColumnWidth = cardWidth / 2;
 
+  // Ensure node has valid position
+  const posX = typeof node.x === 'number' ? node.x : 0;
+  const posY = typeof node.y === 'number' ? node.y : 0;
+
+  console.log('Rendering Card');
+
   return (
     <g
       ref={cardRef}
-      className={`card_cont`}
-      transform={`translate(${node.x}, ${node.y})`}
-      style={{ opacity: 0 }}
+      className={`card_cont ${node.data.main ? 'main-node' : ''}`}
+      transform={`translate(${posX}, ${posY})`}
+      style={{ opacity: 0 }} // Initial opacity is 0, animation will change it
       data-id={node.data.id}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -74,7 +97,7 @@ const Card: React.FC<CardProps> = ({
 
       {/* Main Card */}
       <g
-        className="card"
+        className="card-inner"
         transform={`translate(${-cardWidth / 2}, ${-cardHeight / 2})`}
       >
         {/* Card Background with Rounded Corners */}

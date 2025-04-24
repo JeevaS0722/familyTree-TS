@@ -193,6 +193,7 @@ const App: React.FC = () => {
     },
     [treeContext]
   );
+  console.log('Rendering App component with family data:');
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
