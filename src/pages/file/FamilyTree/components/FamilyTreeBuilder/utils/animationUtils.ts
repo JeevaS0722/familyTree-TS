@@ -35,6 +35,13 @@ export function calculateEnterAndExitPositions(
         node._x = node.parent.x;
         node._y = node.parent.y;
       }
+      // Another fallback for children with father/mother relationship but no parent reference
+      else if (node.data.rels.father || node.data.rels.mother) {
+        // For children where the TreeNode parent reference might be missing
+        // but we know they have a parent from the data relationships
+        node._x = node.x;
+        node._y = node.y - 150; // Start slightly above final position
+      }
       // Last resort fallback
       else {
         // Start slightly offset from final position
@@ -43,6 +50,17 @@ export function calculateEnterAndExitPositions(
         node._x = node.x + offsetX;
         node._y = node.y + offsetY;
       }
+
+      // Log the calculated position for debugging
+      console.log(`Node ${node.data.id} entering position calculated:`, {
+        finalPos: { x: node.x, y: node.y },
+        startPos: { x: node._x, y: node._y },
+        depth: node.depth,
+        isAncestry: node.is_ancestry,
+        hasSpouse: !!node.spouse,
+        hasParent: !!node.parent,
+        hasParentSpousePos: node.psx !== undefined && node.psy !== undefined,
+      });
     } catch (e) {
       // Emergency fallback in case of any errors
       node._x = node.x;
@@ -61,16 +79,15 @@ export function calculateEnterAndExitPositions(
 
 /**
  * Calculate delay for sequential animations
- * This precisely matches the original implementation's timing logic with
- * added minimum delay for non-initial animations
+ * Modified to reduce delays for non-initial animations to make new nodes appear faster
  */
 export function calculateAnimationDelay(
   node: TreeNode,
   transitionTime: number,
   treeData: TreeNode[]
 ): number {
-  // Base delay unit per level
-  const delay_level = transitionTime * 0.4;
+  // Base delay unit per level - reduced for better responsiveness
+  const delay_level = transitionTime * 0.3; // Reduced from 0.4
 
   // Find max depth of ancestry nodes
   const ancestry_levels = Math.max(
@@ -87,13 +104,17 @@ export function calculateAnimationDelay(
 
     // Spouses appear after their partners
     if (node.spouse) {
-      delay += delay_level;
+      delay += delay_level * 0.7; // Reduced multiplier
     }
 
-    // Extra delay based on depth for better sequencing
-    delay += node.depth * delay_level;
+    // Extra delay based on depth for better sequencing - reduced
+    delay += node.depth * delay_level * 0.8; // Reduced multiplier
   }
 
+  // Cap maximum delay to prevent very long waits
+  const maxDelay = transitionTime * 1.5;
+  delay = Math.min(delay, maxDelay);
+
   // Ensure a minimum delay for better visibility
-  return Math.max(delay, 100);
+  return Math.max(delay, 50); // Reduced minimum delay
 }

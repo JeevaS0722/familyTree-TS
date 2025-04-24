@@ -27,7 +27,8 @@ type TreeAction =
       payload: {
         person: PersonData;
         parentId: string;
-        relationship: 'partner' | 'child';
+        relationship: 'father' | 'mother' | 'spouse' | 'son' | 'daughter';
+        otherParentId?: string;
       };
     }
   | { type: 'REMOVE_PERSON'; payload: string }
@@ -39,7 +40,8 @@ type TreeAction =
       payload: {
         person: PersonData;
         parentId: string;
-        relationship: 'partner' | 'child';
+        relationship: 'father' | 'mother' | 'spouse' | 'son' | 'daughter';
+        otherParentId?: string;
       };
     }
   | { type: 'REMOVE_PERSON_AND_UPDATE'; payload: string };
@@ -48,7 +50,7 @@ type TreeAction =
 const initialConfig: TreeConfig = {
   nodeSeparation: 400,
   levelSeparation: 300,
-  singleParentEmptyCard: false,
+  singleParentEmptyCard: true, // Changed to true for consistent behavior
   isHorizontal: false,
   transitionTime: 1000,
   cardDimensions: {
@@ -107,7 +109,7 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       const parent = updatedData[parentIndex];
 
       // Process relationships based on type
-      if (relationship === 'partner') {
+      if (relationship === 'spouse') {
         // Initialize arrays if they don't exist
         if (!parent.rels.spouses) {
           parent.rels.spouses = [];
@@ -119,7 +121,7 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         // Add bidirectional spouse relationship
         parent.rels.spouses.push(person.id);
         person.rels.spouses.push(parent.id);
-      } else if (relationship === 'child') {
+      } else if (relationship === 'son' || relationship === 'daughter') {
         // Initialize arrays if they don't exist
         if (!parent.rels.children) {
           parent.rels.children = [];
@@ -266,13 +268,16 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         ...state,
         isInitialRender: false,
       };
-    // Add these cases to your existing treeReducer function:
+
     case 'ADD_PERSON_AND_UPDATE': {
       const { person, parentId, relationship, otherParentId } = action.payload;
+      // Create a deep copy to avoid mutation - deep clone to ensure all nested objects are properly copied
       const updatedData = JSON.parse(JSON.stringify(state.data));
 
+      // Find parent in the data
       const parentIndex = updatedData.findIndex(p => p.id === parentId);
       if (parentIndex === -1) {
+        console.error(`Parent with ID ${parentId} not found`);
         return state;
       }
 
@@ -289,23 +294,41 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         }
       }
 
+      console.log('Adding person with relationship:', relationship);
+      console.log('Parent:', parent);
+      console.log('Other parent:', otherParent || 'None');
+
       // Process relationship type
-      if (relationship === 'partner') {
-        // Handle spouse relationship - same as before
+      if (relationship === 'spouse') {
+        // Handle spouse relationship
         if (!parent.rels.spouses) {
           parent.rels.spouses = [];
         }
         if (!person.rels.spouses) {
           person.rels.spouses = [];
         }
-        parent.rels.spouses.push(person.id);
-        person.rels.spouses.push(parent.id);
-      } else if (relationship === 'child') {
-        // Handle child relationship - now with other parent
+
+        // Ensure we don't add duplicate relationships
+        if (!parent.rels.spouses.includes(person.id)) {
+          parent.rels.spouses.push(person.id);
+        }
+
+        if (!person.rels.spouses.includes(parent.id)) {
+          person.rels.spouses.push(parent.id);
+        }
+
+        console.log('Updated parent spouses:', parent.rels.spouses);
+        console.log('Updated person spouses:', person.rels.spouses);
+      } else if (relationship === 'son' || relationship === 'daughter') {
+        // Handle child relationship
         if (!parent.rels.children) {
           parent.rels.children = [];
         }
-        parent.rels.children.push(person.id);
+
+        // Ensure we don't add duplicate children
+        if (!parent.rels.children.includes(person.id)) {
+          parent.rels.children.push(person.id);
+        }
 
         // Set parent reference based on gender
         if (parent.data.gender === 'M') {
@@ -317,7 +340,9 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
             if (!otherParent.rels.children) {
               otherParent.rels.children = [];
             }
-            otherParent.rels.children.push(person.id);
+            if (!otherParent.rels.children.includes(person.id)) {
+              otherParent.rels.children.push(person.id);
+            }
           }
         } else {
           person.rels.mother = parent.id;
@@ -328,23 +353,37 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
             if (!otherParent.rels.children) {
               otherParent.rels.children = [];
             }
-            otherParent.rels.children.push(person.id);
+            if (!otherParent.rels.children.includes(person.id)) {
+              otherParent.rels.children.push(person.id);
+            }
           }
         }
+
+        console.log('Updated parent children:', parent.rels.children);
+        console.log('Person parents:', {
+          father: person.rels.father || 'None',
+          mother: person.rels.mother || 'None',
+        });
       }
 
       // Add the new person to the data
       updatedData.push(person);
+      console.log(
+        'Added new person to data. Total people:',
+        updatedData.length
+      );
 
-      // Calculate tree
+      // Calculate tree with consistent parameters
       const treeData = calculateTree({
         data: updatedData,
         main_id: state.mainId,
         node_separation: state.config.nodeSeparation,
         level_separation: state.config.levelSeparation,
-        single_parent_empty_card: false, // Force to false here too
+        single_parent_empty_card: state.config.singleParentEmptyCard, // Use the config value for consistency
         is_horizontal: state.config.isHorizontal,
       });
+
+      console.log('Tree recalculated. Nodes in tree:', treeData.data.length);
 
       return {
         ...state,
@@ -355,7 +394,6 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
     }
 
     case 'REMOVE_PERSON_AND_UPDATE': {
-      // Copy your existing REMOVE_PERSON case logic here
       const personId = action.payload;
       // Create a deep copy without the removed person
       const updatedData = JSON.parse(
@@ -374,7 +412,6 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
           }
         }
 
-        // ... other cleanup from your existing code
         if (person.rels.children) {
           person.rels.children = person.rels.children.filter(
             id => id !== personId
@@ -434,7 +471,8 @@ interface TreeContextValue {
   addPerson: (
     person: PersonData,
     parentId: string,
-    relationship: 'partner' | 'child'
+    relationship: 'father' | 'mother' | 'spouse' | 'son' | 'daughter',
+    otherParentId?: string
   ) => void;
   removePerson: (personId: string) => void;
 }
@@ -483,7 +521,7 @@ export function TreeProvider({
     (
       person: PersonData,
       parentId: string,
-      relationship: 'partner' | 'child',
+      relationship: 'father' | 'mother' | 'spouse' | 'son' | 'daughter',
       otherParentId?: string
     ) => {
       dispatch({

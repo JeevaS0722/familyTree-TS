@@ -1,17 +1,17 @@
-// src/pages/file/FamilyTree/components/CircularMenu.tsx
+// src/pages/file/FamilyTree/components/FamilyTreeBuilder/components/RelationshipMenu.tsx
 import React, { useEffect, useState } from 'react';
 import { TreeNode } from '../types/familyTree';
 import ParentSelectionMenu from './ParentSelectionMenu';
 
-interface CircularMenuProps {
+interface RelationshipMenuProps {
   node: TreeNode;
   position: { x: number; y: number };
   existingFamilyMembers: TreeNode[];
-  onAddRelative: (relationType: string) => void;
+  onAddRelative: (relationType: string, otherParentId?: string) => void;
   onClose: () => void;
 }
 
-const CircularMenu: React.FC<CircularMenuProps> = ({
+const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
   node,
   position,
   onAddRelative,
@@ -55,30 +55,39 @@ const CircularMenu: React.FC<CircularMenuProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  // Handle initial relationship selection
+  // Handle initial relationship selection with logging
   const handleRelationSelect = (relationType: string) => {
+    console.log(
+      `Relationship selected: ${relationType}, Has spouses: ${hasSpouses}`
+    );
+
     // For son/daughter, check if we need to show parent selection based on spouse existence
     if ((relationType === 'son' || relationType === 'daughter') && hasSpouses) {
+      console.log(`Showing parent selection for ${relationType}`);
       setSelectedRelationType(relationType);
       setShowParentSelection(true);
     } else {
       // For father, mother, spouse or when no spouses exist
+      console.log(`Directly adding ${relationType} without parent selection`);
       onAddRelative(relationType);
     }
   };
 
-  // Handle parent selection for child
+  // Handle parent selection for child with logging
   const handleParentSelection = (
     relationType: string,
     otherParentId?: string
   ) => {
+    console.log(
+      `Parent selected for ${relationType}: ${otherParentId || 'None'}`
+    );
     setShowParentSelection(false);
     onAddRelative(relationType, otherParentId);
   };
 
-  // Calculate menu positions - same as before
+  // Calculate menu positions
   const getItemPosition = (index: number, total: number) => {
-    // Same calculation logic as before
+    // Calculate position in an arc
     const firstAngle = -90;
     const angleRange = Math.min(180, total * 40);
     const angleStep = angleRange / (total - 1);
@@ -232,4 +241,4 @@ const CircularMenu: React.FC<CircularMenuProps> = ({
   );
 };
 
-export default CircularMenu;
+export default RelationshipMenu;

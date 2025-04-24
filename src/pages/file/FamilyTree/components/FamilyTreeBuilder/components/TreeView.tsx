@@ -23,7 +23,11 @@ import { safeCloneNodes } from '../utils/general';
 interface TreeViewProps {
   svgRef: React.RefObject<SVGSVGElement>;
   onPersonClick?: (personId: string) => void;
-  onPersonAdd?: (personId: string, relationType: string) => void;
+  onPersonAdd?: (
+    personId: string,
+    relationType: string,
+    otherParentId?: string
+  ) => void;
   onPersonDelete?: (personId: string) => void;
 }
 
@@ -42,6 +46,9 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
     const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const prevNodesRef = useRef<TreeNode[]>([]);
+
+    // Track when nodes are added so we can force a re-render if needed
+    const [nodeAdditionCounter, setNodeAdditionCounter] = useState(0);
 
     // Initialize zoom and pan functionality
     const { fitTree, zoomIn, zoomOut } = useZoomPan({
@@ -80,57 +87,75 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       return allLinks;
     }, [state.treeData, state.config.isHorizontal]);
 
+    // Enhanced node tracking with better error handling
     useEffect(() => {
       if (!state.treeData?.data) {
         return;
       }
 
-      const currentIds = new Set(state.treeData.data.map(n => n.data.id));
-      const prevIds = new Set(prevNodesRef.current.map(n => n.data.id));
+      try {
+        const currentIds = new Set(state.treeData.data.map(n => n.data.id));
+        const prevIds = new Set(prevNodesRef.current.map(n => n.data.id));
 
-      // Handle exiting nodes
-      const newExitingNodes = prevNodesRef.current
-        .filter(node => !currentIds.has(node.data.id))
-        .map(node => {
-          // Make a copy to avoid mutating shared state
-          const exitingNode = { ...node, exiting: true };
-          calculateEnterAndExitPositions(exitingNode, false, true);
-          return exitingNode;
+        // Log node counts for debugging
+        console.log(
+          `Current nodes: ${currentIds.size}, Previous nodes: ${prevIds.size}`
+        );
+
+        // Find nodes that are new in this update
+        const newNodeIds = [...currentIds].filter(id => !prevIds.has(id));
+        if (newNodeIds.length > 0) {
+          console.log('New nodes added:', newNodeIds);
+
+          // Increment the counter to force re-renders when needed
+          setNodeAdditionCounter(prev => prev + 1);
+        }
+
+        // Handle exiting nodes
+        const newExitingNodes = prevNodesRef.current
+          .filter(node => !currentIds.has(node.data.id))
+          .map(node => {
+            // Make a copy to avoid mutating shared state
+            const exitingNode = { ...node, exiting: true };
+            calculateEnterAndExitPositions(exitingNode, false, true);
+            return exitingNode;
+          });
+
+        // Mark entering nodes
+        state.treeData.data.forEach(node => {
+          if (!prevIds.has(node.data.id)) {
+            // This is a new node
+            calculateEnterAndExitPositions(node, true, false);
+
+            // Log for debugging
+            console.log(`New node added: ${node.data.id}`, {
+              x: node.x,
+              y: node.y,
+              _x: node._x,
+              _y: node._y,
+            });
+          }
         });
 
-      // Mark entering nodes
-      state.treeData.data.forEach(node => {
-        if (!prevIds.has(node.data.id)) {
-          // This is a new node
-          calculateEnterAndExitPositions(node, true, false);
+        // Update exiting nodes
+        setExitingNodes(newExitingNodes);
 
-          // Log for debugging
-          console.log(`New node added: ${node.data.id}`, {
-            x: node.x,
-            y: node.y,
-            _x: node._x,
-            _y: node._y,
-          });
-        }
-      });
+        // After transition time, remove exiting nodes
+        const timer = setTimeout(() => {
+          setExitingNodes([]);
+        }, state.config.transitionTime + 100);
 
-      // Update exiting nodes
-      setExitingNodes(newExitingNodes);
+        // Save current nodes for next update - make a deep copy
+        prevNodesRef.current = safeCloneNodes(state.treeData.data);
 
-      // After transition time, remove exiting nodes
-      const timer = setTimeout(() => {
+        return () => clearTimeout(timer);
+      } catch (error) {
+        console.error('Error tracking nodes:', error);
+        // Recover by clearing exiting nodes and resetting the tracking
         setExitingNodes([]);
-      }, state.config.transitionTime + 100);
-
-      // Save current nodes for next update - make a deep copy
-      prevNodesRef.current = safeCloneNodes(state.treeData.data);
-
-      return () => clearTimeout(timer);
-    }, [
-      state.treeData?.data,
-      state.config.transitionTime,
-      calculateEnterAndExitPositions,
-    ]);
+        prevNodesRef.current = safeCloneNodes(state.treeData.data);
+      }
+    }, [state.treeData?.data, state.config.transitionTime]);
 
     // Fit tree when dimensions change
     useEffect(() => {
@@ -173,6 +198,28 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       state.config.levelSeparation,
     ]);
 
+    // Effect to handle newly added nodes - trigger a refit when needed
+    useEffect(() => {
+      if (
+        nodeAdditionCounter > 0 &&
+        firstFitDoneRef.current &&
+        state.treeData?.dim
+      ) {
+        console.log('Re-fitting tree after adding new nodes');
+        const timeoutId = setTimeout(() => {
+          fitTree();
+        }, state.config.transitionTime * 1.1); // Slight delay to ensure animation completes
+
+        return () => clearTimeout(timeoutId);
+      }
+    }, [
+      nodeAdditionCounter,
+      fitTree,
+      state.config.transitionTime,
+      state.treeData?.dim,
+    ]);
+
+    // Handle person add with parent selection
     const handlePersonAdd = (node: TreeNode, event: React.MouseEvent) => {
       event.stopPropagation(); // Prevent clicks from propagating
       setSelectedNode(node);
@@ -183,15 +230,21 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
     };
 
     // Handle relationship selection
-    const handleAddRelative = (relationType: string) => {
+    const handleAddRelative = (
+      relationType: string,
+      otherParentId?: string
+    ) => {
       if (!selectedNode) {
         return;
       }
       console.log(
-        `Adding relationship: ${relationType} to node ${selectedNode.data.id}`
+        `Adding relationship: ${relationType} to node ${selectedNode.data.id}`,
+        otherParentId
+          ? `with other parent ${otherParentId}`
+          : 'without other parent'
       );
       if (onPersonAdd && selectedNode?.data?.id) {
-        onPersonAdd(selectedNode.data.id, relationType);
+        onPersonAdd(selectedNode.data.id, relationType, otherParentId);
       }
       setSelectedNode(null);
     };
@@ -362,7 +415,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
               {/* Current nodes */}
               {state.treeData.data.map(node => (
                 <Card
-                  key={node.data.id}
+                  key={`${node.data.id}-${nodeAdditionCounter}`} /* Add counter to force re-render */
                   node={node}
                   showMiniTree={state.config.showMiniTree}
                   transitionTime={state.config.transitionTime}

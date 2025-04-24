@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable max-depth */
 /* eslint-disable complexity */
-// src/components/FamilyTree/components/EditDialog.tsx - Updated with fileId and contactId
+// src/components/FamilyTree/components/EditDialog.tsx - Updated with otherParentId support
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -26,20 +26,18 @@ import AddIcon from '@mui/icons-material/Add';
 import { Contact } from '../types';
 import { useCreateContactMutation } from '../../../../store/Services/contactService';
 import { PersonData as FamilyMember } from './FamilyTreeBuilder/types/familyTree';
-import {
-  contactsToFamilyTreemapper,
-  mapRelationshipType,
-} from '../utils/mapper';
+import { contactsToFamilyTreemapper } from '../utils/mapper';
 
 interface EditDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (member: FamilyMember, relationshipType: 'partner' | 'child') => void;
+  onSave: (member: FamilyMember) => void;
   parentMember?: FamilyMember | null;
   contactList?: Contact[];
   existingFamilyMembers?: FamilyMember[];
   refreshContacts?: () => Promise<Contact[]>;
-  initialRelationshipType?: string;
+  initialRelationshipType?: string | null;
+  otherParentId?: string;
 }
 
 const EditDialog: React.FC<EditDialogProps> = ({
@@ -51,6 +49,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
   existingFamilyMembers = [],
   refreshContacts = async () => [],
   initialRelationshipType,
+  otherParentId,
 }) => {
   // Get fileId from URL params
   const { fileId } = useParams<{ fileId: string }>();
@@ -61,18 +60,9 @@ const EditDialog: React.FC<EditDialogProps> = ({
   // State for selected contact vs adding new contact
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isAddingNewContact, setIsAddingNewContact] = useState(false);
-
-  // State for gender and relationship type
-  const [gender, setGender] = useState<'M' | 'F' | null>(null);
-  const [relationshipType, setRelationshipType] = useState<
-    'partner' | 'child' | null
-  >(null);
-
   // State for validation errors
   const [validationErrors, setValidationErrors] = useState<{
     contact?: string;
-    gender?: string;
-    relationshipType?: string;
     firstName?: string;
     ownership?: string;
   }>({});
@@ -82,6 +72,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
     relationship: '',
     ownership: '',
     lastName: '',
+    gender: '',
     firstName: '',
     deceased: false,
     decDt: '',
@@ -92,67 +83,53 @@ const EditDialog: React.FC<EditDialogProps> = ({
     zip: '',
   });
 
-  // Reset state when dialog opens
-  useEffect(() => {
-    if (open) {
-      setSelectedContact(null);
-      setGender(null);
-      setRelationshipType(null);
-      setValidationErrors({});
-      setIsAddingNewContact(false);
-      setNewContactForm({
-        relationship: '',
-        ownership: '',
-        lastName: '',
-        firstName: '',
-        deceased: false,
-        decDt: '',
-        dOB: '',
-        address: '',
-        city: '',
-        state: '',
-        zip: '',
-      });
-    }
-  }, [open]);
-
   // When dialog opens, set the relationship type based on initialRelationshipType
   useEffect(() => {
+    console.log(
+      'Dialog opened with initialRelationshipType:',
+      initialRelationshipType
+    );
     if (open && initialRelationshipType) {
-      setRelationshipType(mapRelationshipType(initialRelationshipType));
-
-      // Pre-select gender based on relationship type
+      let gender = '';
       if (
         initialRelationshipType === 'father' ||
         initialRelationshipType === 'son'
       ) {
-        setGender('M');
+        gender = 'male';
       } else if (
         initialRelationshipType === 'mother' ||
-        initialRelationshipType === 'daughter'
+        initialRelationshipType === 'daughter' ||
+        initialRelationshipType === 'suppose'
       ) {
-        setGender('F');
+        gender = 'female';
       }
+      let formatRelationship = initialRelationshipType || '';
+      if (initialRelationshipType === 'spouse') {
+        formatRelationship = `Wife of ${parentMember?.data?.name || ''}`;
+      } else if (initialRelationshipType === 'son') {
+        formatRelationship = `Son of ${parentMember?.data?.name || ''}`;
+      } else if (initialRelationshipType === 'daughter') {
+        formatRelationship = `Daughter of ${parentMember?.data?.name || ''}`;
+      } else if (initialRelationshipType === 'father') {
+        formatRelationship = `Father of ${parentMember?.data?.name || ''}`;
+      } else if (initialRelationshipType === 'mother') {
+        formatRelationship = `Mother of ${parentMember?.data?.name || ''}`;
+      }
+      setNewContactForm(prev => ({
+        ...prev,
+        relationship: formatRelationship,
+        gender,
+      }));
     }
-  }, [open, initialRelationshipType]);
+  }, []);
 
   const validateSelectContactInputs = (): boolean => {
     const errors: {
       contact?: string;
-      gender?: string;
-      relationshipType?: string;
     } = {};
 
     if (!selectedContact && !isAddingNewContact) {
       errors.contact = 'Please select a contact';
-    }
-
-    if (!gender) {
-      errors.gender = 'Please select a gender';
-    }
-
-    if (!relationshipType) {
-      errors.relationshipType = 'Please select a relationship type';
     }
 
     setValidationErrors(errors);
@@ -163,8 +140,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
     const errors: {
       firstName?: string;
       ownership?: string;
-      gender?: string;
-      relationshipType?: string;
     } = {};
 
     if (!newContactForm.firstName) {
@@ -175,14 +150,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
       errors.ownership = 'Ownership is required';
     } else if (isNaN(parseFloat(newContactForm.ownership))) {
       errors.ownership = 'Ownership must be a valid number';
-    }
-
-    if (!gender) {
-      errors.gender = 'Please select a gender';
-    }
-
-    if (!relationshipType || !newContactForm.relationship) {
-      errors.relationshipType = 'Please select a relationship type';
     }
 
     setValidationErrors(errors);
@@ -202,16 +169,16 @@ const EditDialog: React.FC<EditDialogProps> = ({
       return;
     }
     console.log('Selected contact:', selectedContact);
+
+    // Create a family member from the selected contact
     const newMember = contactsToFamilyTreemapper(
-      {
-        ...selectedContact,
-        gender: gender,
-        relationship: relationshipType,
-      } as Contact,
+      selectedContact as Contact,
       fileId,
       false
     );
-    onSave(newMember, relationshipType!);
+
+    console.log('Created family member from existing contact:', newMember);
+    onSave(newMember);
   };
 
   const handleSaveNewContact = async () => {
@@ -234,6 +201,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
         city: newContactForm.city,
         state: newContactForm.state,
         zip: newContactForm.zip,
+        gender: newContactForm.gender,
       };
 
       console.log('Creating contact with data:', contactData);
@@ -276,11 +244,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
               );
 
               console.log('Created family member to be saved:', newMember);
-              console.log(
-                'Calling onSave with relationship type:',
-                relationshipType
-              );
-              onSave(newMember, relationshipType);
+              onSave(newMember);
               return;
             } else {
               console.warn(
@@ -296,12 +260,15 @@ const EditDialog: React.FC<EditDialogProps> = ({
         // Fallback if refresh fails or contact not found after refresh
         // Create a family member based on the form data
         const newMember = contactsToFamilyTreemapper(
-          { ...newContactForm, contactID: newContactId } as Contact,
+          {
+            ...newContactForm,
+            contactID: newContactId,
+          } as Contact,
           fileId,
           false
         );
         console.log('Created family member from form data:', newMember);
-        onSave(newMember, relationshipType);
+        onSave(newMember);
       } else {
         console.error('Contact creation failed or invalid response:', response);
       }
@@ -318,20 +285,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
       void handleSaveExistingContact();
     }
   };
-
-  // Relation options
-  const relationOptions = [
-    'Child',
-    'Partner',
-    'Stepchild',
-    'Niece',
-    'Nephew',
-    'Foster Child',
-    'Parent',
-    'Sibling',
-    'Cousin',
-    'Other',
-  ];
 
   // State options
   const stateOptions = [
@@ -398,9 +351,11 @@ const EditDialog: React.FC<EditDialogProps> = ({
       return isAddingNewContact ? 'Add New Contact' : 'Add Family Member';
     }
 
+    const otherParentTitle = otherParentId ? ' (with other parent)' : '';
+
     return isAddingNewContact
-      ? `Add New Contact for ${parentMember.data.firstName} ${parentMember.data.lastName}`
-      : `Add Family Member for ${parentMember.data.firstName} ${parentMember.data.lastName}`;
+      ? `Add New Contact for ${parentMember.data.name || ''}${otherParentTitle}`
+      : `Add Family Member for ${parentMember.data.name || ''}${otherParentTitle}`;
   };
 
   // Filter out contacts that are already in the family tree
@@ -417,11 +372,21 @@ const EditDialog: React.FC<EditDialogProps> = ({
       existingContactIds.delete(parentMember?.data?.contactId);
     }
 
+    // Don't filter out the other parent if specified
+    if (otherParentId) {
+      const otherParent = existingFamilyMembers.find(
+        m => m.id === otherParentId
+      );
+      if (otherParent?.data.contactId) {
+        existingContactIds.delete(otherParent.data.contactId);
+      }
+    }
+
     // Filter the contact list
     return contactList.filter(
       contact => !existingContactIds.has(contact.contactID)
     );
-  }, [contactList, existingFamilyMembers, parentMember]);
+  }, [contactList, existingFamilyMembers, parentMember, otherParentId]);
 
   return (
     <Dialog
@@ -515,7 +480,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                   value={selectedContact}
                   onChange={(_, newValue) => {
                     setSelectedContact(newValue);
-                    // Automatically set gender based on contact relationship
                     if (newValue) {
                       setValidationErrors(prev => ({
                         ...prev,
@@ -554,118 +518,41 @@ const EditDialog: React.FC<EditDialogProps> = ({
             {/* Relation Dropdown - Second Row */}
             <Box>
               <FormControl fullWidth>
-                <InputLabel id="relation-label" sx={{ color: 'white' }}>
-                  Relation *
-                </InputLabel>
-                <Select
-                  labelId="relation-label"
-                  id="relation"
-                  value={relationshipType}
-                  onChange={e => {
-                    setRelationshipType(e.target.value as 'partner' | 'child');
-                    setValidationErrors(prev => ({
-                      ...prev,
-                      relationshipType: undefined,
-                    }));
-                  }}
+                <TextField
+                  fullWidth
+                  id="relationship"
                   label="Relation"
-                  error={!!validationErrors.relationshipType}
+                  value={newContactForm.relationship}
+                  onChange={e =>
+                    handleNewContactChange('relationship', e.target.value)
+                  }
+                  InputLabelProps={{
+                    sx: { color: 'white' },
+                  }}
                   sx={{
-                    color: 'white',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: validationErrors.relationshipType
-                        ? '#f44336'
-                        : 'rgba(255, 255, 255, 0.23)',
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: 'rgba(255,255,255,0.23)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: 'white',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: 'white',
+                      },
                     },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: validationErrors.relationshipType
-                        ? '#f44336'
-                        : 'white',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: validationErrors.relationshipType
-                        ? '#f44336'
-                        : 'white',
-                    },
-                    '& .MuiSvgIcon-root': {
+                    '& .MuiInputBase-input': {
                       color: 'white',
                     },
                   }}
-                >
-                  <MenuItem value="partner">Partner</MenuItem>
-                  <MenuItem value="child">Child</MenuItem>
-                  <MenuItem value="stepchild">Stepchild</MenuItem>
-                  <MenuItem value="niece">Niece</MenuItem>
-                  <MenuItem value="nephew">Nephew</MenuItem>
-                  <MenuItem value="foster">Foster Child</MenuItem>
-                  <MenuItem value="other">Other</MenuItem>
-                </Select>
+                />
               </FormControl>
-              {validationErrors.relationshipType && (
-                <FormHelperText error sx={{ textAlign: 'center' }}>
-                  {validationErrors.relationshipType}
-                </FormHelperText>
-              )}
-            </Box>
-
-            {/* Gender Dropdown - Third Row */}
-            <Box>
-              <FormControl fullWidth>
-                <InputLabel id="gender-label" sx={{ color: 'white' }}>
-                  Gender *
-                </InputLabel>
-                <Select
-                  labelId="gender-label"
-                  id="gender"
-                  value={gender || ''}
-                  onChange={e => {
-                    setGender(e.target.value as 'M' | 'F');
-                    setValidationErrors(prev => ({
-                      ...prev,
-                      gender: undefined,
-                    }));
-                  }}
-                  label="Gender"
-                  error={!!validationErrors.gender}
-                  sx={{
-                    color: 'white',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: validationErrors.gender
-                        ? '#f44336'
-                        : 'rgba(255, 255, 255, 0.23)',
-                    },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: validationErrors.gender
-                        ? '#f44336'
-                        : 'white',
-                    },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: validationErrors.gender
-                        ? '#f44336'
-                        : 'white',
-                    },
-                    '& .MuiSvgIcon-root': {
-                      color: 'white',
-                    },
-                  }}
-                >
-                  <MenuItem value="M">Male</MenuItem>
-                  <MenuItem value="F">Female</MenuItem>
-                  <MenuItem value="O">Other</MenuItem>
-                </Select>
-              </FormControl>
-              {validationErrors.gender && (
-                <FormHelperText error sx={{ textAlign: 'center' }}>
-                  {validationErrors.gender}
-                </FormHelperText>
-              )}
             </Box>
           </Box>
         ) : (
-          // ADD NEW CONTACT MODE - Content omitted for brevity
+          // ADD NEW CONTACT MODE
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid container spacing={2}>
-              {/* Form fields for adding new contact - content omitted for brevity */}
               {/* Last Name */}
               <Grid item xs={12} md={6}>
                 <TextField
@@ -740,64 +627,35 @@ const EditDialog: React.FC<EditDialogProps> = ({
 
               {/* Relation dropdown */}
               <Grid item xs={12} md={6}>
-                <FormControl
-                  fullWidth
-                  error={!!validationErrors.relationshipType}
-                >
-                  <InputLabel id="relation-label" sx={{ color: 'white' }}>
-                    Relation *
-                  </InputLabel>
-                  <Select
-                    labelId="relation-label"
-                    id="relation"
+                <FormControl fullWidth>
+                  <TextField
+                    fullWidth
+                    id="relationship"
+                    label="Relation"
                     value={newContactForm.relationship}
-                    onChange={e => {
-                      handleNewContactChange('relationship', e.target.value);
-                      // Set the relationshipType based on the selection
-                      if (e.target.value === 'Partner') {
-                        setRelationshipType('partner');
-                      } else {
-                        setRelationshipType('child');
-                      }
-                      setValidationErrors(prev => ({
-                        ...prev,
-                        relationshipType: undefined,
-                      }));
+                    onChange={e =>
+                      handleNewContactChange('relationship', e.target.value)
+                    }
+                    InputLabelProps={{
+                      sx: { color: 'white' },
                     }}
-                    label="Relation *"
                     sx={{
-                      color: 'white',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: validationErrors.relationshipType
-                          ? '#f44336'
-                          : 'rgba(255, 255, 255, 0.23)',
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: 'rgba(255,255,255,0.23)',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: 'white',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: 'white',
+                        },
                       },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: validationErrors.relationshipType
-                          ? '#f44336'
-                          : 'white',
-                      },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: validationErrors.relationshipType
-                          ? '#f44336'
-                          : 'white',
-                      },
-                      '& .MuiSvgIcon-root': {
+                      '& .MuiInputBase-input': {
                         color: 'white',
                       },
                     }}
-                  >
-                    {relationOptions.map(option => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {validationErrors.relationshipType && (
-                    <FormHelperText>
-                      {validationErrors.relationshipType}
-                    </FormHelperText>
-                  )}
+                  />
                 </FormControl>
               </Grid>
 
@@ -833,56 +691,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                     },
                   }}
                 />
-              </Grid>
-
-              {/* Gender Dropdown */}
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth error={!!validationErrors.gender}>
-                  <InputLabel id="gender-label" sx={{ color: 'white' }}>
-                    Gender *
-                  </InputLabel>
-                  <Select
-                    labelId="gender-label"
-                    id="gender-select"
-                    value={gender || ''}
-                    onChange={e => {
-                      setGender(e.target.value as 'M' | 'F');
-                      setValidationErrors(prev => ({
-                        ...prev,
-                        gender: undefined,
-                      }));
-                    }}
-                    label="Gender *"
-                    sx={{
-                      color: 'white',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: validationErrors.gender
-                          ? '#f44336'
-                          : 'rgba(255, 255, 255, 0.23)',
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: validationErrors.gender
-                          ? '#f44336'
-                          : 'white',
-                      },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: validationErrors.gender
-                          ? '#f44336'
-                          : 'white',
-                      },
-                      '& .MuiSvgIcon-root': {
-                        color: 'white',
-                      },
-                    }}
-                  >
-                    <MenuItem value="male">Male</MenuItem>
-                    <MenuItem value="female">Female</MenuItem>
-                    <MenuItem value="other">Other</MenuItem>
-                  </Select>
-                  {validationErrors.gender && (
-                    <FormHelperText>{validationErrors.gender}</FormHelperText>
-                  )}
-                </FormControl>
               </Grid>
 
               {/* Deceased Checkbox */}

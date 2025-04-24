@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import MaleIcon from '@mui/icons-material/Male';
 import FemaleIcon from '@mui/icons-material/Female';
-import { PersonData } from '../../../../component/FamilyTree';
+import { PersonData } from '../components/FamilyTreeBuilder/types/familyTree';
 import { Contact } from '../types';
 import { contactsToFamilyTreemapper, determineGender } from '../utils/mapper';
 
@@ -23,7 +23,7 @@ interface InitialNodeDialogProps {
   onClose: () => void;
   onSave: (member: PersonData) => void;
   isFirstNode?: boolean;
-  contactList?: Contact[]; // Add contact list for autocomplete
+  contactList?: Contact[];
 }
 
 const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
@@ -196,6 +196,7 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button
+                disabled={!selectedContact}
                 variant={gender === 'M' ? 'contained' : 'outlined'}
                 color="primary"
                 startIcon={<MaleIcon />}
@@ -218,6 +219,7 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
               </Button>
 
               <Button
+                disabled={!selectedContact}
                 variant={gender === 'F' ? 'contained' : 'outlined'}
                 color="secondary"
                 startIcon={<FemaleIcon />}
