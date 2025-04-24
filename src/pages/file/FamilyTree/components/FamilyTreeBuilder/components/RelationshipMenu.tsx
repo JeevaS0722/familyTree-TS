@@ -1,6 +1,7 @@
 // src/pages/file/FamilyTree/components/CircularMenu.tsx
 import React, { useEffect, useState } from 'react';
 import { TreeNode } from '../types/familyTree';
+import ParentSelectionMenu from './ParentSelectionMenu';
 
 interface CircularMenuProps {
   node: TreeNode;
@@ -15,12 +16,21 @@ const CircularMenu: React.FC<CircularMenuProps> = ({
   position,
   onAddRelative,
   onClose,
+  existingFamilyMembers,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const menuRadius = 160; // Radius of the circular menu
-  const buttonRadius = 40; // Radius of each button
+  const [showParentSelection, setShowParentSelection] = useState(false);
+  const [selectedRelationType, setSelectedRelationType] = useState<
+    'son' | 'daughter' | null
+  >(null);
+
+  const menuRadius = 160;
+  const buttonRadius = 40;
   const hasFather = !!node.data.rels.father;
   const hasMother = !!node.data.rels.mother;
+  const hasSpouses = !!(
+    node.data.rels.spouses && node.data.rels.spouses.length > 0
+  );
 
   // Open the menu with animation after mounting
   useEffect(() => {
@@ -28,11 +38,15 @@ const CircularMenu: React.FC<CircularMenuProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Close menu when clicking outside
+  // Outside click handling
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.circular-menu') && !target.closest('.card_cont')) {
+      if (
+        !target.closest('.circular-menu') &&
+        !target.closest('.card_cont') &&
+        !target.closest('.parent-selection-menu')
+      ) {
         onClose();
       }
     };
@@ -41,23 +55,42 @@ const CircularMenu: React.FC<CircularMenuProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  // Calculate positions for each menu item on the circle
+  // Handle initial relationship selection
+  const handleRelationSelect = (relationType: string) => {
+    // For son/daughter, check if we need to show parent selection based on spouse existence
+    if ((relationType === 'son' || relationType === 'daughter') && hasSpouses) {
+      setSelectedRelationType(relationType);
+      setShowParentSelection(true);
+    } else {
+      // For father, mother, spouse or when no spouses exist
+      onAddRelative(relationType);
+    }
+  };
+
+  // Handle parent selection for child
+  const handleParentSelection = (
+    relationType: string,
+    otherParentId?: string
+  ) => {
+    setShowParentSelection(false);
+    onAddRelative(relationType, otherParentId);
+  };
+
+  // Calculate menu positions - same as before
   const getItemPosition = (index: number, total: number) => {
-    const firstAngle = -90; // Start from the top
-    // Adjust the angle range based on number of items (if we have fewer items, use a smaller arc)
+    // Same calculation logic as before
+    const firstAngle = -90;
     const angleRange = Math.min(180, total * 40);
     const angleStep = angleRange / (total - 1);
-
     const angle = firstAngle - angleRange / 2 + index * angleStep;
     const radians = (angle * Math.PI) / 180;
-
     return {
       left: menuRadius * Math.cos(radians),
       top: menuRadius * Math.sin(radians),
     };
   };
 
-  // Filter options based on existing relationships
+  // Filter menu items based on node relationships
   const menuItems = [
     { type: 'father', label: 'Add Father', color: '#7EADFF', show: !hasFather },
     { type: 'mother', label: 'Add Mother', color: '#FF96BC', show: !hasMother },
@@ -113,76 +146,89 @@ const CircularMenu: React.FC<CircularMenuProps> = ({
   };
 
   return (
-    <div className="circular-menu" style={containerStyle}>
-      {/* Main circle background */}
-      <div style={circleStyle}></div>
+    <>
+      <div className="circular-menu" style={containerStyle}>
+        {/* Main circle background */}
+        <div style={circleStyle}></div>
 
-      {/* Menu items positioned in an arc */}
-      {menuItems.map((item, index) => {
-        const pos = getItemPosition(index, menuItems.length);
+        {/* Menu items positioned in an arc */}
+        {menuItems.map((item, index) => {
+          const pos = getItemPosition(index, menuItems.length);
 
-        // Menu item button style
-        const itemStyle: React.CSSProperties = {
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: isOpen
-            ? `translate(calc(-50% + ${pos.left}px), calc(-50% + ${pos.top}px))`
-            : 'translate(-50%, -50%)',
-          width: `${buttonRadius * 2}px`,
-          height: `${buttonRadius * 2}px`,
-          borderRadius: '50%',
-          backgroundColor: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: isOpen ? 1 : 0,
-          pointerEvents: 'auto',
-          transition: `transform 0.3s ease-out ${0.05 * index}s, opacity 0.3s ease-out ${0.05 * index}s`,
-          cursor: 'pointer',
-          zIndex: 1001,
-        };
+          // Menu item button style
+          const itemStyle: React.CSSProperties = {
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: isOpen
+              ? `translate(calc(-50% + ${pos.left}px), calc(-50% + ${pos.top}px))`
+              : 'translate(-50%, -50%)',
+            width: `${buttonRadius * 2}px`,
+            height: `${buttonRadius * 2}px`,
+            borderRadius: '50%',
+            backgroundColor: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: 'auto',
+            transition: `transform 0.3s ease-out ${0.05 * index}s, opacity 0.3s ease-out ${0.05 * index}s`,
+            cursor: 'pointer',
+            zIndex: 1001,
+          };
 
-        // Text label style
-        const labelStyle: React.CSSProperties = {
-          position: 'absolute',
-          left: '50%',
-          top: '120%',
-          transform: 'translateX(-50%)',
-          whiteSpace: 'nowrap',
-          color: 'white',
-          fontSize: '14px',
-          fontWeight: 500,
-          textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-        };
+          // Text label style
+          const labelStyle: React.CSSProperties = {
+            position: 'absolute',
+            left: '50%',
+            top: '120%',
+            transform: 'translateX(-50%)',
+            whiteSpace: 'nowrap',
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: 500,
+            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+          };
 
-        return (
-          <div
-            key={item.type}
-            style={itemStyle}
-            onClick={() => {
-              onAddRelative(item.type);
-            }}
-          >
-            <span
-              style={{
-                color: item.color,
-                fontSize: '24px',
-                fontWeight: 'bold',
+          return (
+            <div
+              key={item.type}
+              style={itemStyle}
+              onClick={() => {
+                handleRelationSelect(item.type);
               }}
             >
-              +
-            </span>
-            <div style={labelStyle}>{item.label}</div>
-          </div>
-        );
-      })}
+              <span
+                style={{
+                  color: item.color,
+                  fontSize: '24px',
+                  fontWeight: 'bold',
+                }}
+              >
+                +
+              </span>
+              <div style={labelStyle}>{item.label}</div>
+            </div>
+          );
+        })}
 
-      {/* Close button */}
-      <div style={closeButtonStyle} onClick={onClose}>
-        ✕
+        {/* Close button */}
+        <div style={closeButtonStyle} onClick={onClose}>
+          ✕
+        </div>
       </div>
-    </div>
+      {/* Parent selection menu - only shows when needed */}
+      {showParentSelection && selectedRelationType && (
+        <ParentSelectionMenu
+          node={node}
+          relationType={selectedRelationType}
+          position={position}
+          onSelect={handleParentSelection}
+          onClose={() => setShowParentSelection(false)}
+          existingFamilyMembers={existingFamilyMembers}
+        />
+      )}
+    </>
   );
 };
 

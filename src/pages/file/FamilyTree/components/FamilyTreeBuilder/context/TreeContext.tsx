@@ -48,7 +48,7 @@ type TreeAction =
 const initialConfig: TreeConfig = {
   nodeSeparation: 400,
   levelSeparation: 300,
-  singleParentEmptyCard: true,
+  singleParentEmptyCard: false,
   isHorizontal: false,
   transitionTime: 1000,
   cardDimensions: {
@@ -268,62 +268,81 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       };
     // Add these cases to your existing treeReducer function:
     case 'ADD_PERSON_AND_UPDATE': {
-      // Copy your existing ADD_PERSON case logic here
-      const { person, parentId, relationship } = action.payload;
-      // Create a deep copy to avoid mutation
+      const { person, parentId, relationship, otherParentId } = action.payload;
       const updatedData = JSON.parse(JSON.stringify(state.data));
 
-      // Find parent in the data
-      const parentIndex = updatedData.findIndex(
-        (p: PersonData) => p.id === parentId
-      );
+      const parentIndex = updatedData.findIndex(p => p.id === parentId);
       if (parentIndex === -1) {
-        console.error(`Parent with ID ${parentId} not found`);
         return state;
       }
 
       const parent = updatedData[parentIndex];
 
-      // Process relationships based on type
+      // Find other parent if specified
+      let otherParent;
+      if (otherParentId) {
+        const otherParentIndex = updatedData.findIndex(
+          p => p.id === otherParentId
+        );
+        if (otherParentIndex !== -1) {
+          otherParent = updatedData[otherParentIndex];
+        }
+      }
+
+      // Process relationship type
       if (relationship === 'partner') {
-        // Initialize arrays if they don't exist
+        // Handle spouse relationship - same as before
         if (!parent.rels.spouses) {
           parent.rels.spouses = [];
         }
         if (!person.rels.spouses) {
           person.rels.spouses = [];
         }
-
-        // Add bidirectional spouse relationship
         parent.rels.spouses.push(person.id);
         person.rels.spouses.push(parent.id);
       } else if (relationship === 'child') {
-        // Initialize arrays if they don't exist
+        // Handle child relationship - now with other parent
         if (!parent.rels.children) {
           parent.rels.children = [];
         }
-
-        // Add parent-child relationship
         parent.rels.children.push(person.id);
 
         // Set parent reference based on gender
         if (parent.data.gender === 'M') {
           person.rels.father = parent.id;
+
+          // Add relationship with other parent if specified
+          if (otherParent && otherParent.data.gender === 'F') {
+            person.rels.mother = otherParent.id;
+            if (!otherParent.rels.children) {
+              otherParent.rels.children = [];
+            }
+            otherParent.rels.children.push(person.id);
+          }
         } else {
           person.rels.mother = parent.id;
+
+          // Add relationship with other parent if specified
+          if (otherParent && otherParent.data.gender === 'M') {
+            person.rels.father = otherParent.id;
+            if (!otherParent.rels.children) {
+              otherParent.rels.children = [];
+            }
+            otherParent.rels.children.push(person.id);
+          }
         }
       }
 
       // Add the new person to the data
       updatedData.push(person);
 
-      // Calculate the tree immediately instead of using setTimeout
+      // Calculate tree
       const treeData = calculateTree({
         data: updatedData,
         main_id: state.mainId,
         node_separation: state.config.nodeSeparation,
         level_separation: state.config.levelSeparation,
-        single_parent_empty_card: state.config.singleParentEmptyCard,
+        single_parent_empty_card: false, // Force to false here too
         is_horizontal: state.config.isHorizontal,
       });
 
@@ -464,12 +483,12 @@ export function TreeProvider({
     (
       person: PersonData,
       parentId: string,
-      relationship: 'partner' | 'child'
+      relationship: 'partner' | 'child',
+      otherParentId?: string
     ) => {
-      // Batch these operations in a single update
       dispatch({
         type: 'ADD_PERSON_AND_UPDATE',
-        payload: { person, parentId, relationship },
+        payload: { person, parentId, relationship, otherParentId },
       });
     },
     []
