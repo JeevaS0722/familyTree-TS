@@ -686,3 +686,20 @@ input:checked+.f3-slider:before {
 .f3 .card:hover {
     filter: brightness(1.03);
 }
+
+/* Add to your existing styles */
+.placeholder-card rect.card-outline {
+    stroke-dasharray: 5, 5;
+}
+
+.card-male.placeholder-card text {
+    fill: #7EADFF;
+}
+
+.card-female.placeholder-card text {
+    fill: #FF96BC;
+}
+
+.placeholder-card {
+    cursor: pointer;
+}

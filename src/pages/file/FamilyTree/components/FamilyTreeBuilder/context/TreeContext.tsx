@@ -11,6 +11,7 @@ import React, {
 } from 'react';
 import { PersonData, TreeData, TreeConfig } from '../types/familyTree';
 import { calculateTree } from '../utils/treeCalculator';
+import { generateRelativePlaceholders } from '../utils/relativePlaceholders';
 
 interface TreeState {
   data: PersonData[];
@@ -18,6 +19,9 @@ interface TreeState {
   config: TreeConfig;
   treeData: TreeData | null;
   isInitialRender: boolean;
+  addRelativeMode: boolean;
+  addRelativeForId: string | null;
+  originalData: PersonData[] | null;
 }
 
 type TreeAction =
@@ -34,7 +38,13 @@ type TreeAction =
   | { type: 'REMOVE_PERSON'; payload: string }
   | { type: 'UPDATE_CONFIG'; payload: Partial<TreeConfig> }
   | { type: 'UPDATE_TREE'; payload?: { initial?: boolean } }
-  | { type: 'SET_INITIAL_RENDER_COMPLETE' };
+  | { type: 'SET_INITIAL_RENDER_COMPLETE' }
+  | { type: 'ACTIVATE_ADD_RELATIVE'; payload: string } // Person ID
+  | { type: 'DEACTIVATE_ADD_RELATIVE' }
+  | {
+      type: 'HANDLE_NEW_RELATIVE';
+      payload: { personData: PersonData; relType: string };
+    };
 
 // Initial configuration
 const initialConfig: TreeConfig = {
@@ -65,6 +75,9 @@ const initialState: TreeState = {
   config: initialConfig,
   treeData: null,
   isInitialRender: true,
+  addRelativeMode: false,
+  addRelativeForId: null,
+  originalData: null,
 };
 
 // Enhanced reducer that handles orientation changes properly
@@ -296,6 +309,86 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         isInitialRender: false,
       };
 
+    case 'ACTIVATE_ADD_RELATIVE': {
+      // Store original data
+      const originalData = JSON.parse(JSON.stringify(state.data));
+
+      // Generate placeholder data
+      const personId = action.payload;
+      const person = state.data.find(p => p.id === personId);
+      if (!person) {
+        return state;
+      }
+      console.log('Activating add relative for person tree:', person);
+
+      // Create modified data with placeholders
+      const dataWithPlaceholders = generateRelativePlaceholders(
+        person,
+        state.data
+      );
+      const newTreeData = calculateTree({
+        data: dataWithPlaceholders,
+        main_id: personId,
+        node_separation: state.config.nodeSeparation,
+        level_separation: state.config.levelSeparation,
+        single_parent_empty_card: state.config.singleParentEmptyCard,
+        is_horizontal: state.config.isHorizontal,
+      });
+
+      return {
+        ...state,
+        originalData: originalData,
+        treeData: newTreeData,
+        addRelativeMode: true,
+        addRelativeForId: personId,
+      };
+    }
+
+    case 'DEACTIVATE_ADD_RELATIVE': {
+      // Restore original data
+      if (!state.originalData) {
+        return state;
+      }
+
+      return {
+        ...state,
+        data: state.originalData,
+        originalData: null,
+        addRelativeMode: false,
+        addRelativeForId: null,
+      };
+    }
+
+    case 'HANDLE_NEW_RELATIVE': {
+      if (!state.originalData || !state.addRelativeForId) {
+        return state;
+      }
+
+      const { personData, relType } = action.payload;
+      const mainPerson = state.originalData.find(
+        p => p.id === state.addRelativeForId
+      );
+      if (!mainPerson) {
+        return state;
+      }
+
+      // Process the new relative based on relationship type
+      const updatedData = handleNewRelative(
+        mainPerson,
+        personData,
+        relType,
+        JSON.parse(JSON.stringify(state.originalData))
+      );
+
+      return {
+        ...state,
+        data: updatedData,
+        originalData: null,
+        addRelativeMode: false,
+        addRelativeForId: null,
+      };
+    }
+
     default:
       return state;
   }
@@ -315,6 +408,9 @@ interface TreeContextValue {
     relationship: 'partner' | 'child'
   ) => void;
   removePerson: (personId: string) => void;
+  activateAddRelative: (personId: string) => void;
+  deactivateAddRelative: () => void;
+  handleNewRelative: (personData: PersonData, relType: string) => void;
 }
 
 const TreeContext = createContext<TreeContextValue | undefined>(undefined);
@@ -349,6 +445,7 @@ export function TreeProvider({
   }, []);
 
   const pendingUpdateRef = useRef(false);
+
   const updateTree = useCallback(
     (props?: { initial?: boolean }) => {
       // Use useRef to track if an update is already pending
@@ -393,6 +490,13 @@ export function TreeProvider({
     [state.data, state.mainId, state.config]
   );
 
+  // Initialize tree on component mount
+  useEffect(() => {
+    if (initialData && initialData.length > 0 && !state.treeData) {
+      updateTree({ initial: true });
+    }
+  }, [initialData, state.treeData, updateTree]);
+
   const setInitialRenderComplete = useCallback(() => {
     dispatch({ type: 'SET_INITIAL_RENDER_COMPLETE' });
   }, []);
@@ -423,12 +527,25 @@ export function TreeProvider({
     [updateTree]
   );
 
-  // Initialize tree on component mount
-  useEffect(() => {
-    if (initialData && initialData.length > 0 && !state.treeData) {
-      updateTree({ initial: true });
-    }
-  }, [initialData, state.treeData, updateTree]);
+  const activateAddRelative = useCallback((personId: string) => {
+    dispatch({ type: 'ACTIVATE_ADD_RELATIVE', payload: personId });
+  }, []);
+
+  const deactivateAddRelative = useCallback(() => {
+    dispatch({ type: 'DEACTIVATE_ADD_RELATIVE' });
+  }, []);
+
+  const handleNewRelative = useCallback(
+    (personData: PersonData, relType: string) => {
+      dispatch({
+        type: 'HANDLE_NEW_RELATIVE',
+        payload: { personData, relType },
+      });
+      // Calculate new tree after adding relative
+      setTimeout(() => updateTree(), 0);
+    },
+    [updateTree]
+  );
 
   return (
     <TreeContext.Provider
@@ -441,6 +558,9 @@ export function TreeProvider({
         setInitialRenderComplete,
         addPerson,
         removePerson,
+        activateAddRelative,
+        deactivateAddRelative,
+        handleNewRelative,
       }}
     >
       {children}

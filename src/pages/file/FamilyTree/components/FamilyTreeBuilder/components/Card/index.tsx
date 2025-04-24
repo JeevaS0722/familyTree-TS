@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 import React, { useRef, useCallback } from 'react';
 import { useNodeAnimation } from '../../hooks/useNodeAnimation';
 import { CardProps } from './types';
@@ -33,6 +34,18 @@ const Card: React.FC<CardProps> = ({
     }
   }, [node, onMouseLeave]);
 
+  const handleOnPersonAdd = useCallback(() => {
+    if (onPersonAdd) {
+      onPersonAdd(node);
+    }
+  }, [onPersonAdd, node]);
+
+  const onClick = useCallback(() => {
+    if (node.data.main && onPersonAdd) {
+      onPersonAdd(node);
+    }
+  }, [node, onPersonAdd, onPersonDelete]);
+
   const data = node.data.data || {};
   const formatedData = {
     fileId: data?.fileId || null,
@@ -55,7 +68,55 @@ const Card: React.FC<CardProps> = ({
   const cardWidth = 300;
   const cardHeight = 160;
   const leftColumnWidth = cardWidth / 2;
+  console.log('node.data.to_add:', node.data.to_add);
+  if (node.data.to_add) {
+    return (
+      <g
+        ref={cardRef}
+        className={`card_cont`}
+        transform={`translate(${node.x}, ${node.y})`}
+        style={{ opacity: 0 }}
+        data-id={node.data.id}
+        onClick={() => onClick?.(node)}
+      >
+        <g
+          className={`card placeholder-card ${node.data.data.gender === 'M' ? 'card-male' : 'card-female'}`}
+          transform={`translate(${-cardWidth / 2}, ${-cardHeight / 2})`}
+        >
+          <rect
+            width={cardWidth}
+            height={cardHeight}
+            rx="4"
+            ry="4"
+            className={`card-outline`}
+            stroke={node.data.data.gender === 'M' ? '#7EADFF' : '#FF96BC'}
+            strokeWidth={2}
+            strokeDasharray="5,5"
+            fill="transparent"
+          />
 
+          <text
+            x={cardWidth / 2}
+            y={cardHeight / 2}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill={node.data.data.gender === 'M' ? '#7EADFF' : '#FF96BC'}
+            fontSize={16}
+            fontWeight="bold"
+          >
+            {node.data._new_rel_data?.label || 'Add'}
+          </text>
+
+          <path
+            d="M12,4 L20,12 M16,4 L16,12 M12,8 L20,8"
+            stroke={node.data.data.gender === 'M' ? '#7EADFF' : '#FF96BC'}
+            strokeWidth={2}
+            transform={`translate(${cardWidth / 2 - 50}, ${cardHeight / 2 - 10})`}
+          />
+        </g>
+      </g>
+    );
+  }
   return (
     <g
       ref={cardRef}
@@ -94,7 +155,7 @@ const Card: React.FC<CardProps> = ({
             displayName: formatedData.displayName,
             personId: node.data.id,
           }}
-          onPersonAdd={onPersonAdd}
+          onPersonAdd={handleOnPersonAdd}
           onPersonDelete={onPersonDelete}
           cardWidth={cardWidth}
         />
