@@ -69,6 +69,12 @@ export interface TreeNode {
   exiting?: boolean;
   all_rels_displayed?: boolean;
   parent?: TreeNode;
+  to_add?: boolean;
+  _new_rel_data?: {
+    rel_type: string;
+    label: string;
+    other_parent_id?: string;
+  };
 }
 
 export interface TreeLink {

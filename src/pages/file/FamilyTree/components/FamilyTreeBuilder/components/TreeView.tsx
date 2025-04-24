@@ -169,8 +169,8 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
     // Function to open edit form for placeholder
     const openEditFormForPlaceholder = (node: TreeNode) => {
       // Extract relationship info from placeholder
-      const relType = node.data._new_rel_data?.rel_type;
-      const otherParentId = node.data._new_rel_data?.other_parent_id;
+      const relType = node._new_rel_data?.rel_type;
+      const otherParentId = node._new_rel_data?.other_parent_id;
 
       // You can integrate this with your existing edit dialog
       // by setting appropriate initial values and relationship info
@@ -185,7 +185,7 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
         console.log('Add relative mode:', state);
         if (state.addRelativeMode) {
           // If in add mode and clicked on a placeholder, open edit form
-          if (node.data.to_add) {
+          if (node.to_add) {
             // Open edit form for this specific relationship
             openEditFormForPlaceholder(node);
           } else {

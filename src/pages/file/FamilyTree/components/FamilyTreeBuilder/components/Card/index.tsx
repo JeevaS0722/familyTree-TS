@@ -8,68 +8,116 @@ import LeftContainer from './components/LeftContainer';
 import RightContainer from './components/RightContainer';
 import CardFooter from './components/CardFooter';
 
-const Card: React.FC<CardProps> = ({
-  node,
-  treeData,
-  initialRender = false,
-  onMouseEnter,
-  onMouseLeave,
-  onPersonAdd,
-  onPersonDelete,
-}) => {
-  const cardRef = useRef<SVGGElement>(null);
+const Card: React.FC<CardProps> = React.memo(
+  ({
+    node,
+    treeData,
+    initialRender = false,
+    onMouseEnter,
+    onMouseLeave,
+    onPersonAdd,
+    onPersonDelete,
+  }) => {
+    const cardRef = useRef<SVGGElement>(null);
 
-  // Animation hook - pass initialRender flag
-  useNodeAnimation(cardRef, node, treeData, initialRender);
+    // Animation hook - pass initialRender flag
+    useNodeAnimation(cardRef, node, treeData, initialRender);
 
-  const handleMouseEnter = useCallback(() => {
-    if (!node.data.main && onMouseEnter) {
-      onMouseEnter(node);
+    const handleMouseEnter = useCallback(() => {
+      if (!node.data.main && onMouseEnter) {
+        onMouseEnter(node);
+      }
+    }, [node, onMouseEnter]);
+
+    const handleMouseLeave = useCallback(() => {
+      if (!node.data.main && onMouseLeave) {
+        onMouseLeave(node);
+      }
+    }, [node, onMouseLeave]);
+
+    const handleOnPersonAdd = useCallback(() => {
+      if (onPersonAdd) {
+        onPersonAdd(node);
+      }
+    }, [onPersonAdd, node]);
+
+    const onClick = useCallback(() => {
+      if (node.data.main && onPersonAdd) {
+        onPersonAdd(node);
+      }
+    }, [node, onPersonAdd, onPersonDelete]);
+
+    const data = node.data.data || {};
+    const formatedData = {
+      fileId: data?.fileId || null,
+      contactId: data?.contactId || null,
+      isDeceased: !!data?.deceased,
+      hasNotes: !!data?.has_new_notes,
+      displayName: data?.name || '',
+      age: data?.age || '-',
+      birthDate: data?.dOB || '-',
+      deathDate: data?.decDt || '-',
+      fullAddress: data?.full_address || '-',
+      relationshipType: data?.relationship || 'Unknown',
+      divisionOfInterest: data?.division_of_interest || '0.000 %',
+      percentage: data?.ownership || '0.000 %',
+      isMale: data?.gender === 'M',
+      offer: data?.offer || {},
+    };
+
+    // Calculate card width and height
+    const cardWidth = 300;
+    const cardHeight = 160;
+    const leftColumnWidth = cardWidth / 2;
+    console.log('node.to_add:', node.to_add);
+    if (node.to_add) {
+      return (
+        <g
+          ref={cardRef}
+          className={`card_cont`}
+          transform={`translate(${node.x}, ${node.y})`}
+          style={{ opacity: 0 }}
+          data-id={node.data.id}
+          onClick={() => onClick?.(node)}
+        >
+          <g
+            className={`card placeholder-card ${node.data.data.gender === 'M' ? 'card-male' : 'card-female'}`}
+            transform={`translate(${-cardWidth / 2}, ${-cardHeight / 2})`}
+          >
+            <rect
+              width={cardWidth}
+              height={cardHeight}
+              rx="4"
+              ry="4"
+              className={`card-outline`}
+              stroke={node.data.data.gender === 'M' ? '#7EADFF' : '#FF96BC'}
+              strokeWidth={2}
+              strokeDasharray="5,5"
+              fill="transparent"
+            />
+
+            <text
+              x={cardWidth / 2}
+              y={cardHeight / 2}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill={node.data.data.gender === 'M' ? '#7EADFF' : '#FF96BC'}
+              fontSize={16}
+              fontWeight="bold"
+            >
+              {node.data._new_rel_data?.label || 'Add'}
+            </text>
+
+            <path
+              d="M12,4 L20,12 M16,4 L16,12 M12,8 L20,8"
+              stroke={node.data.data.gender === 'M' ? '#7EADFF' : '#FF96BC'}
+              strokeWidth={2}
+              transform={`translate(${cardWidth / 2 - 50}, ${cardHeight / 2 - 10})`}
+            />
+          </g>
+        </g>
+      );
     }
-  }, [node, onMouseEnter]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (!node.data.main && onMouseLeave) {
-      onMouseLeave(node);
-    }
-  }, [node, onMouseLeave]);
-
-  const handleOnPersonAdd = useCallback(() => {
-    if (onPersonAdd) {
-      onPersonAdd(node);
-    }
-  }, [onPersonAdd, node]);
-
-  const onClick = useCallback(() => {
-    if (node.data.main && onPersonAdd) {
-      onPersonAdd(node);
-    }
-  }, [node, onPersonAdd, onPersonDelete]);
-
-  const data = node.data.data || {};
-  const formatedData = {
-    fileId: data?.fileId || null,
-    contactId: data?.contactId || null,
-    isDeceased: !!data?.deceased,
-    hasNotes: !!data?.has_new_notes,
-    displayName: data?.name || '',
-    age: data?.age || '-',
-    birthDate: data?.dOB || '-',
-    deathDate: data?.decDt || '-',
-    fullAddress: data?.full_address || '-',
-    relationshipType: data?.relationship || 'Unknown',
-    divisionOfInterest: data?.division_of_interest || '0.000 %',
-    percentage: data?.ownership || '0.000 %',
-    isMale: data?.gender === 'M',
-    offer: data?.offer || {},
-  };
-
-  // Calculate card width and height
-  const cardWidth = 300;
-  const cardHeight = 160;
-  const leftColumnWidth = cardWidth / 2;
-  console.log('node.data.to_add:', node.data.to_add);
-  if (node.data.to_add) {
     return (
       <g
         ref={cardRef}
@@ -77,119 +125,75 @@ const Card: React.FC<CardProps> = ({
         transform={`translate(${node.x}, ${node.y})`}
         style={{ opacity: 0 }}
         data-id={node.data.id}
-        onClick={() => onClick?.(node)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
+        {/* Relationship Badge Component */}
+        <RelationshipBadge
+          relationshipType={formatedData.relationshipType}
+          isDeceased={formatedData.isDeceased}
+        />
+
+        {/* Main Card */}
         <g
-          className={`card placeholder-card ${node.data.data.gender === 'M' ? 'card-male' : 'card-female'}`}
+          className="card"
           transform={`translate(${-cardWidth / 2}, ${-cardHeight / 2})`}
         >
+          {/* Card Background with Rounded Corners */}
           <rect
             width={cardWidth}
             height={cardHeight}
-            rx="4"
-            ry="4"
-            className={`card-outline`}
-            stroke={node.data.data.gender === 'M' ? '#7EADFF' : '#FF96BC'}
-            strokeWidth={2}
-            strokeDasharray="5,5"
-            fill="transparent"
+            rx={20}
+            ry={20}
+            fill="#D9D9D9"
+            stroke={formatedData.isDeceased ? '#FF0000' : 'none'}
+            strokeWidth={formatedData.isDeceased ? 2 : 0}
           />
 
-          <text
-            x={cardWidth / 2}
-            y={cardHeight / 2}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill={node.data.data.gender === 'M' ? '#7EADFF' : '#FF96BC'}
-            fontSize={16}
-            fontWeight="bold"
-          >
-            {node.data._new_rel_data?.label || 'Add'}
-          </text>
-
-          <path
-            d="M12,4 L20,12 M16,4 L16,12 M12,8 L20,8"
-            stroke={node.data.data.gender === 'M' ? '#7EADFF' : '#FF96BC'}
-            strokeWidth={2}
-            transform={`translate(${cardWidth / 2 - 50}, ${cardHeight / 2 - 10})`}
+          {/* Card Header Component */}
+          <CardHeader
+            data={{
+              displayName: formatedData.displayName,
+              personId: node.data.id,
+            }}
+            onPersonAdd={handleOnPersonAdd}
+            onPersonDelete={onPersonDelete}
+            cardWidth={cardWidth}
           />
+
+          {/* Left Container Component */}
+          <LeftContainer
+            data={{
+              isMale: formatedData.isMale,
+              age: formatedData.age,
+              birth: formatedData.birthDate,
+              death: formatedData.deathDate,
+              address: formatedData.fullAddress,
+              leftColumnWidth,
+            }}
+          />
+
+          {/* Right Container Component */}
+          <RightContainer
+            data={{
+              fileId: formatedData.fileId,
+              contactId: formatedData.contactId,
+              isMale: formatedData.isMale,
+              divisionOfInterest: formatedData.divisionOfInterest,
+              percentage: formatedData.percentage,
+              leftColumnWidth,
+              offer: formatedData.offer,
+            }}
+          />
+
+          {/* Footer Component */}
+          <CardFooter />
         </g>
       </g>
     );
   }
-  return (
-    <g
-      ref={cardRef}
-      className={`card_cont`}
-      transform={`translate(${node.x}, ${node.y})`}
-      style={{ opacity: 0 }}
-      data-id={node.data.id}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Relationship Badge Component */}
-      <RelationshipBadge
-        relationshipType={formatedData.relationshipType}
-        isDeceased={formatedData.isDeceased}
-      />
+);
 
-      {/* Main Card */}
-      <g
-        className="card"
-        transform={`translate(${-cardWidth / 2}, ${-cardHeight / 2})`}
-      >
-        {/* Card Background with Rounded Corners */}
-        <rect
-          width={cardWidth}
-          height={cardHeight}
-          rx={20}
-          ry={20}
-          fill="#D9D9D9"
-          stroke={formatedData.isDeceased ? '#FF0000' : 'none'}
-          strokeWidth={formatedData.isDeceased ? 2 : 0}
-        />
+Card.displayName = 'Card';
 
-        {/* Card Header Component */}
-        <CardHeader
-          data={{
-            displayName: formatedData.displayName,
-            personId: node.data.id,
-          }}
-          onPersonAdd={handleOnPersonAdd}
-          onPersonDelete={onPersonDelete}
-          cardWidth={cardWidth}
-        />
-
-        {/* Left Container Component */}
-        <LeftContainer
-          data={{
-            isMale: formatedData.isMale,
-            age: formatedData.age,
-            birth: formatedData.birthDate,
-            death: formatedData.deathDate,
-            address: formatedData.fullAddress,
-            leftColumnWidth,
-          }}
-        />
-
-        {/* Right Container Component */}
-        <RightContainer
-          data={{
-            fileId: formatedData.fileId,
-            contactId: formatedData.contactId,
-            isMale: formatedData.isMale,
-            divisionOfInterest: formatedData.divisionOfInterest,
-            percentage: formatedData.percentage,
-            leftColumnWidth,
-            offer: formatedData.offer,
-          }}
-        />
-
-        {/* Footer Component */}
-        <CardFooter />
-      </g>
-    </g>
-  );
-};
-
-export default React.memo(Card);
+export default Card;
