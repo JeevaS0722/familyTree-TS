@@ -1,7 +1,7 @@
 // src/components/FamilyTree/Card.tsx
 import React, { useRef, useCallback, memo } from 'react';
-import { TreeNode, CardDimensions, TreeData } from '../../types/familyTree';
-import { useNodeAnimation } from '../../hooks/useNodeAnimation';
+import { TreeNode, CardDimensions, TreeData } from '../types/familyTree';
+import { useNodeAnimation } from '../hooks/useNodeAnimation';
 
 interface CardProps {
   node: TreeNode;

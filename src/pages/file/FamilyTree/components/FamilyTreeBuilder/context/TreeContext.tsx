@@ -1,3 +1,4 @@
+/* eslint-disable complexity */
 // src/component/FamilyTree/context/TreeContext.tsx
 import React, {
   createContext,
@@ -21,6 +22,15 @@ interface TreeState {
 type TreeAction =
   | { type: 'UPDATE_MAIN_ID'; payload: string }
   | { type: 'UPDATE_DATA'; payload: PersonData[] }
+  | {
+      type: 'ADD_PERSON';
+      payload: {
+        person: PersonData;
+        parentId: string;
+        relationship: 'partner' | 'child';
+      };
+    }
+  | { type: 'REMOVE_PERSON'; payload: string }
   | { type: 'UPDATE_CONFIG'; payload: Partial<TreeConfig> }
   | { type: 'UPDATE_TREE'; payload?: { initial?: boolean } }
   | { type: 'SET_INITIAL_RENDER_COMPLETE' };
@@ -70,6 +80,113 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         ...state,
         data: action.payload,
       };
+
+    case 'ADD_PERSON': {
+      const { person, parentId, relationship } = action.payload;
+      // Create a deep copy to avoid mutation
+      const updatedData = JSON.parse(JSON.stringify(state.data));
+
+      // Find parent in the data
+      const parentIndex = updatedData.findIndex(
+        (p: PersonData) => p.id === parentId
+      );
+      if (parentIndex === -1) {
+        console.error(`Parent with ID ${parentId} not found`);
+        return state;
+      }
+
+      const parent = updatedData[parentIndex];
+
+      // Process relationships based on type
+      if (relationship === 'partner') {
+        // Initialize arrays if they don't exist
+        if (!parent.rels.spouses) {
+          parent.rels.spouses = [];
+        }
+        if (!person.rels.spouses) {
+          person.rels.spouses = [];
+        }
+
+        // Add bidirectional spouse relationship
+        parent.rels.spouses.push(person.id);
+        person.rels.spouses.push(parent.id);
+      } else if (relationship === 'child') {
+        // Initialize arrays if they don't exist
+        if (!parent.rels.children) {
+          parent.rels.children = [];
+        }
+
+        // Add parent-child relationship
+        parent.rels.children.push(person.id);
+
+        // Set parent reference based on gender
+        if (parent.data.gender === 'M') {
+          person.rels.father = parent.id;
+        } else {
+          person.rels.mother = parent.id;
+        }
+      }
+
+      // Add the new person to the data
+      updatedData.push(person);
+
+      return {
+        ...state,
+        data: updatedData,
+      };
+    }
+
+    case 'REMOVE_PERSON': {
+      const personId = action.payload;
+      // Create a deep copy without the removed person
+      const updatedData = JSON.parse(
+        JSON.stringify(state.data.filter(p => p.id !== personId))
+      );
+
+      // Clean up all references to this person
+      updatedData.forEach((person: PersonData) => {
+        if (person.rels.spouses) {
+          person.rels.spouses = person.rels.spouses.filter(
+            id => id !== personId
+          );
+          // Clean up empty arrays
+          if (person.rels.spouses.length === 0) {
+            delete person.rels.spouses;
+          }
+        }
+
+        if (person.rels.children) {
+          person.rels.children = person.rels.children.filter(
+            id => id !== personId
+          );
+          // Clean up empty arrays
+          if (person.rels.children.length === 0) {
+            delete person.rels.children;
+          }
+        }
+
+        // Remove parent references
+        if (person.rels.father === personId) {
+          delete person.rels.father;
+        }
+
+        if (person.rels.mother === personId) {
+          delete person.rels.mother;
+        }
+      });
+
+      // If we're removing the main person, find a new one
+      let newMainId = state.mainId;
+      if (state.mainId === personId && updatedData.length > 0) {
+        newMainId = updatedData[0].id;
+      }
+
+      return {
+        ...state,
+        data: updatedData,
+        mainId: newMainId,
+      };
+    }
 
     case 'UPDATE_CONFIG': {
       const newConfig = {
@@ -153,6 +270,13 @@ interface TreeContextValue {
   updateConfig: (config: Partial<TreeConfig>) => void;
   updateTree: (props?: { initial?: boolean }) => void;
   setInitialRenderComplete: () => void;
+  // New methods for managing people
+  addPerson: (
+    person: PersonData,
+    parentId: string,
+    relationship: 'partner' | 'child'
+  ) => void;
+  removePerson: (personId: string) => void;
 }
 
 const TreeContext = createContext<TreeContextValue | undefined>(undefined);
@@ -194,12 +318,38 @@ export function TreeProvider({
     dispatch({ type: 'SET_INITIAL_RENDER_COMPLETE' });
   }, []);
 
+  // New methods for managing people
+  const addPerson = useCallback(
+    (
+      person: PersonData,
+      parentId: string,
+      relationship: 'partner' | 'child'
+    ) => {
+      dispatch({
+        type: 'ADD_PERSON',
+        payload: { person, parentId, relationship },
+      });
+      // Re-calculate tree after adding the person
+      setTimeout(() => updateTree(), 0);
+    },
+    [updateTree]
+  );
+
+  const removePerson = useCallback(
+    (personId: string) => {
+      dispatch({ type: 'REMOVE_PERSON', payload: personId });
+      // Re-calculate tree after removing the person
+      setTimeout(() => updateTree(), 0);
+    },
+    [updateTree]
+  );
+
   // Initialize tree on component mount
   useEffect(() => {
     if (initialData && initialData.length > 0 && !state.treeData) {
       updateTree({ initial: true });
     }
-  }, []);
+  }, [initialData, state.treeData, updateTree]);
 
   return (
     <TreeContext.Provider
@@ -210,6 +360,8 @@ export function TreeProvider({
         updateConfig,
         updateTree,
         setInitialRenderComplete,
+        addPerson,
+        removePerson,
       }}
     >
       {children}

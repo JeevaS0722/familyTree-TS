@@ -1,6 +1,6 @@
 // src/components/FamilyTree/SvgDefs.tsx
 import React from 'react';
-import { CardDimensions } from '../../types/familyTree';
+import { CardDimensions } from '../types/familyTree';
 
 interface SvgDefsProps {
   cardDimensions: CardDimensions;

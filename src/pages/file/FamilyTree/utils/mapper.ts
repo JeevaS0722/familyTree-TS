@@ -1,6 +1,6 @@
 import { PersonData } from '../../../../component/FamilyTree';
 import { formatDateToMonthDayYear } from '../../../../utils/GeneralUtil';
-import { Contact, ContactApiResponse } from '../types';
+import { Contact, ContactApiResponse, OfferData } from '../types';
 
 export const determineGender = (contact: Contact): 'M' | 'F' => {
   const relationship = contact.relationship?.toLowerCase() || '';
@@ -43,24 +43,56 @@ export const calculateAge = (birthDateStr: string): string => {
   }
 };
 
+export const formatOffer = (
+  offers: OfferData[]
+): {
+  offerId?: string | null;
+  amount?: string | null;
+  offer_type?: string | null;
+  grantors?: string | null;
+} => {
+  if (!offers || offers.length === 0) {
+    return {
+      offerId: null,
+      amount: null,
+      offer_type: null,
+      grantors: null,
+    };
+  }
+
+  const offer = offers[0];
+  return {
+    offerId: offer.offerID.toString() || null,
+    amount: offer.amount?.toLocaleString() || null,
+    offer_type: offer.offerType?.toLocaleString() || null,
+    grantors: offer.grantors || null,
+  };
+};
+
 export const contactsToFamilyTreemapper = (
   rootContact: Contact,
   fileId?: string | number,
-  isMain?: boolean = false
+  isMain?: boolean
 ): PersonData => ({
   id: rootContact.contactID.toString(),
   data: {
     fileId: Number(fileId),
+    contactId: rootContact.contactID,
     gender: determineGender(rootContact),
-    firstName: rootContact.firstName || '',
-    lastName: rootContact.lastName || '',
+    first_ame: rootContact.firstName || '',
+    last_name: rootContact.lastName || '',
+    name: [rootContact.firstName, rootContact.lastName]
+      .filter(Boolean)
+      .join(' '),
+    relationship: rootContact.relationship || null,
     dOB: formatDateToMonthDayYear(rootContact.dOB),
     decDt: formatDateToMonthDayYear(rootContact.decDt),
     deceased: rootContact.deceased || null,
     age: calculateAge(rootContact.dOB || ''),
     city: rootContact.city || null,
     state: rootContact.state || null,
-    address: [
+    address: rootContact.address || null,
+    full_address: [
       rootContact.address,
       rootContact.city,
       rootContact.state,
@@ -70,15 +102,15 @@ export const contactsToFamilyTreemapper = (
       .join(', '),
     heir: null,
     research_inheritance: null,
-    is_new_notes:
+    has_new_notes:
       Array.isArray(rootContact.TasksModels) &&
       rootContact.TasksModels.length > 0,
     ownership: `${parseFloat(rootContact.ownership).toFixed(4)} %`,
     division_of_interest: 'Interest',
-    contactId: rootContact.contactID,
+    offer: formatOffer(rootContact?.OffersModels || []),
   },
   rels: {},
-  main: isMain,
+  main: isMain || false,
 });
 
 export const mapContactsToFamilyTree = (

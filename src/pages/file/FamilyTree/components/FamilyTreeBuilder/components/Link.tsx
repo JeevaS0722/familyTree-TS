@@ -1,8 +1,8 @@
 // src/component/FamilyTree/components/FamilyTree/Link.tsx
 import React, { useRef, useEffect, memo } from 'react';
 import * as d3 from 'd3';
-import { TreeLink } from '../../types/familyTree';
-import { calculateAnimationDelay } from '../../utils/animationUtils';
+import { TreeLink } from '../types/familyTree';
+import { calculateAnimationDelay } from '../utils/animationUtils';
 
 interface LinkProps {
   link: TreeLink;

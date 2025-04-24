@@ -1,260 +1,194 @@
-import React, { useState } from 'react';
-import { FamilyTree } from '../../../component/FamilyTree';
-import { PersonData } from '../../../component/FamilyTree/types/familyTree';
-
-// Sample family tree data
-const sampleFamilyData: PersonData[] = [
-  {
-    id: '0',
-    rels: {
-      spouses: ['8c92765f-92d3-4120-90dd-85a28302504c'],
-      father: '0c09cfa0-5e7c-4073-8beb-94f6c69ada19',
-      mother: '0fa5c6bc-5b58-40f5-a07e-d787e26d8b56',
-      children: [
-        'ce2fcb9a-6058-4326-b56a-aced35168561',
-        'f626d086-e2d6-4722-b4f3-ca4f15b109ab',
-      ],
-    },
-    data: {
-      firstName: 'Agnus',
-      lastName: '',
-      dOB: '1970',
-      gender: 'M',
-    },
-  },
-  {
-    id: '8c92765f-92d3-4120-90dd-85a28302504c',
-    data: {
-      gender: 'F',
-      firstName: 'Andrea',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      spouses: ['0'],
-      children: [
-        'ce2fcb9a-6058-4326-b56a-aced35168561',
-        'f626d086-e2d6-4722-b4f3-ca4f15b109ab',
-      ],
-      father: 'd8897e67-db7c-4b72-ae7c-69aae266b140',
-      mother: '9397093b-30bb-420b-966f-62596b58447f',
-    },
-  },
-  {
-    id: '0c09cfa0-5e7c-4073-8beb-94f6c69ada19',
-    data: {
-      gender: 'M',
-      firstName: 'Zen',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      children: ['0'],
-      spouses: ['0fa5c6bc-5b58-40f5-a07e-d787e26d8b56'],
-    },
-  },
-  {
-    id: '0fa5c6bc-5b58-40f5-a07e-d787e26d8b56',
-    data: {
-      gender: 'F',
-      firstName: 'Zebra',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      spouses: ['0c09cfa0-5e7c-4073-8beb-94f6c69ada19'],
-      children: ['0'],
-      father: '12a9bddf-855a-4583-a695-c73fa8c0e9b2',
-      mother: 'bd56a527-b613-474d-9f38-fcac0aae218b',
-    },
-  },
-  {
-    id: 'ce2fcb9a-6058-4326-b56a-aced35168561',
-    data: {
-      gender: 'M',
-      firstName: 'Ben',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      mother: '8c92765f-92d3-4120-90dd-85a28302504c',
-      father: '0',
-      spouses: ['b4e33c68-20a7-47ba-9dcc-1168a07d5b52'],
-      children: [
-        'eabd40c9-4518-4485-af5e-e4bc3ffd27fb',
-        '240a3f71-c921-42d7-8a13-dec5e1acc4fd',
-      ],
-    },
-  },
-  {
-    id: 'f626d086-e2d6-4722-b4f3-ca4f15b109ab',
-    data: {
-      gender: 'F',
-      firstName: 'Becky',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      mother: '8c92765f-92d3-4120-90dd-85a28302504c',
-      father: '0',
-    },
-  },
-  {
-    id: 'eabd40c9-4518-4485-af5e-e4bc3ffd27fb',
-    data: {
-      gender: 'M',
-      firstName: 'Carlos',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      mother: 'b4e33c68-20a7-47ba-9dcc-1168a07d5b52',
-      father: 'ce2fcb9a-6058-4326-b56a-aced35168561',
-    },
-  },
-  {
-    id: 'b4e33c68-20a7-47ba-9dcc-1168a07d5b52',
-    data: {
-      gender: 'F',
-      firstName: 'Branka',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      spouses: ['ce2fcb9a-6058-4326-b56a-aced35168561'],
-      children: [
-        'eabd40c9-4518-4485-af5e-e4bc3ffd27fb',
-        '240a3f71-c921-42d7-8a13-dec5e1acc4fd',
-      ],
-    },
-  },
-  {
-    id: '240a3f71-c921-42d7-8a13-dec5e1acc4fd',
-    data: {
-      gender: 'F',
-      firstName: 'Carla',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      mother: 'b4e33c68-20a7-47ba-9dcc-1168a07d5b52',
-      father: 'ce2fcb9a-6058-4326-b56a-aced35168561',
-    },
-  },
-  {
-    id: '12a9bddf-855a-4583-a695-c73fa8c0e9b2',
-    data: {
-      gender: 'M',
-      firstName: 'Yvo',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      children: ['0fa5c6bc-5b58-40f5-a07e-d787e26d8b56'],
-      spouses: ['bd56a527-b613-474d-9f38-fcac0aae218b'],
-    },
-  },
-  {
-    id: 'bd56a527-b613-474d-9f38-fcac0aae218b',
-    data: {
-      gender: 'F',
-      firstName: 'Yva',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      spouses: ['12a9bddf-855a-4583-a695-c73fa8c0e9b2'],
-      children: ['0fa5c6bc-5b58-40f5-a07e-d787e26d8b56'],
-    },
-  },
-  {
-    id: 'd8897e67-db7c-4b72-ae7c-69aae266b140',
-    data: {
-      gender: 'M',
-      firstName: 'Zadro',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      children: ['8c92765f-92d3-4120-90dd-85a28302504c'],
-      spouses: ['9397093b-30bb-420b-966f-62596b58447f'],
-    },
-  },
-  {
-    id: '9397093b-30bb-420b-966f-62596b58447f',
-    data: {
-      gender: 'F',
-      firstName: 'Zadra',
-      lastName: '',
-      dOB: '',
-      avatar: '',
-    },
-    rels: {
-      spouses: ['d8897e67-db7c-4b72-ae7c-69aae266b140'],
-      children: ['8c92765f-92d3-4120-90dd-85a28302504c'],
-    },
-  },
-];
+import React, { memo, useCallback, useEffect, useState } from 'react';
+import { FamilyTree } from './components/FamilyTreeBuilder';
+import { PersonData } from './components/FamilyTreeBuilder/types/familyTree';
+import { useLazyGetContactsByFileQuery } from '../../../store/Services/contactService';
+import { useLocation, useParams } from 'react-router-dom';
+import { Contact, ContactApiResponse } from './types';
+import { mapContactsToFamilyTree } from './utils/mapper';
+import InitialNodeDialog from './components/InitialNodeDialog';
+import AddPersonDialog from './components/EditDialog';
+import OverlayLoader from '../../../component/common/OverlayLoader';
 
 const App: React.FC = () => {
-  const [familyData, setFamilyData] = useState<PersonData[]>(sampleFamilyData);
+  // query params
+  const { fileId } = useParams<{ fileId: string }>();
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const filename = query.get('filename');
+  const decodedFileName = filename ? decodeURIComponent(filename) : '';
 
-  // Handle person click
-  const handlePersonClick = (personId: string) => {
-    console.log(`Person clicked: ${personId}`);
-  };
+  // RTK Query hook
+  const [getContactsByFile] = useLazyGetContactsByFileQuery();
 
-  // Handle person edit
-  const handlePersonEdit = (person: PersonData) => {
-    console.log('Person edited:', person);
+  // states
+  const [treeContext, setTreeContext] = useState<any>(null);
+  const [contactsData, setContactsData] = useState<Contact[]>([]);
+  const [familyData, setFamilyData] = useState<PersonData[]>([]);
+  const [rootMember, setRootMember] = useState<PersonData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showInitialDialog, setShowInitialDialog] = useState<boolean>(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [currentParentId, setCurrentParentId] = useState<string | null>(null);
 
-    // Update the person in the data
-    const updatedData = familyData.map(p =>
-      p.id === person.id ? { ...p, data: { ...person.data } } : p
-    );
+  // Get context from FamilyTree component
+  const handleContextRef = useCallback((context: any) => {
+    setTreeContext(context);
+  }, []);
 
-    setFamilyData(updatedData);
-  };
+  // Initial fetch of contacts
+  useEffect(() => {
+    setLoading(true);
+    void getContactsByFile({
+      fileid: Number(fileId),
+      sortBy: 'deceased, lastName, firstName',
+      sortOrder: 'asc',
+    })
+      .unwrap()
+      .then(response => {
+        try {
+          console.log('API Response:', response);
+
+          // Store the raw contacts for autocomplete in dialogs
+          if (response.data?.contact) {
+            // Cast through unknown first to satisfy TypeScript when types don't overlap sufficiently
+            const contacts = response.data.contact as unknown as Contact[]; // Assert type to match state
+            setContactsData(contacts);
+
+            // Try to build a family tree from the contacts using only our two specific checks
+            const builtFamilyTree = mapContactsToFamilyTree(
+              response as unknown as ContactApiResponse, // Cast to the expected type
+              decodedFileName,
+              fileId
+            );
+
+            if (builtFamilyTree) {
+              // We successfully found a root based on the two checks
+              console.log(
+                'Found root node based on relationship or filename:',
+                builtFamilyTree
+              );
+              setRootMember(builtFamilyTree);
+              setFamilyData([builtFamilyTree]);
+              setShowInitialDialog(false);
+            } else {
+              // Neither check succeeded - show the initial dialog
+              console.log(
+                'No contact matching criteria found. Showing initial dialog.'
+              );
+              setShowInitialDialog(true);
+            }
+          } else {
+            // No contacts - definitely show initial dialog
+            setContactsData([]);
+            setShowInitialDialog(true);
+          }
+        } catch (err) {
+          console.error('Error processing contact data:', err);
+          setShowInitialDialog(true);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching contacts:', err);
+        setShowInitialDialog(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [fileId, decodedFileName]);
 
   // Handle person add
-  const handlePersonAdd = (person: PersonData) => {
-    console.log('Person added:', person);
+  const handlePersonAdd = useCallback((personId: string) => {
+    console.log('Person added:', personId);
+    setCurrentParentId(personId);
+    setShowAddDialog(true);
+  }, []);
 
-    // Add the new person to the data
-    setFamilyData([...familyData, person]);
-  };
+  // Handle saving new family member
+  const handleSaveNewMember = useCallback(
+    (newPerson: PersonData, relationshipType: 'partner' | 'child') => {
+      if (!currentParentId || !treeContext) {
+        return;
+      }
+
+      console.log(
+        'Adding new member:',
+        newPerson,
+        'as',
+        relationshipType,
+        'to',
+        currentParentId
+      );
+
+      // Use the context method to add the person
+      treeContext.addPerson(newPerson, currentParentId, relationshipType);
+
+      // Update local state to keep it in sync
+      setFamilyData(prev => {
+        // Check if person already exists
+        if (prev.some(p => p.id === newPerson.id)) {
+          return prev;
+        }
+        return [...prev, newPerson];
+      });
+
+      setShowAddDialog(false);
+    },
+    [currentParentId, treeContext]
+  );
 
   // Handle person delete
-  const handlePersonDelete = (personId: string) => {
-    console.log(`Person deleted: ${personId}`);
+  const handlePersonDelete = useCallback(
+    (personId: string) => {
+      console.log(`Person deleted: ${personId}`);
 
-    // Remove the person from the data
-    setFamilyData(familyData.filter(p => p.id !== personId));
-  };
+      if (treeContext) {
+        // Use context method to remove the person
+        treeContext.removePerson(personId);
+
+        // Update local state to keep it in sync
+        setFamilyData(prevData => prevData.filter(p => p.id !== personId));
+      }
+    },
+    [treeContext]
+  );
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      <FamilyTree
-        data={familyData}
-        mainId="1"
-        onPersonClick={handlePersonClick}
-        onPersonEdit={handlePersonEdit}
-        onPersonAdd={handlePersonAdd}
-        onPersonDelete={handlePersonDelete}
+      {/* intial node dialog */}
+      <InitialNodeDialog
+        open={showInitialDialog}
+        onClose={() => setShowInitialDialog(false)}
+        onSave={newMember => {
+          setRootMember(newMember);
+          setFamilyData([newMember]);
+          setShowInitialDialog(false);
+        }}
+        contactList={contactsData}
+        isFirstNode={familyData.length === 0}
       />
+
+      {/* Family Tree component */}
+      {familyData?.length > 0 && (
+        <FamilyTree
+          contextRef={handleContextRef}
+          data={familyData}
+          mainId={rootMember?.id}
+          onPersonAdd={handlePersonAdd}
+          onPersonDelete={handlePersonDelete}
+        />
+      )}
+      {/* Add Person Dialog */}
+      <AddPersonDialog
+        open={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onSave={handleSaveNewMember}
+        contactList={contactsData}
+        existingFamilyMembers={familyData}
+      />
+      {/* Loading indicator */}
+      {loading && <OverlayLoader open loadingText="Loading..." />}
     </div>
   );
 };
 
-export default App;
+export default memo(App);

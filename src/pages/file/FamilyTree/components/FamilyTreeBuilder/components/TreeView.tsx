@@ -7,26 +7,26 @@ import React, {
   useEffect,
 } from 'react';
 import * as d3 from 'd3';
-import { useTreeContext } from '../../context/TreeContext';
-import { useZoomPan } from '../../hooks/useZoomPan';
-import { PersonData, TreeNode, TreeLink } from '../../types/familyTree';
-import { createLinks } from '../../utils/linkCreator';
-import { calculateEnterAndExitPositions } from '../../utils/animationUtils';
+import { useTreeContext } from '../context/TreeContext';
+import { useZoomPan } from '../hooks/useZoomPan';
+import { TreeNode, TreeLink } from '../types/familyTree';
+import { createLinks } from '../utils/linkCreator';
+import { calculateEnterAndExitPositions } from '../utils/animationUtils';
 import Card from './Card/index';
 import Link from './Link';
 import SvgDefs from './SvgDefs';
 import Toolbar from './controls/Toolbar';
-import { findPathToMain } from '../../utils/pathFinder';
+import { findPathToMain } from '../utils/pathFinder';
 
 interface TreeViewProps {
   svgRef: React.RefObject<SVGSVGElement>;
   onPersonClick?: (personId: string) => void;
-  onPersonEdit?: (person: PersonData) => void;
-  onPersonAdd?: (person: PersonData) => void;
+  onPersonAdd?: (personId: string) => void;
+  onPersonDelete?: (personId: string) => void;
 }
 
 const TreeView: React.FC<TreeViewProps> = React.memo(
-  ({ svgRef, onPersonClick, onPersonEdit, onPersonAdd }: TreeViewProps) => {
+  ({ svgRef, onPersonClick, onPersonAdd, onPersonDelete }: TreeViewProps) => {
     const { state, updateTree, updateMainId, setInitialRenderComplete } =
       useTreeContext();
     const viewRef = useRef<SVGGElement>(null);
@@ -340,18 +340,14 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
                 <Card
                   key={node.data.id}
                   node={node}
-                  cardDimensions={state.config.cardDimensions}
                   showMiniTree={state.config.showMiniTree}
                   transitionTime={state.config.transitionTime}
                   treeData={state.treeData}
                   initialRender={state.isInitialRender}
-                  onClick={handlePersonClick}
-                  onEdit={
-                    onPersonEdit ? () => onPersonEdit(node.data) : undefined
-                  }
                   onMouseEnter={highlightPathToMain}
                   onMouseLeave={clearPathHighlight}
                   onPersonAdd={onPersonAdd}
+                  onPersonDelete={onPersonDelete}
                 />
               ))}
 
@@ -360,7 +356,6 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
                 <Card
                   key={`exit-${node.data.id}`}
                   node={node}
-                  cardDimensions={state.config.cardDimensions}
                   showMiniTree={false}
                   transitionTime={state.config.transitionTime}
                   treeData={state.treeData}

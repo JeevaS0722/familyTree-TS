@@ -80,17 +80,6 @@
     transform: scale(1.1);
 }
 
-.f3 .card_edit.pencil_icon,
-.f3 .card_add_relative {
-    color: #fff;
-    transition: color 0.3s ease;
-}
-
-.f3 .card_edit.pencil_icon:hover,
-.f3 .card_add_relative:hover {
-    color: #ddd;
-}
-
 /* Link styling */
 .f3 .link {
     pointer-events: none;
@@ -551,87 +540,7 @@ input:checked+.f3-slider:before {
     animation: slideUp 0.3s ease-out forwards;
 }
 
-/* Animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
 
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-}
-
-@keyframes slideDown {
-    from {
-        transform: translateY(0);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(18px);
-        opacity: 1;
-    }
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(18px);
-        opacity: 1;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 0;
-    }
-}
-
-@keyframes rotateArrow {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(180deg);
-    }
-}
-
-/* Icon styling */
-.f3 .card-icon {
-    cursor: pointer;
-    will-change: transform;
-}
-
-.f3 .card-icon:hover {
-    fill: var(--icon-hover-color, #1976d2);
-}
-
-.f3 .card-icon.notes-icon svg {
-    fill: var(--notes-icon-color, #000000);
-}
-
-.f3 .card-icon.notes-icon.has-notes svg {
-    fill: #FF0000;
-}
-
-.f3 .card-icon.document-icon svg,
-.f3 .card-icon.doc-dollar-icon svg {
-    fill: #000000;
-}
 
 /* Offer popup styling */
 .f3 .offer-popup {
@@ -650,18 +559,6 @@ input:checked+.f3-slider:before {
     rx: 0 0 16px 16px;
     ry: 0 0 16px 16px;
 }
-
-/* Arrow styling */
-.f3 .bottom-bar .arrow-icon {
-    transition: transform 0.3s ease;
-}
-
-.f3 .bottom-bar .arrow-icon.rotated {
-    transform: rotate(180deg);
-}
-
-
-
 
 /* New Card styles */
 
@@ -691,6 +588,11 @@ input:checked+.f3-slider:before {
 
 .f3 .card-header rect {
     fill: white;
+}
+
+.f3 .header-tooltip rect {
+    fill: #000 !important;
+    opacity: 0.8;
 }
 
 .f3 .card-header text {
@@ -750,16 +652,22 @@ input:checked+.f3-slider:before {
 
 .f3 .card-icon {
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: transform 0.5s ease;
 }
 
-.f3 .card-icon:hover {
+.f3 .card-icon {
+    cursor: pointer;
+    transition: transform 0.5s ease;
+}
+
+/* .f3 .card-icon:hover {
     transform: scale(1.1);
 }
 
-.f3 .notes-circle {
-    fill: #00BF0A;
-}
+.f3 .bottom-arrow-icon:hover {
+    transform: scale(1.1);
+} */
+
 
 .f3 .offer-popup {
     filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1));

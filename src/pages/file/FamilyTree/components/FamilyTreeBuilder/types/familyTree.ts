@@ -3,9 +3,13 @@
 export interface PersonData {
   id: string;
   data: {
+    contactId?: number;
+    fileId?: number;
     gender: 'M' | 'F' | '';
-    firstName: string;
-    lastName: string;
+    first_ame: string;
+    last_name: string;
+    name: string;
+    relationship?: string | null;
     dOB?: string | null;
     decDt?: string | null;
     deceased?: boolean | null;
@@ -13,21 +17,26 @@ export interface PersonData {
     city?: string | null;
     state?: string | null;
     address?: string | null;
-    fileId?: number;
-    contactId?: number;
+    full_address?: string | null;
     heir?: boolean | null;
     research_inheritance?: boolean | null;
-    is_new_notes?: boolean | null;
+    has_new_notes?: boolean | null;
     division_of_interest?: string | null;
     ownership?: string | null;
-    [key: string]: any;
+    alt_names?: string[];
+    titles?: string[];
+    offer: {
+      offerId?: string | null;
+      amount?: string | null;
+      offer_type?: string | null;
+      grantors?: string | null;
+    };
   };
   rels: {
     father?: string;
     mother?: string;
     spouses?: string[];
     children?: string[];
-    _rels?: any; // For hidden relationships
   };
   main?: boolean;
   hide_rels?: boolean;
@@ -59,7 +68,7 @@ export interface TreeNode {
   added?: boolean;
   exiting?: boolean;
   all_rels_displayed?: boolean;
-  parent?: TreeNode; // D3 hierarchy parent reference
+  parent?: TreeNode;
 }
 
 export interface TreeLink {

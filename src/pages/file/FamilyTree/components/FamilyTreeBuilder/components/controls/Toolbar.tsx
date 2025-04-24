@@ -1,6 +1,6 @@
 // src/components/FamilyTree/controls/Toolbar.tsx
 import React from 'react';
-import { useTreeContext } from '../../../context/TreeContext';
+import { useTreeContext } from '../../context/TreeContext';
 
 interface ToolbarProps {
   zoomIn: () => void;

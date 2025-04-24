@@ -1,3 +1,20 @@
+export interface OfferData {
+  [key: string]: string | number | null;
+  offerID: number;
+  grantors: string | null;
+  draftAmount1: number | null;
+  draftLength1: number | null;
+  draftAmount2: number | null;
+  draftLength2: number | null;
+  comment3: string | null;
+  offerAddress: string | null;
+  offerCity: string | null;
+  offerState: string | null;
+  offerZip: string | null;
+  offerDate: string | null;
+  offerTypes: string | null;
+  letterType: string | null;
+}
 export interface Contact {
   contactID: number;
   relationship: string | null;
@@ -15,12 +32,7 @@ export interface Contact {
   ownership: string;
   main: boolean;
   altNameFormat: string;
-  OffersModels: Array<{
-    offerID: number;
-    offerDate: string | null;
-    draftAmount2: string;
-    modifyDt: string;
-  }>;
+  OffersModels: OfferData[];
   DeedsModels: Array<{
     deedID: number;
     county: string;
