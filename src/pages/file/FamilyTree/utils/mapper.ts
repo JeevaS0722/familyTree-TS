@@ -1,9 +1,18 @@
-import { PersonData } from '../../../../component/FamilyTree';
 import { formatDateToMonthDayYear } from '../../../../utils/GeneralUtil';
+import { PersonData } from '../components/FamilyTreeBuilder';
 import { Contact, ContactApiResponse, OfferData } from '../types';
+import moment from 'moment';
 
 export const determineGender = (contact: Contact): 'M' | 'F' => {
   const relationship = contact.relationship?.toLowerCase() || '';
+  const gender = contact?.gender?.toLowerCase() || '';
+  if (gender === 'male' || gender === 'm') {
+    return 'M';
+  }
+
+  if (gender === 'female' || gender === 'f') {
+    return 'F';
+  }
 
   if (
     relationship.includes('husband') ||

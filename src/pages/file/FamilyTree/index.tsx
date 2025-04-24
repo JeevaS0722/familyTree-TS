@@ -103,37 +103,73 @@ const App: React.FC = () => {
     setShowAddDialog(true);
   }, []);
 
-  // Handle saving new family member
+  // Enhanced handleSaveNewMember function
   const handleSaveNewMember = useCallback(
     (newPerson: PersonData, relationshipType: 'partner' | 'child') => {
       if (!currentParentId || !treeContext) {
+        console.error(
+          'Cannot add new member: Missing parent ID or tree context'
+        );
         return;
       }
 
-      console.log(
-        'Adding new member:',
-        newPerson,
-        'as',
-        relationshipType,
-        'to',
-        currentParentId
-      );
+      try {
+        console.log(
+          'Adding new member:',
+          newPerson,
+          'as',
+          relationshipType,
+          'to',
+          currentParentId
+        );
 
-      // Use the context method to add the person
-      treeContext.addPerson(newPerson, currentParentId, relationshipType);
-
-      // Update local state to keep it in sync
-      setFamilyData(prev => {
-        // Check if person already exists
-        if (prev.some(p => p.id === newPerson.id)) {
-          return prev;
+        // Validate the data
+        if (!newPerson.data.gender) {
+          console.warn('New person has no gender specified, defaulting to "M"');
+          newPerson.data.gender = 'M';
         }
-        return [...prev, newPerson];
-      });
 
-      setShowAddDialog(false);
+        // Get parent info to do additional validation
+        const parent = familyData.find(p => p.id === currentParentId);
+
+        if (parent && relationshipType === 'child') {
+          // Set up appropriate parent-child relationship
+          const parentGender = parent.data.gender;
+
+          if (parentGender === 'M') {
+            newPerson.rels.father = currentParentId;
+          } else if (parentGender === 'F') {
+            newPerson.rels.mother = currentParentId;
+          }
+        }
+
+        // Use the context method to add the person
+        treeContext.addPerson(newPerson, currentParentId, relationshipType);
+
+        // Update local state to keep it in sync - this prevents having to refetch data
+        setFamilyData(prev => {
+          // Find if the person already exists by ID
+          const personExists = prev.some(p => p.id === newPerson.id);
+
+          if (personExists) {
+            // Update the existing person
+            return prev.map(p =>
+              p.id === newPerson.id ? { ...p, ...newPerson } : p
+            );
+          }
+
+          // Add new person
+          return [...prev, newPerson];
+        });
+
+        // Close the dialog
+        setShowAddDialog(false);
+      } catch (error) {
+        console.error('Error adding new family member:', error);
+        // Handle error - could show an error message to the user
+      }
     },
-    [currentParentId, treeContext]
+    [currentParentId, treeContext, familyData]
   );
 
   // Handle person delete

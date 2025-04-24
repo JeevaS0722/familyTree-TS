@@ -18,6 +18,7 @@ export interface OfferData {
 export interface Contact {
   contactID: number;
   relationship: string | null;
+  gender?: string | null;
   lastName: string;
   firstName: string;
   sSN: string | null;

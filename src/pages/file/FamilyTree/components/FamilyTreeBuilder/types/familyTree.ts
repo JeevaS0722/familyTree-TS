@@ -5,7 +5,7 @@ export interface PersonData {
   data: {
     contactId?: number;
     fileId?: number;
-    gender: 'M' | 'F' | '';
+    gender: 'M' | 'F' | 'O' | '';
     first_ame: string;
     last_name: string;
     name: string;

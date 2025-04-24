@@ -1,3 +1,4 @@
+/* eslint-disable max-depth */
 /* eslint-disable complexity */
 // src/component/FamilyTree/context/TreeContext.tsx
 import React, {
@@ -107,28 +108,80 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
           person.rels.spouses = [];
         }
 
-        // Add bidirectional spouse relationship
-        parent.rels.spouses.push(person.id);
-        person.rels.spouses.push(parent.id);
+        // Avoid duplicate relationships
+        if (!parent.rels.spouses.includes(person.id)) {
+          parent.rels.spouses.push(person.id);
+        }
+
+        if (!person.rels.spouses.includes(parent.id)) {
+          person.rels.spouses.push(parent.id);
+        }
       } else if (relationship === 'child') {
         // Initialize arrays if they don't exist
         if (!parent.rels.children) {
           parent.rels.children = [];
         }
 
-        // Add parent-child relationship
-        parent.rels.children.push(person.id);
+        // Avoid duplicate children
+        if (!parent.rels.children.includes(person.id)) {
+          parent.rels.children.push(person.id);
+        }
 
         // Set parent reference based on gender
         if (parent.data.gender === 'M') {
+          // If child already has a father, consider if we should replace it
+          if (person.rels.father && person.rels.father !== parent.id) {
+            console.warn(
+              `Child already has a father (${person.rels.father}), replacing with ${parent.id}`
+            );
+
+            // Optional: Clean up previous father-child relationship
+            const oldFatherIndex = updatedData.findIndex(
+              p => p.id === person.rels.father
+            );
+            if (
+              oldFatherIndex !== -1 &&
+              updatedData[oldFatherIndex].rels.children
+            ) {
+              updatedData[oldFatherIndex].rels.children = updatedData[
+                oldFatherIndex
+              ].rels.children.filter(id => id !== person.id);
+            }
+          }
           person.rels.father = parent.id;
         } else {
+          // If child already has a mother, consider if we should replace it
+          if (person.rels.mother && person.rels.mother !== parent.id) {
+            console.warn(
+              `Child already has a mother (${person.rels.mother}), replacing with ${parent.id}`
+            );
+
+            // Optional: Clean up previous mother-child relationship
+            const oldMotherIndex = updatedData.findIndex(
+              p => p.id === person.rels.mother
+            );
+            if (
+              oldMotherIndex !== -1 &&
+              updatedData[oldMotherIndex].rels.children
+            ) {
+              updatedData[oldMotherIndex].rels.children = updatedData[
+                oldMotherIndex
+              ].rels.children.filter(id => id !== person.id);
+            }
+          }
           person.rels.mother = parent.id;
         }
       }
-
-      // Add the new person to the data
-      updatedData.push(person);
+      // If this person already exists in the data, update it instead of adding
+      const existingPersonIndex = updatedData.findIndex(
+        p => p.id === person.id
+      );
+      if (existingPersonIndex !== -1) {
+        updatedData[existingPersonIndex] = person;
+      } else {
+        // Add the new person to the data
+        updatedData.push(person);
+      }
 
       return {
         ...state,
@@ -230,25 +283,10 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
     }
 
     case 'UPDATE_TREE': {
-      console.log('Calculating tree layout');
-
-      // Calculate new tree layout
-      const treeData = calculateTree({
-        data: state.data,
-        main_id: state.mainId,
-        node_separation: state.config.nodeSeparation,
-        level_separation: state.config.levelSeparation,
-        single_parent_empty_card: state.config.singleParentEmptyCard,
-        is_horizontal: state.config.isHorizontal,
-      });
-
-      console.log('Tree layout calculated with dimensions:', treeData.dim);
-
       return {
         ...state,
-        treeData,
-        // If initial is true, set isInitialRender to true
-        isInitialRender: action.payload?.initial === true,
+        treeData: action.payload.treeData,
+        isInitialRender: action.payload.initial === true,
       };
     }
 
@@ -310,9 +348,50 @@ export function TreeProvider({
     dispatch({ type: 'UPDATE_CONFIG', payload: config });
   }, []);
 
-  const updateTree = useCallback((props?: { initial?: boolean }) => {
-    dispatch({ type: 'UPDATE_TREE', payload: props });
-  }, []);
+  const pendingUpdateRef = useRef(false);
+  const updateTree = useCallback(
+    (props?: { initial?: boolean }) => {
+      // Use useRef to track if an update is already pending
+      if (pendingUpdateRef.current) {
+        return; // Avoid multiple calculations in the same tick
+      }
+
+      pendingUpdateRef.current = true;
+
+      // Use requestAnimationFrame instead of setTimeout for better performance
+      requestAnimationFrame(() => {
+        try {
+          console.log('Calculating tree layout');
+
+          // Calculate new tree layout
+          const treeData = calculateTree({
+            data: state.data,
+            main_id: state.mainId,
+            node_separation: state.config.nodeSeparation,
+            level_separation: state.config.levelSeparation,
+            single_parent_empty_card: state.config.singleParentEmptyCard,
+            is_horizontal: state.config.isHorizontal,
+          });
+
+          console.log('Tree layout calculated with dimensions:', treeData.dim);
+
+          // Update state with new tree data
+          dispatch({
+            type: 'UPDATE_TREE',
+            payload: {
+              treeData,
+              initial: props?.initial === true,
+            },
+          });
+        } catch (error) {
+          console.error('Error calculating tree layout:', error);
+        } finally {
+          pendingUpdateRef.current = false;
+        }
+      });
+    },
+    [state.data, state.mainId, state.config]
+  );
 
   const setInitialRenderComplete = useCallback(() => {
     dispatch({ type: 'SET_INITIAL_RENDER_COMPLETE' });

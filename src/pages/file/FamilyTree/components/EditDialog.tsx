@@ -172,56 +172,17 @@ const EditDialog: React.FC<EditDialogProps> = ({
     }));
   };
 
-  // Determine gender based on relationship
-  const determineGender = (contact: Contact): 'M' | 'F' => {
-    const relationship = contact.relationship?.toLowerCase() || '';
-
-    if (
-      relationship.includes('husband') ||
-      relationship.includes('father') ||
-      relationship.includes('son')
-    ) {
-      return 'M';
-    }
-
-    if (
-      relationship.includes('wife') ||
-      relationship.includes('mother') ||
-      relationship.includes('daughter')
-    ) {
-      return 'F';
-    }
-
-    // Default based on ID being even/odd as a fallback (arbitrary)
-    return contact.contactID % 2 === 0 ? 'M' : 'F';
-  };
-
-  const calculateAge = (birthDateStr: string): string => {
-    try {
-      const birthDate = new Date(birthDateStr);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-
-      if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-      ) {
-        age--;
-      }
-
-      return age.toString();
-    } catch (e) {
-      return '00';
-    }
-  };
-
   const handleSaveExistingContact = async () => {
     if (!validateSelectContactInputs()) {
       return;
     }
+    console.log('Selected contact:', selectedContact);
     const newMember = contactsToFamilyTreemapper(
-      selectedContact as Contact,
+      {
+        ...selectedContact,
+        gender: gender,
+        relationship: relationshipType,
+      } as Contact,
       fileId,
       false
     );
@@ -531,7 +492,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                     setSelectedContact(newValue);
                     // Automatically set gender based on contact relationship
                     if (newValue) {
-                      setGender(determineGender(newValue));
                       setValidationErrors(prev => ({
                         ...prev,
                         contact: undefined,
@@ -664,9 +624,9 @@ const EditDialog: React.FC<EditDialogProps> = ({
                     },
                   }}
                 >
-                  <MenuItem value="male">Male</MenuItem>
-                  <MenuItem value="female">Female</MenuItem>
-                  <MenuItem value="other">Other</MenuItem>
+                  <MenuItem value="M">Male</MenuItem>
+                  <MenuItem value="F">Female</MenuItem>
+                  <MenuItem value="O">Other</MenuItem>
                 </Select>
               </FormControl>
               {validationErrors.gender && (
