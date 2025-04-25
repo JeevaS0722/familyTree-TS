@@ -1,4 +1,5 @@
-// src/utils/treeCalculator.ts
+// src/pages/file/FamilyTree/components/FamilyTreeBuilder/utils/treeCalculator.ts
+
 import * as d3 from 'd3';
 import { PersonData, TreeData, TreeNode } from '../types/familyTree';
 import { createNewPerson } from './personHelper';
@@ -8,14 +9,12 @@ export function calculateTree({
   main_id = null,
   node_separation = 250,
   level_separation = 150,
-  single_parent_empty_card = true,
   is_horizontal = false,
 }: {
   data: PersonData[];
   main_id?: string | null;
   node_separation?: number;
   level_separation?: number;
-  single_parent_empty_card?: boolean;
   is_horizontal?: boolean;
 }): TreeData {
   if (!data || !data.length) {
@@ -32,10 +31,8 @@ export function calculateTree({
     [node_separation, level_separation] = [level_separation, node_separation];
   }
 
-  // Create a copy of data to work with
-  const data_stash = single_parent_empty_card
-    ? createRelsToAdd(data)
-    : [...data];
+  // Create a copy of data WITHOUT adding phantom spouses
+  const data_stash = JSON.parse(JSON.stringify(data)) as PersonData[];
 
   // Sort children with spouses
   sortChildrenWithSpouses(data_stash);
@@ -280,19 +277,25 @@ export function calculateTree({
       if (d.added) {
         return;
       }
+
+      // Get mom and dad nodes if they exist
       const m = findDatum(d.data.rels.mother);
       const f = findDatum(d.data.rels.father);
-      if (m && f) {
+
+      // For a single parent, set the connection points directly to the parent
+      if (m && !f) {
+        d.psx = m.x;
+        d.psy = m.y;
+      } else if (f && !m) {
+        d.psx = f.x;
+        d.psy = f.y;
+      } else if (m && f) {
+        // For dual parents, use the existing logic
         if (!m.added && !f.added) {
           console.error('no added spouse', m, f);
         }
         const added_spouse = m.added ? m : f;
         setupParentPos(d, added_spouse);
-      } else if (m || f) {
-        const parent = m || f!;
-        parent.sx = parent.x;
-        parent.sy = parent.y;
-        setupParentPos(d, parent);
       }
 
       function setupParentPos(d: TreeNode, p: TreeNode): void {
@@ -347,54 +350,6 @@ export function calculateTree({
       x_off: -w_extent[0] + node_separation / 2,
       y_off: -h_extent[0] + level_separation / 2,
     };
-  }
-
-  function createRelsToAdd(data: PersonData[]): PersonData[] {
-    const data_copy = JSON.parse(JSON.stringify(data)) as PersonData[];
-    const to_add_spouses: PersonData[] = [];
-
-    for (let i = 0; i < data_copy.length; i++) {
-      const d = data_copy[i];
-      if (d.rels.children && d.rels.children.length > 0) {
-        if (!d.rels.spouses) {
-          d.rels.spouses = [];
-        }
-        const is_father = d.data.gender === 'M';
-        let spouse: PersonData | undefined;
-
-        d.rels.children.forEach(d0 => {
-          const child = data_copy.find(d1 => d1.id === d0)!;
-          if (child.rels[is_father ? 'father' : 'mother'] !== d.id) {
-            return;
-          }
-          if (child.rels[!is_father ? 'father' : 'mother']) {
-            return;
-          }
-          if (!spouse) {
-            spouse = createToAddSpouse(d);
-            d.rels.spouses.push(spouse.id);
-          }
-          if (!spouse.rels.children) {
-            spouse.rels.children = [];
-          }
-          spouse.rels.children.push(child.id);
-          child.rels[!is_father ? 'father' : 'mother'] = spouse.id;
-        });
-      }
-    }
-
-    to_add_spouses.forEach(d => data_copy.push(d));
-    return data_copy;
-
-    function createToAddSpouse(d: PersonData): PersonData {
-      const spouse = createNewPerson({
-        data: { gender: d.data.gender === 'M' ? 'F' : 'M' },
-        rels: { spouses: [d.id], children: [] },
-      });
-      spouse.to_add = true;
-      to_add_spouses.push(spouse);
-      return spouse;
-    }
   }
 }
 

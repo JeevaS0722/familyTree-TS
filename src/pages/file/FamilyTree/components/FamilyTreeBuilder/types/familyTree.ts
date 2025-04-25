@@ -41,12 +41,13 @@ export interface PersonData {
   main?: boolean;
   hide_rels?: boolean;
   to_add?: boolean;
-  relation_type?: string; // For displaying relationship to file
+  relation_type?: string;
   _new_rel_data?: {
     rel_type: 'father' | 'mother' | 'spouse' | 'son' | 'daughter';
     label: string;
     other_parent_id?: string;
   };
+  isPhantom?: boolean;
 }
 
 export interface TreeNode {
@@ -101,14 +102,13 @@ export interface TreeData {
 export interface TreeConfig {
   nodeSeparation: number;
   levelSeparation: number;
-  singleParentEmptyCard: boolean;
   isHorizontal: boolean;
   transitionTime: number;
   cardDimensions: CardDimensions;
   showMiniTree: boolean;
   linkBreak: boolean;
-  highlightHoverPath: boolean; // New toggle for path highlighting on hover
-  viewMode: boolean; // New toggle for view/edit mode
+  highlightHoverPath: boolean;
+  viewMode: boolean;
 }
 
 export interface CardDimensions {

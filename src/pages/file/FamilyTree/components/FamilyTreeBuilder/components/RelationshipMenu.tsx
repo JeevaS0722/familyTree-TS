@@ -26,11 +26,27 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
 
   const menuRadius = 160;
   const buttonRadius = 40;
+
+  // Don't allow adding relations to phantom nodes
+  if (node.data.isPhantom) {
+    console.log(
+      'Attempted to open relationship menu for phantom node, closing'
+    );
+    onClose();
+    return null;
+  }
+
+  // Check for existing relationships
   const hasFather = !!node.data.rels.father;
   const hasMother = !!node.data.rels.mother;
-  const hasSpouses = !!(
-    node.data.rels.spouses && node.data.rels.spouses.length > 0
-  );
+
+  // Filter out phantom nodes when checking for spouses
+  const nonPhantomSpouses = (node.data.rels.spouses || []).filter(spouseId => {
+    const spouse = existingFamilyMembers.find(m => m.data.id === spouseId);
+    return spouse && !spouse.data.isPhantom;
+  });
+
+  const hasSpouses = nonPhantomSpouses.length > 0;
 
   // Open the menu with animation after mounting
   useEffect(() => {
@@ -109,7 +125,6 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
   ].filter(item => item.show);
 
   // Calculate container position
-  // Position centered on the right side of the card
   const containerStyle: React.CSSProperties = {
     position: 'absolute',
     left: `${position.x - 160}px`,
@@ -226,6 +241,7 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
           ✕
         </div>
       </div>
+
       {/* Parent selection menu - only shows when needed */}
       {showParentSelection && selectedRelationType && (
         <ParentSelectionMenu
@@ -234,7 +250,9 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
           position={position}
           onSelect={handleParentSelection}
           onClose={() => setShowParentSelection(false)}
-          existingFamilyMembers={existingFamilyMembers}
+          existingFamilyMembers={existingFamilyMembers.filter(
+            m => !m.data.isPhantom
+          )} // Filter out phantom parents
         />
       )}
     </>

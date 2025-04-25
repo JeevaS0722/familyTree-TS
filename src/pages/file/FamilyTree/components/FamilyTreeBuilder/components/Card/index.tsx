@@ -1,4 +1,5 @@
-// src/component/FamilyTree/components/Card/index.tsx
+/* eslint-disable complexity */
+// src/pages/file/FamilyTree/components/FamilyTreeBuilder/components/Card/index.tsx
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { useNodeAnimation } from '../../hooks/useNodeAnimation';
 import { CardProps } from './types';
@@ -20,9 +21,10 @@ const Card: React.FC<CardProps> = ({
   onPersonDelete,
 }) => {
   const cardRef = useRef<SVGGElement>(null);
-
-  // Track if this card should be rendered - helps with debugging
   const [isRendered, setIsRendered] = useState(true);
+
+  // Check if this is a phantom parent node
+  const isPhantom = !!node.data.isPhantom;
 
   // Animation hook - pass initialRender flag
   useNodeAnimation(cardRef, node, transitionTime, treeData, initialRender);
@@ -36,6 +38,7 @@ const Card: React.FC<CardProps> = ({
         _x: node._x,
         _y: node._y,
         exiting: node.exiting,
+        isPhantom: isPhantom,
         initialRender,
         relationships: {
           father: node.data.rels.father,
@@ -45,7 +48,7 @@ const Card: React.FC<CardProps> = ({
         },
       });
     }
-  }, [node, initialRender]);
+  }, [node, initialRender, isPhantom]);
 
   // Safety check - if a node has disappeared from view, try to force-show it
   useEffect(() => {
@@ -56,7 +59,7 @@ const Card: React.FC<CardProps> = ({
           const opacity = window.getComputedStyle(cardRef.current).opacity;
           if (opacity === '0' || parseFloat(opacity) < 0.1) {
             console.log(`Force showing node ${node.data.id} - was invisible`);
-            cardRef.current.style.opacity = '1';
+            cardRef.current.style.opacity = isPhantom ? '0.5' : '1';
             cardRef.current.style.transform = `translate(${node.x}px, ${node.y}px)`;
           }
         }
@@ -64,19 +67,20 @@ const Card: React.FC<CardProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [node, transitionTime]);
+  }, [node, transitionTime, isPhantom]);
 
+  // Only allow interactions with non-phantom nodes
   const handleMouseEnter = useCallback(() => {
-    if (!node.data.main && onMouseEnter) {
+    if (!node.data.main && !isPhantom && onMouseEnter) {
       onMouseEnter(node);
     }
-  }, [node, onMouseEnter]);
+  }, [node, onMouseEnter, isPhantom]);
 
   const handleMouseLeave = useCallback(() => {
-    if (!node.data.main && onMouseLeave) {
+    if (!node.data.main && !isPhantom && onMouseLeave) {
       onMouseLeave(node);
     }
-  }, [node, onMouseLeave]);
+  }, [node, onMouseLeave, isPhantom]);
 
   const data = node.data.data || {};
   const formatedData = {
@@ -113,78 +117,101 @@ const Card: React.FC<CardProps> = ({
     return null;
   }
 
+  // Define phantom class and special styles for phantom nodes
+  const phantomClass = isPhantom ? 'phantom-card' : '';
+
   return (
     <g
       ref={cardRef}
-      className={`card_cont ${node.data.main ? 'main-node' : ''}`}
+      className={`card_cont ${node.data.main ? 'main-node' : ''} ${phantomClass}`}
       transform={`translate(${posX}, ${posY})`}
       style={{ opacity: 0 }} // Initial opacity is 0, animation will change it
       data-id={node.data.id}
+      data-phantom={isPhantom ? 'true' : 'false'}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Relationship Badge Component */}
-      <RelationshipBadge
-        relationshipType={formatedData.relationshipType}
-        isDeceased={formatedData.isDeceased}
-      />
+      {/* Only show relationship badge for non-phantom nodes */}
+      {!isPhantom && (
+        <RelationshipBadge
+          relationshipType={formatedData.relationshipType}
+          isDeceased={formatedData.isDeceased}
+        />
+      )}
 
       {/* Main Card */}
       <g
-        className="card-inner"
+        className={`card-inner ${phantomClass}`}
         transform={`translate(${-cardWidth / 2}, ${-cardHeight / 2})`}
       >
-        {/* Card Background with Rounded Corners */}
+        {/* Card Background with Rounded Corners - Special styling for phantom nodes */}
         <rect
           width={cardWidth}
           height={cardHeight}
           rx={20}
           ry={20}
-          fill="#D9D9D9"
-          stroke={formatedData.isDeceased ? '#FF0000' : 'none'}
-          strokeWidth={formatedData.isDeceased ? 2 : 0}
+          fill={isPhantom ? '#F5F5F5' : '#D9D9D9'}
+          stroke={
+            isPhantom ? '#CCCCCC' : formatedData.isDeceased ? '#FF0000' : 'none'
+          }
+          strokeWidth={isPhantom ? 1 : formatedData.isDeceased ? 2 : 0}
+          strokeDasharray={isPhantom ? '5,5' : 'none'}
         />
 
-        {/* Card Header Component */}
-        <CardHeader
-          data={{
-            displayName: formatedData.displayName,
-            personId: node.data.id,
-          }}
-          onPersonAdd={e => onPersonAdd && onPersonAdd(node, e)}
-          onPersonDelete={onPersonDelete}
-          cardWidth={cardWidth}
-        />
+        {/* Only show interactive elements for real (non-phantom) nodes */}
+        {!isPhantom ? (
+          <>
+            <CardHeader
+              data={{
+                displayName: formatedData.displayName,
+                personId: node.data.id,
+              }}
+              onPersonAdd={e => onPersonAdd && onPersonAdd(node, e)}
+              onPersonDelete={onPersonDelete}
+              cardWidth={cardWidth}
+            />
 
-        {/* Left Container Component */}
-        <LeftContainer
-          data={{
-            isMale: formatedData.isMale,
-            age: formatedData.age,
-            birth: formatedData.birthDate,
-            death: formatedData.deathDate,
-            address: formatedData.fullAddress,
-            leftColumnWidth,
-          }}
-        />
+            <LeftContainer
+              data={{
+                isMale: formatedData.isMale,
+                age: formatedData.age,
+                birth: formatedData.birthDate,
+                death: formatedData.deathDate,
+                address: formatedData.fullAddress,
+                leftColumnWidth,
+              }}
+            />
 
-        {/* Right Container Component */}
-        <RightContainer
-          data={{
-            fileId: formatedData.fileId,
-            contactId: formatedData.contactId,
-            isMale: formatedData.isMale,
-            divisionOfInterest: formatedData.divisionOfInterest,
-            percentage: formatedData.percentage,
-            leftColumnWidth,
-            offerIconHovered: false, // Initial state
-            setOfferIconHovered: () => {}, // Will be managed inside RightContainer
-            offer: formatedData.offer,
-          }}
-        />
+            <RightContainer
+              data={{
+                fileId: formatedData.fileId,
+                contactId: formatedData.contactId,
+                isMale: formatedData.isMale,
+                divisionOfInterest: formatedData.divisionOfInterest,
+                percentage: formatedData.percentage,
+                leftColumnWidth,
+                offerIconHovered: false,
+                setOfferIconHovered: () => {},
+                offer: formatedData.offer,
+              }}
+            />
 
-        {/* Footer Component */}
-        <CardFooter />
+            <CardFooter />
+          </>
+        ) : (
+          // For phantom nodes, show a simplified placeholder
+          <text
+            x={cardWidth / 2}
+            y={cardHeight / 2}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill="#999"
+            fontSize="14"
+            fontStyle="italic"
+          >
+            {formatedData.isMale ? 'Unknown Father' : 'Unknown Mother'}
+          </text>
+        )}
       </g>
     </g>
   );

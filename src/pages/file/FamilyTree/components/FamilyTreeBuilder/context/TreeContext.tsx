@@ -46,11 +46,10 @@ type TreeAction =
     }
   | { type: 'REMOVE_PERSON_AND_UPDATE'; payload: string };
 
-// Initial configuration
+// Initial configuration - removed singleParentEmptyCard option
 const initialConfig: TreeConfig = {
   nodeSeparation: 400,
   levelSeparation: 300,
-  singleParentEmptyCard: true, // Changed to true for consistent behavior
   isHorizontal: false,
   transitionTime: 1000,
   cardDimensions: {
@@ -77,7 +76,6 @@ const initialState: TreeState = {
   isInitialRender: true,
 };
 
-// Enhanced reducer that handles orientation changes properly
 function treeReducer(state: TreeState, action: TreeAction): TreeState {
   switch (action.type) {
     case 'UPDATE_MAIN_ID':
@@ -93,7 +91,7 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       };
 
     case 'ADD_PERSON': {
-      const { person, parentId, relationship } = action.payload;
+      const { person, parentId, relationship, otherParentId } = action.payload;
       // Create a deep copy to avoid mutation
       const updatedData = JSON.parse(JSON.stringify(state.data));
 
@@ -107,6 +105,17 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       }
 
       const parent = updatedData[parentIndex];
+
+      // Find other parent if specified
+      let otherParent;
+      if (otherParentId) {
+        const otherParentIndex = updatedData.findIndex(
+          (p: PersonData) => p.id === otherParentId
+        );
+        if (otherParentIndex !== -1) {
+          otherParent = updatedData[otherParentIndex];
+        }
+      }
 
       // Process relationships based on type
       if (relationship === 'spouse') {
@@ -133,9 +142,43 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         // Set parent reference based on gender
         if (parent.data.gender === 'M') {
           person.rels.father = parent.id;
+
+          // Add relationship with other parent if specified
+          if (otherParent && otherParent.data.gender === 'F') {
+            person.rels.mother = otherParent.id;
+            if (!otherParent.rels.children) {
+              otherParent.rels.children = [];
+            }
+            if (!otherParent.rels.children.includes(person.id)) {
+              otherParent.rels.children.push(person.id);
+            }
+          }
         } else {
           person.rels.mother = parent.id;
+
+          // Add relationship with other parent if specified
+          if (otherParent && otherParent.data.gender === 'M') {
+            person.rels.father = otherParent.id;
+            if (!otherParent.rels.children) {
+              otherParent.rels.children = [];
+            }
+            if (!otherParent.rels.children.includes(person.id)) {
+              otherParent.rels.children.push(person.id);
+            }
+          }
         }
+      } else if (relationship === 'father') {
+        person.rels.father = parent.id;
+        if (!parent.rels.children) {
+          parent.rels.children = [];
+        }
+        parent.rels.children.push(person.id);
+      } else if (relationship === 'mother') {
+        person.rels.mother = parent.id;
+        if (!parent.rels.children) {
+          parent.rels.children = [];
+        }
+        parent.rels.children.push(person.id);
       }
 
       // Add the new person to the data
@@ -209,8 +252,7 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       if (
         action.payload.isHorizontal !== undefined ||
         action.payload.nodeSeparation !== undefined ||
-        action.payload.levelSeparation !== undefined ||
-        action.payload.singleParentEmptyCard !== undefined
+        action.payload.levelSeparation !== undefined
       ) {
         console.log('Critical config change - recalculating tree');
 
@@ -220,7 +262,6 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
           main_id: state.mainId,
           node_separation: newConfig.nodeSeparation,
           level_separation: newConfig.levelSeparation,
-          single_parent_empty_card: newConfig.singleParentEmptyCard,
           is_horizontal: newConfig.isHorizontal,
         });
 
@@ -243,13 +284,12 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
     case 'UPDATE_TREE': {
       console.log('Calculating tree layout');
 
-      // Calculate new tree layout
+      // Calculate new tree layout without singleParentEmptyCard parameter
       const treeData = calculateTree({
         data: state.data,
         main_id: state.mainId,
         node_separation: state.config.nodeSeparation,
         level_separation: state.config.levelSeparation,
-        single_parent_empty_card: state.config.singleParentEmptyCard,
         is_horizontal: state.config.isHorizontal,
       });
 
@@ -271,7 +311,7 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
 
     case 'ADD_PERSON_AND_UPDATE': {
       const { person, parentId, relationship, otherParentId } = action.payload;
-      // Create a deep copy to avoid mutation - deep clone to ensure all nested objects are properly copied
+      // Create a deep copy to avoid mutation
       const updatedData = JSON.parse(JSON.stringify(state.data));
 
       // Find parent in the data
@@ -364,6 +404,24 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
           father: person.rels.father || 'None',
           mother: person.rels.mother || 'None',
         });
+      } else if (relationship === 'father') {
+        // Handle father relationship
+        person.rels.father = parent.id;
+        if (!parent.rels.children) {
+          parent.rels.children = [];
+        }
+        if (!parent.rels.children.includes(person.id)) {
+          parent.rels.children.push(person.id);
+        }
+      } else if (relationship === 'mother') {
+        // Handle mother relationship
+        person.rels.mother = parent.id;
+        if (!parent.rels.children) {
+          parent.rels.children = [];
+        }
+        if (!parent.rels.children.includes(person.id)) {
+          parent.rels.children.push(person.id);
+        }
       }
 
       // Add the new person to the data
@@ -373,13 +431,12 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         updatedData.length
       );
 
-      // Calculate tree with consistent parameters
+      // Calculate tree
       const treeData = calculateTree({
         data: updatedData,
         main_id: state.mainId,
         node_separation: state.config.nodeSeparation,
         level_separation: state.config.levelSeparation,
-        single_parent_empty_card: state.config.singleParentEmptyCard, // Use the config value for consistency
         is_horizontal: state.config.isHorizontal,
       });
 
@@ -395,9 +452,23 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
 
     case 'REMOVE_PERSON_AND_UPDATE': {
       const personId = action.payload;
-      // Create a deep copy without the removed person
+
+      // Don't allow removing phantom nodes directly
+      const personToRemove = state.data.find(p => p.id === personId);
+      if (personToRemove?.isPhantom) {
+        console.log('Attempted to remove a phantom node, ignoring');
+        return state;
+      }
+
+      // Create a deep copy without the removed person and any associated phantom nodes
       const updatedData = JSON.parse(
-        JSON.stringify(state.data.filter(p => p.id !== personId))
+        JSON.stringify(
+          state.data.filter(
+            p =>
+              p.id !== personId &&
+              (!p.isPhantom || !p.rels.spouses?.includes(personId))
+          )
+        )
       );
 
       // Clean up all references to this person
@@ -433,7 +504,13 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       // If we're removing the main person, find a new one
       let newMainId = state.mainId;
       if (state.mainId === personId && updatedData.length > 0) {
-        newMainId = updatedData[0].id;
+        // Find first non-phantom node to be main
+        const newMain = updatedData.find(p => !p.isPhantom);
+        if (newMain) {
+          newMainId = newMain.id;
+        } else {
+          newMainId = updatedData[0].id;
+        }
       }
 
       // Calculate the tree immediately
@@ -442,7 +519,6 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         main_id: newMainId,
         node_separation: state.config.nodeSeparation,
         level_separation: state.config.levelSeparation,
-        single_parent_empty_card: state.config.singleParentEmptyCard,
         is_horizontal: state.config.isHorizontal,
       });
 
@@ -571,3 +647,10 @@ export function useTreeContext() {
   }
   return context;
 }
+
+// Export data function to filter out phantom nodes
+const exportData = (data: PersonData[]): PersonData[] => {
+  return data.filter(person => !person.isPhantom);
+};
+
+// Rest of the file remains the same

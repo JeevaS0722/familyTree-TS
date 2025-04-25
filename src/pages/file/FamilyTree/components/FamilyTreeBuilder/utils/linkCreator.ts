@@ -50,25 +50,50 @@ export function createLinks({
       return;
     }
 
-    d.children.forEach((child, i) => {
-      const other_parent = otherParent(child, d, tree) || d;
-      const sx = other_parent.sx;
+    d.children.forEach(child => {
+      // Find the other parent if it exists
+      const other_parent = otherParent(child, d, tree);
 
-      const parent_pos = !is_horizontal ? { x: sx, y: d.y } : { x: d.x, y: sx };
-      links.push({
-        d: Link(child, parent_pos),
-        _d: () =>
-          Link(parent_pos, {
-            x: _or(parent_pos, 'x'),
-            y: _or(parent_pos, 'y'),
-          }),
-        curve: true,
-        id: linkId(child, d, other_parent),
-        depth: d.depth + 1,
-        is_ancestry: false,
-        source: [d, other_parent],
-        target: child,
-      });
+      // Check if this is a single parent or dual parent situation
+      if (!other_parent) {
+        // SINGLE PARENT CASE - Direct connection from parent to child
+        links.push({
+          d: LinkSingleParent(d, child),
+          _d: () => {
+            const _d = { x: d.x, y: d.y };
+            const _c = { x: child.x, y: child.y };
+            return LinkSingleParent(_d, _c);
+          },
+          curve: true,
+          id: linkId(child, d),
+          depth: d.depth + 1,
+          is_ancestry: false,
+          is_single_parent: true, // Mark as single parent link
+          source: d,
+          target: child,
+        });
+      } else {
+        // DUAL PARENT CASE - Connection through both parents
+        // Use child's psx/psy as connection point (set in setupProgenyParentsPos)
+        const parent_pos = !is_horizontal
+          ? { x: child.psx || d.x, y: d.y }
+          : { x: d.x, y: child.psx || d.y };
+
+        links.push({
+          d: Link(child, parent_pos),
+          _d: () =>
+            Link(parent_pos, {
+              x: _or(parent_pos, 'x'),
+              y: _or(parent_pos, 'y'),
+            }),
+          curve: true,
+          id: linkId(child, d, other_parent),
+          depth: d.depth + 1,
+          is_ancestry: false,
+          source: [d, other_parent],
+          target: child,
+        });
+      }
     });
   }
 
@@ -103,6 +128,49 @@ export function createLinks({
         target: spouse,
       });
     });
+  }
+
+  // New function for single parent to child links
+  function LinkSingleParent(parent: any, child: any): [number, number][] {
+    return is_horizontal
+      ? LinkSingleParentHorizontal(parent, child)
+      : LinkSingleParentVertical(parent, child);
+  }
+
+  // Vertical single parent link (curved path from parent to child)
+  function LinkSingleParentVertical(
+    parent: any,
+    child: any
+  ): [number, number][] {
+    // Calculate halfway point for the curve
+    const halfwayY = parent.y + (child.y - parent.y) / 2;
+
+    return [
+      [parent.x, parent.y], // Start at parent
+      [parent.x, halfwayY], // Vertical line down from parent
+      [parent.x, halfwayY], // Control point for curve
+      [child.x, halfwayY], // Control point for curve to child
+      [child.x, halfwayY], // Horizontal line to child's x position
+      [child.x, child.y], // End at child
+    ];
+  }
+
+  // Horizontal single parent link
+  function LinkSingleParentHorizontal(
+    parent: any,
+    child: any
+  ): [number, number][] {
+    // Calculate halfway point for the curve
+    const halfwayX = parent.x + (child.x - parent.x) / 2;
+
+    return [
+      [parent.x, parent.y], // Start at parent
+      [halfwayX, parent.y], // Horizontal line from parent
+      [halfwayX, parent.y], // Control point for curve
+      [halfwayX, child.y], // Control point for curve to child
+      [halfwayX, child.y], // Vertical line to child's y position
+      [child.x, child.y], // End at child
+    ];
   }
 
   // Helper functions

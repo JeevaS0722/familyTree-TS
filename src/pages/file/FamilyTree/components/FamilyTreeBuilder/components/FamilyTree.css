@@ -703,3 +703,44 @@ input:checked+.f3-slider:before {
 .placeholder-card {
     cursor: pointer;
 }
+
+/* Styles for phantom parent nodes */
+.phantom-card {
+    pointer-events: none;
+    /* Prevent interactions with phantom nodes */
+}
+
+.phantom-card rect {
+    stroke-dasharray: 5, 5;
+    opacity: 0.7;
+}
+
+.phantom-card text {
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Ensure phantom cards are visible but clearly distinguished */
+g.card_cont.phantom-card {
+    opacity: 0.5 !important;
+}
+
+/* Styles for different types of links */
+.link {
+    stroke: #fff;
+    stroke-width: 1px;
+}
+
+.spouse-link {
+    stroke-dasharray: none;
+}
+
+.ancestry-link {
+    stroke-width: 1px;
+}
+
+/* Special styling for single parent links */
+.single-parent-link {
+    stroke-width: 1.5px;
+    /* Make slightly thicker */
+}

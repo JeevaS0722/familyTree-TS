@@ -135,17 +135,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
             </label>
           </div>
 
-          <div className="f3-config-control">
-            <label>Single Parent Empty Card</label>
-            <label className="f3-switch">
-              <input
-                type="checkbox"
-                checked={state.config.singleParentEmptyCard}
-                onChange={e => handleCheckboxChange(e, 'singleParentEmptyCard')}
-              />
-              <span className="f3-slider"></span>
-            </label>
-          </div>
+          {/* Removed Single Parent Empty Card option - now automatically handled */}
         </div>
 
         <div className="f3-config-section">

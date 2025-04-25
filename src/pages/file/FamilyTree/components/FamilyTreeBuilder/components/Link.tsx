@@ -94,10 +94,15 @@ const Link: React.FC<LinkProps> = ({
     };
   }, [link, transitionTime, treeData, initialRender]);
 
+  // Determine if this is a single-parent link
+  const isSingleParentLink = link.is_single_parent === true;
+
   return (
     <path
       ref={linkRef}
-      className={`link ${link.spouse ? 'spouse-link' : ''} ${link.is_ancestry ? 'ancestry-link' : ''}`}
+      className={`link ${link.spouse ? 'spouse-link' : ''} 
+                 ${link.is_ancestry ? 'ancestry-link' : ''} 
+                 ${isSingleParentLink ? 'single-parent-link' : ''}`}
       fill="none"
       stroke="#fff"
       strokeWidth={1}
