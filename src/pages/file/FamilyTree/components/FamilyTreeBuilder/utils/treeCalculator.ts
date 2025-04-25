@@ -1,8 +1,5 @@
-// src/pages/file/FamilyTree/components/FamilyTreeBuilder/utils/treeCalculator.ts
-
 import * as d3 from 'd3';
 import { PersonData, TreeData, TreeNode } from '../types/familyTree';
-import { createNewPerson } from './personHelper';
 
 export function calculateTree({
   data,
@@ -31,48 +28,35 @@ export function calculateTree({
     [node_separation, level_separation] = [level_separation, node_separation];
   }
 
-  // Create a copy of data WITHOUT adding phantom spouses
   const data_stash = JSON.parse(JSON.stringify(data)) as PersonData[];
 
-  // Sort children with spouses
   sortChildrenWithSpouses(data_stash);
 
-  // Find main person
   const main =
     (main_id !== null && data_stash.find(d => d.id === main_id)) ||
     data_stash[0];
 
-  // Calculate tree positions
   const tree_children = calculateTreePositions(main, 'children', false);
   const tree_parents = calculateTreePositions(main, 'parents', true);
 
-  // Mark main node
   data_stash.forEach(d => (d.main = d.id === main.id));
 
-  // Level out each side
   levelOutEachSide(tree_parents, tree_children);
 
-  // Merge sides
   const tree = mergeSides(tree_parents, tree_children);
 
-  // Setup children and parents
   setupChildrenAndParents({ tree });
 
-  // Setup spouses
   setupSpouses({ tree, node_separation });
 
-  // Setup progeny parents positions
   setupProgenyParentsPos({ tree });
 
-  // Position nodes
   nodePositioning({ tree, is_horizontal });
 
-  // Check if all relatives are displayed
   tree.forEach(d => {
     d.all_rels_displayed = isAllRelativeDisplayed(d, tree);
   });
 
-  // Calculate tree dimensions
   const dim = calculateTreeDim(
     tree,
     node_separation,
@@ -82,7 +66,6 @@ export function calculateTree({
 
   return { data: tree, data_stash, dim, main_id: main.id, is_horizontal };
 
-  // Inner functions for tree calculation
   function calculateTreePositions(
     datum: PersonData,
     rt: 'children' | 'parents',
@@ -119,10 +102,6 @@ export function calculateTree({
       return offset;
     }
 
-    function hasCh(d: d3.HierarchyNode<PersonData>): boolean {
-      return !!d.children;
-    }
-
     function sameParent(
       a: d3.HierarchyNode<PersonData>,
       b: d3.HierarchyNode<PersonData>
@@ -138,13 +117,6 @@ export function calculateTree({
         a.data.rels.father === b.data.rels.father &&
         a.data.rels.mother === b.data.rels.mother
       );
-    }
-
-    function someChildren(
-      a: d3.HierarchyNode<PersonData>,
-      b: d3.HierarchyNode<PersonData>
-    ): boolean {
-      return hasCh(a) || hasCh(b);
     }
 
     function hasSpouses(d: d3.HierarchyNode<PersonData>): boolean {
@@ -228,7 +200,7 @@ export function calculateTree({
         d.data.rels.spouses &&
         d.data.rels.spouses.length > 0
       ) {
-        const side = d.data.data.gender === 'M' ? -1 : 1; // female on right
+        const side = d.data.data.gender === 'M' ? -1 : 1;
         d.x += (d.data.rels.spouses.length / 2) * node_separation * side;
         d.data.rels.spouses.forEach((sp_id, i) => {
           const spouse_data = data_stash.find(d0 => d0.id === sp_id)!;
@@ -278,11 +250,9 @@ export function calculateTree({
         return;
       }
 
-      // Get mom and dad nodes if they exist
       const m = findDatum(d.data.rels.mother);
       const f = findDatum(d.data.rels.father);
 
-      // For a single parent, set the connection points directly to the parent
       if (m && !f) {
         d.psx = m.x;
         d.psy = m.y;
@@ -290,10 +260,6 @@ export function calculateTree({
         d.psx = f.x;
         d.psy = f.y;
       } else if (m && f) {
-        // For dual parents, use the existing logic
-        if (!m.added && !f.added) {
-          console.error('no added spouse', m, f);
-        }
         const added_spouse = m.added ? m : f;
         setupParentPos(d, added_spouse);
       }

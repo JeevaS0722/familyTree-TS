@@ -46,9 +46,7 @@ export interface Contact {
     dateCreated: string;
     dateDue: string;
     dateComplete: string | null;
-    // other task properties
   }>;
-  // Add other fields as needed
 }
 
 export interface ContactApiResponse {

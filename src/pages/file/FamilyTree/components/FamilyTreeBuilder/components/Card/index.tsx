@@ -8,6 +8,7 @@ import CardHeader from './components/CardHeader';
 import LeftContainer from './components/LeftContainer';
 import RightContainer from './components/RightContainer';
 import CardFooter from './components/CardFooter';
+import MiniTree from './components/MIniTree';
 
 const Card: React.FC<CardProps> = ({
   node,
@@ -23,42 +24,19 @@ const Card: React.FC<CardProps> = ({
   const cardRef = useRef<SVGGElement>(null);
   const [isRendered, setIsRendered] = useState(true);
 
-  // Check if this is a phantom parent node
   const isPhantom = !!node.data.isPhantom;
 
-  // Animation hook - pass initialRender flag
+  const shouldShowMiniTree =
+    showMiniTree && !isPhantom && !node.data.main && !node.all_rels_displayed;
+
   useNodeAnimation(cardRef, node, transitionTime, treeData, initialRender);
 
-  // Log node state for debugging
-  useEffect(() => {
-    if (node && !node.exiting) {
-      console.log(`Card component for node: ${node.data.id}`, {
-        x: node.x,
-        y: node.y,
-        _x: node._x,
-        _y: node._y,
-        exiting: node.exiting,
-        isPhantom: isPhantom,
-        initialRender,
-        relationships: {
-          father: node.data.rels.father,
-          mother: node.data.rels.mother,
-          children: node.data.rels.children?.length || 0,
-          spouses: node.data.rels.spouses?.length || 0,
-        },
-      });
-    }
-  }, [node, initialRender, isPhantom]);
-
-  // Safety check - if a node has disappeared from view, try to force-show it
   useEffect(() => {
     if (cardRef.current && node && !node.exiting) {
-      // Check after animation should be complete
       const timer = setTimeout(() => {
         if (cardRef.current) {
           const opacity = window.getComputedStyle(cardRef.current).opacity;
           if (opacity === '0' || parseFloat(opacity) < 0.1) {
-            console.log(`Force showing node ${node.data.id} - was invisible`);
             cardRef.current.style.opacity = isPhantom ? '0.5' : '1';
             cardRef.current.style.transform = `translate(${node.x}px, ${node.y}px)`;
           }
@@ -69,7 +47,6 @@ const Card: React.FC<CardProps> = ({
     }
   }, [node, transitionTime, isPhantom]);
 
-  // Only allow interactions with non-phantom nodes
   const handleMouseEnter = useCallback(() => {
     if (!node.data.main && !isPhantom && onMouseEnter) {
       onMouseEnter(node);
@@ -90,7 +67,7 @@ const Card: React.FC<CardProps> = ({
     hasNotes: !!data?.has_new_notes,
     displayName:
       data?.name ||
-      `${data?.firstName || ''} ${data?.lastName || ''}`.trim() ||
+      `${data?.first_ame || ''} ${data?.last_name || ''}`.trim() ||
       'Unknown',
     age: data?.age || '-',
     birthDate: data?.dOB || '-',
@@ -103,21 +80,17 @@ const Card: React.FC<CardProps> = ({
     offer: data?.offer || {},
   };
 
-  // Calculate card width and height
   const cardWidth = 300;
   const cardHeight = 160;
   const leftColumnWidth = cardWidth / 2;
 
-  // Ensure node has valid position - default to origin if invalid
   const posX = typeof node.x === 'number' && !isNaN(node.x) ? node.x : 0;
   const posY = typeof node.y === 'number' && !isNaN(node.y) ? node.y : 0;
 
-  // Don't render if marked as not rendered (for debugging)
   if (!isRendered) {
     return null;
   }
 
-  // Define phantom class and special styles for phantom nodes
   const phantomClass = isPhantom ? 'phantom-card' : '';
 
   return (
@@ -125,26 +98,24 @@ const Card: React.FC<CardProps> = ({
       ref={cardRef}
       className={`card_cont ${node.data.main ? 'main-node' : ''} ${phantomClass}`}
       transform={`translate(${posX}, ${posY})`}
-      style={{ opacity: 0 }} // Initial opacity is 0, animation will change it
+      style={{ opacity: 0 }}
       data-id={node.data.id}
       data-phantom={isPhantom ? 'true' : 'false'}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Only show relationship badge for non-phantom nodes */}
       {!isPhantom && (
         <RelationshipBadge
           relationshipType={formatedData.relationshipType}
           isDeceased={formatedData.isDeceased}
         />
       )}
+      <MiniTree node={node} visible={shouldShowMiniTree} />
 
-      {/* Main Card */}
       <g
         className={`card-inner ${phantomClass}`}
         transform={`translate(${-cardWidth / 2}, ${-cardHeight / 2})`}
       >
-        {/* Card Background with Rounded Corners - Special styling for phantom nodes */}
         <rect
           width={cardWidth}
           height={cardHeight}
@@ -158,7 +129,6 @@ const Card: React.FC<CardProps> = ({
           strokeDasharray={isPhantom ? '5,5' : 'none'}
         />
 
-        {/* Only show interactive elements for real (non-phantom) nodes */}
         {!isPhantom ? (
           <>
             <CardHeader
@@ -199,7 +169,6 @@ const Card: React.FC<CardProps> = ({
             <CardFooter />
           </>
         ) : (
-          // For phantom nodes, show a simplified placeholder
           <text
             x={cardWidth / 2}
             y={cardHeight / 2}

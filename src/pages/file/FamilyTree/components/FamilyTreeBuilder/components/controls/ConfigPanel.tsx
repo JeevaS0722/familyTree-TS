@@ -1,32 +1,23 @@
 // src/components/FamilyTree/controls/ConfigPanel.tsx
-import React, { useState } from 'react';
+import React from 'react';
 import { useTreeContext } from '../../context/TreeContext';
 
 interface ConfigPanelProps {
-  // Add any props needed
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const ConfigPanel: React.FC<ConfigPanelProps> = () => {
-  const { state, updateConfig, updateTree } = useTreeContext();
-  const [isOpen, setIsOpen] = useState(false);
+const ConfigPanel: React.FC<ConfigPanelProps> = ({ isOpen, onClose }) => {
+  const { state, updateConfig } = useTreeContext();
 
   const togglePanel = () => {
-    setIsOpen(!isOpen);
+    onClose();
   };
 
   const handleChange = (key: string, value: any) => {
     const newConfig: any = {};
     newConfig[key] = value;
     updateConfig(newConfig);
-  };
-
-  const handleCardDimensionChange = (key: string, value: number) => {
-    updateConfig({
-      cardDimensions: {
-        ...state.config.cardDimensions,
-        [key]: value,
-      },
-    });
   };
 
   const handleRangeChange = (
@@ -37,24 +28,12 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
     handleChange(key, value);
   };
 
-  const handleCardDimRangeChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    key: string
-  ) => {
-    const value = parseInt(e.target.value, 10);
-    handleCardDimensionChange(key, value);
-  };
-
   const handleCheckboxChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     key: string
   ) => {
     const value = e.target.checked;
     handleChange(key, value);
-  };
-
-  const applyChanges = () => {
-    updateTree();
   };
 
   return (
@@ -65,22 +44,8 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
       <div className="f3-config-content">
         <h3>Tree Configuration</h3>
 
-        {/* NEW SECTION: Interaction Mode */}
         <div className="f3-config-section">
           <h4>Interaction Mode</h4>
-          <div className="f3-config-control">
-            <label>View/Edit Mode</label>
-            <label className="f3-switch">
-              <input
-                type="checkbox"
-                checked={state.config.viewMode}
-                onChange={e => handleCheckboxChange(e, 'viewMode')}
-              />
-              <span className="f3-slider"></span>
-            </label>
-            <span>{state.config.viewMode ? 'View Mode' : 'Edit Mode'}</span>
-          </div>
-
           <div className="f3-config-control">
             <label>Highlight Path on Hover</label>
             <label className="f3-switch">
@@ -110,60 +75,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
         </div>
 
         <div className="f3-config-section">
-          <h4>Card Options</h4>
-          <div className="f3-config-control">
-            <label>Show Mini Tree</label>
-            <label className="f3-switch">
-              <input
-                type="checkbox"
-                checked={state.config.showMiniTree}
-                onChange={e => handleCheckboxChange(e, 'showMiniTree')}
-              />
-              <span className="f3-slider"></span>
-            </label>
-          </div>
-
-          <div className="f3-config-control">
-            <label>Enable Link Break</label>
-            <label className="f3-switch">
-              <input
-                type="checkbox"
-                checked={state.config.linkBreak}
-                onChange={e => handleCheckboxChange(e, 'linkBreak')}
-              />
-              <span className="f3-slider"></span>
-            </label>
-          </div>
-
-          {/* Removed Single Parent Empty Card option - now automatically handled */}
-        </div>
-
-        <div className="f3-config-section">
-          <h4>Card Dimensions</h4>
-          <div className="f3-config-control">
-            <label>Width: {state.config.cardDimensions.w}px</label>
-            <input
-              type="range"
-              min="300"
-              max="600"
-              value={state.config.cardDimensions.w}
-              onChange={e => handleCardDimRangeChange(e, 'w')}
-            />
-          </div>
-
-          <div className="f3-config-control">
-            <label>Height: {state.config.cardDimensions.h}px</label>
-            <input
-              type="range"
-              min="155"
-              max="310"
-              value={state.config.cardDimensions.h}
-              onChange={e => handleCardDimRangeChange(e, 'h')}
-            />
-          </div>
-        </div>
-
-        <div className="f3-config-section">
           <h4>Spacing</h4>
           <div className="f3-config-control">
             <label>Node Separation: {state.config.nodeSeparation}px</label>
@@ -187,25 +98,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = () => {
             />
           </div>
         </div>
-
-        <div className="f3-config-section">
-          <h4>Animation</h4>
-          <div className="f3-config-control">
-            <label>Transition Time: {state.config.transitionTime}ms</label>
-            <input
-              type="range"
-              min="0"
-              max="3000"
-              step="100"
-              value={state.config.transitionTime}
-              onChange={e => handleRangeChange(e, 'transitionTime')}
-            />
-          </div>
-        </div>
-
-        <button className="f3-config-apply" onClick={applyChanges}>
-          Apply Changes
-        </button>
       </div>
     </div>
   );

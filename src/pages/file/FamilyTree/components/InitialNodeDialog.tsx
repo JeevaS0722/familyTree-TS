@@ -33,7 +33,6 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
   isFirstNode = false,
   contactList = [],
 }) => {
-  // Get fileId from URL params
   const { fileId } = useParams<{ fileId: string }>();
 
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -43,7 +42,6 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
     gender?: string;
   }>({});
 
-  // Reset state when dialog opens
   useEffect(() => {
     if (open) {
       setSelectedContact(null);
@@ -75,7 +73,6 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
       return;
     }
 
-    // Create a FamilyMember from the selected contact
     const newMember: PersonData = contactsToFamilyTreemapper(
       selectedContact as Contact,
       fileId,
@@ -111,7 +108,6 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
 
       <DialogContent sx={{ pt: 3, pb: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {/* Contact Autocomplete */}
           <Box>
             <Autocomplete
               options={contactList}
@@ -174,7 +170,6 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
               value={selectedContact}
               onChange={(_, newValue) => {
                 setSelectedContact(newValue);
-                // Automatically set gender if selected from contacts
                 if (newValue) {
                   setGender(determineGender(newValue));
                   setValidationErrors(prev => ({
@@ -192,7 +187,6 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
             )}
           </Box>
 
-          {/* Gender Selection */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button

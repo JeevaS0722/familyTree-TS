@@ -30,7 +30,6 @@ export const determineGender = (contact: Contact): 'M' | 'F' => {
     return 'F';
   }
 
-  // Default based on ID being even/odd as a fallback (arbitrary)
   return 'M';
 };
 
@@ -127,12 +126,9 @@ export const mapContactsToFamilyTree = (
   decodedFileName: string,
   fileId?: string | number
 ): PersonData | null => {
-  // Check if the response contains contacts
   if (!response.data?.contact) {
-    console.error('No contacts found in the response.');
     return null;
   }
-  // 1. First check for a contact with relationship containing "self"
   const contacts: Contact[] = response.data.contact;
   let rootContact: Contact | undefined = contacts.find((contact: Contact) =>
     contact.relationship?.toLowerCase()?.includes('self')
@@ -141,7 +137,6 @@ export const mapContactsToFamilyTree = (
     rootContact = contacts.find(contact => {
       const fileNameLower = decodedFileName.toLowerCase().trim();
 
-      // Create different name combinations to check
       const firstLastName =
         `${contact.firstName || ''} ${contact.lastName || ''}`
           .toLowerCase()
@@ -151,7 +146,6 @@ export const mapContactsToFamilyTree = (
           .toLowerCase()
           .trim();
 
-      // Check if any name combination matches or is contained in the filename
       return (
         firstLastName.includes(fileNameLower) ||
         fileNameLower.includes(firstLastName) ||
@@ -163,7 +157,6 @@ export const mapContactsToFamilyTree = (
   if (!rootContact) {
     return null;
   }
-  // Convert the single root contact to a FamilyMember
   const rootFamilyMember: PersonData = contactsToFamilyTreemapper(
     rootContact,
     fileId,

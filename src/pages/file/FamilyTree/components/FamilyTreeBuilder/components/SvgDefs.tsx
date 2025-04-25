@@ -7,7 +7,6 @@ interface SvgDefsProps {
 }
 
 const SvgDefs: React.FC<SvgDefsProps> = ({ cardDimensions }) => {
-  // Curved rectangle path function
   const curvedRectPath = (
     dim: { w: number; h: number },
     curve: number,
@@ -29,19 +28,16 @@ const SvgDefs: React.FC<SvgDefsProps> = ({ cardDimensions }) => {
 
   return (
     <defs id="f3CardDef">
-      {/* Fade gradient for text overflow */}
       <linearGradient id="fadeGrad">
         <stop offset="0.9" stopColor="white" stopOpacity="0" />
         <stop offset=".91" stopColor="white" stopOpacity=".5" />
         <stop offset="1" stopColor="white" stopOpacity="1" />
       </linearGradient>
 
-      {/* Mask using the gradient */}
       <mask id="fade" maskContentUnits="objectBoundingBox">
         <rect width="1" height="1" fill="url(#fadeGrad)" />
       </mask>
 
-      {/* Clip paths for various card elements */}
       <clipPath id="card_clip">
         <path
           d={curvedRectPath({ w: cardDimensions.w, h: cardDimensions.h }, 20)}
@@ -52,7 +48,6 @@ const SvgDefs: React.FC<SvgDefsProps> = ({ cardDimensions }) => {
         <rect width={cardDimensions.w - 10} height={cardDimensions.h} />
       </clipPath>
 
-      {/* Relationship batch clip path */}
       <clipPath id="relationship_batch_clip">
         <rect
           width={cardDimensions.relationship_batch_w}
@@ -62,7 +57,6 @@ const SvgDefs: React.FC<SvgDefsProps> = ({ cardDimensions }) => {
         />
       </clipPath>
 
-      {/* Drop shadow filter */}
       <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
         <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
         <feOffset dx="0" dy="2" result="offsetblur" />

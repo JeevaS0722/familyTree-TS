@@ -51,23 +51,18 @@ const EditDialog: React.FC<EditDialogProps> = ({
   initialRelationshipType,
   otherParentId,
 }) => {
-  // Get fileId from URL params
   const { fileId } = useParams<{ fileId: string }>();
 
-  // RTK Query hook for creating contacts
   const [createContact, { isLoading: isCreating }] = useCreateContactMutation();
 
-  // State for selected contact vs adding new contact
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isAddingNewContact, setIsAddingNewContact] = useState(false);
-  // State for validation errors
   const [validationErrors, setValidationErrors] = useState<{
     contact?: string;
     firstName?: string;
     ownership?: string;
   }>({});
 
-  // State for new contact form
   const [newContactForm, setNewContactForm] = useState({
     relationship: '',
     ownership: '',
@@ -83,12 +78,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
     zip: '',
   });
 
-  // When dialog opens, set the relationship type based on initialRelationshipType
   useEffect(() => {
-    console.log(
-      'Dialog opened with initialRelationshipType:',
-      initialRelationshipType
-    );
     if (open && initialRelationshipType) {
       let gender = '';
       if (
@@ -156,7 +146,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
     return Object.keys(errors).length === 0;
   };
 
-  // Handle form field changes
   const handleNewContactChange = (field: string, value: string | boolean) => {
     setNewContactForm(prev => ({
       ...prev,
@@ -168,16 +157,13 @@ const EditDialog: React.FC<EditDialogProps> = ({
     if (!validateSelectContactInputs()) {
       return;
     }
-    console.log('Selected contact:', selectedContact);
 
-    // Create a family member from the selected contact
     const newMember = contactsToFamilyTreemapper(
       selectedContact as Contact,
       fileId,
       false
     );
 
-    console.log('Created family member from existing contact:', newMember);
     onSave(newMember);
   };
 
@@ -187,7 +173,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
     }
 
     try {
-      // Create contact data object
       const contactData = {
         fileID: Number(fileId),
         relationship: initialRelationshipType || newContactForm.relationship,
@@ -204,36 +189,20 @@ const EditDialog: React.FC<EditDialogProps> = ({
         gender: newContactForm.gender,
       };
 
-      console.log('Creating contact with data:', contactData);
-
-      // Submit the new contact
       const response = await createContact(contactData).unwrap();
-
-      console.log('Contact creation API Response:', response);
 
       if (response?.success && response?.data?.contactID) {
         const newContactId = response.data.contactID;
-        console.log('Successfully created contact with ID:', newContactId);
 
-        // If we have the refreshContacts function, use it to get updated contact list
         if (refreshContacts) {
           try {
-            console.log('Refreshing contacts after creating new contact...');
             const updatedContacts = await refreshContacts();
-            console.log('Refreshed contacts count:', updatedContacts.length);
 
-            // Find the newly created contact in the refreshed list
             const createdContact = updatedContacts.find(
               c => c.contactID === newContactId
             );
 
             if (createdContact) {
-              console.log(
-                'Found newly created contact in refreshed list:',
-                createdContact
-              );
-
-              // Check if the contact has any tasks/notes (likely won't for a new contact)
               const hasNotes =
                 Array.isArray(createdContact.TasksModels) &&
                 createdContact.TasksModels.length > 0;
@@ -243,22 +212,12 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 hasNotes
               );
 
-              console.log('Created family member to be saved:', newMember);
               onSave(newMember);
               return;
-            } else {
-              console.warn(
-                'Could not find the newly created contact in the refreshed list. Will use form data instead.'
-              );
             }
-          } catch (refreshError) {
-            console.error('Error refreshing contacts:', refreshError);
-            // Continue with form data if refresh fails
-          }
+          } catch (refreshError) {}
         }
 
-        // Fallback if refresh fails or contact not found after refresh
-        // Create a family member based on the form data
         const newMember = contactsToFamilyTreemapper(
           {
             ...newContactForm,
@@ -267,17 +226,11 @@ const EditDialog: React.FC<EditDialogProps> = ({
           fileId,
           false
         );
-        console.log('Created family member from form data:', newMember);
         onSave(newMember);
-      } else {
-        console.error('Contact creation failed or invalid response:', response);
       }
-    } catch (error) {
-      console.error('Error creating contact:', error);
-    }
+    } catch (error) {}
   };
 
-  // Combined save handler
   const handleSave = () => {
     if (isAddingNewContact) {
       void handleSaveNewContact();
@@ -286,7 +239,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
     }
   };
 
-  // State options
   const stateOptions = [
     'AL',
     'AK',
@@ -358,21 +310,17 @@ const EditDialog: React.FC<EditDialogProps> = ({
       : `Add Family Member for ${parentMember.data.name || ''}${otherParentTitle}`;
   };
 
-  // Filter out contacts that are already in the family tree
   const filteredContacts = React.useMemo(() => {
-    // Extract contact IDs that are already in the family tree
     const existingContactIds = new Set(
       existingFamilyMembers
         .filter(member => member.data.contactId)
         .map(member => member.data.contactId)
     );
 
-    // Don't filter out the parent member itself
     if (parentMember?.data.contactId) {
       existingContactIds.delete(parentMember?.data?.contactId);
     }
 
-    // Don't filter out the other parent if specified
     if (otherParentId) {
       const otherParent = existingFamilyMembers.find(
         m => m.id === otherParentId
@@ -382,7 +330,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
       }
     }
 
-    // Filter the contact list
     return contactList.filter(
       contact => !existingContactIds.has(contact.contactID)
     );
@@ -414,9 +361,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
 
       <DialogContent sx={{ pt: 3, pb: 3 }}>
         {!isAddingNewContact ? (
-          // EXISTING CONTACT SELECTION MODE
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* Contact Autocomplete with Add Contact button - First Row */}
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Autocomplete
@@ -515,7 +460,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
               )}
             </Box>
 
-            {/* Relation Dropdown - Second Row */}
             <Box>
               <FormControl fullWidth>
                 <TextField
@@ -550,10 +494,8 @@ const EditDialog: React.FC<EditDialogProps> = ({
             </Box>
           </Box>
         ) : (
-          // ADD NEW CONTACT MODE
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid container spacing={2}>
-              {/* Last Name */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -585,7 +527,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 />
               </Grid>
 
-              {/* First Name */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -625,7 +566,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 />
               </Grid>
 
-              {/* Relation dropdown */}
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
                   <TextField
@@ -659,7 +599,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 </FormControl>
               </Grid>
 
-              {/* Ownership */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -693,7 +632,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 />
               </Grid>
 
-              {/* Deceased Checkbox */}
               <Grid item xs={12}>
                 <FormControlLabel
                   control={
@@ -717,7 +655,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 />
               </Grid>
 
-              {/* Date of Death */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -750,7 +687,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 />
               </Grid>
 
-              {/* Date of Birth */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -781,7 +717,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 />
               </Grid>
 
-              {/* Address */}
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -813,7 +748,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 />
               </Grid>
 
-              {/* City */}
               <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
@@ -843,7 +777,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 />
               </Grid>
 
-              {/* State */}
               <Grid item xs={12} md={4}>
                 <FormControl fullWidth>
                   <InputLabel id="state-label" sx={{ color: 'white' }}>
@@ -882,7 +815,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 </FormControl>
               </Grid>
 
-              {/* Zip */}
               <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth

@@ -6,7 +6,6 @@ export function safeCloneNodes(nodes: TreeNode[]): TreeNode[] {
   }
 
   return nodes.map(node => {
-    // Create a new object with only the essential properties
     const clonedNode: Partial<TreeNode> = {
       data: node.data,
       x: node.x,
@@ -18,7 +17,6 @@ export function safeCloneNodes(nodes: TreeNode[]): TreeNode[] {
       exiting: node.exiting,
     };
 
-    // Add ID reference to parent/spouse but not the full objects
     if (node.parent) {
       clonedNode.parent = { data: { id: node.parent.data.id } } as TreeNode;
     }
@@ -27,7 +25,6 @@ export function safeCloneNodes(nodes: TreeNode[]): TreeNode[] {
       clonedNode.spouse = { data: { id: node.spouse.data.id } } as TreeNode;
     }
 
-    // Add other essential properties that don't cause circular references
     if (node.psx !== undefined) {
       clonedNode.psx = node.psx;
     }

@@ -14,7 +14,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSelectPerson }) => {
   const [searchResults, setSearchResults] = useState<PersonData[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Toggle search bar expansion
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
     if (!isExpanded) {
@@ -24,13 +23,11 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSelectPerson }) => {
     }
   };
 
-  // Handle input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
   };
 
-  // Search for people
   useEffect(() => {
     if (!searchTerm || !state.data.length) {
       setSearchResults([]);
@@ -50,10 +47,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSelectPerson }) => {
       );
     });
 
-    setSearchResults(results.slice(0, 10)); // Limit to 10 results
+    setSearchResults(results.slice(0, 10));
   }, [searchTerm, state.data]);
 
-  // Handle person selection
   const handleSelectPerson = (person: PersonData) => {
     setSearchTerm('');
     setSearchResults([]);

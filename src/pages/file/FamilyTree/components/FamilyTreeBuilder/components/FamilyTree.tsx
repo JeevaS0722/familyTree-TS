@@ -5,7 +5,6 @@ import React, { memo, useEffect, useRef } from 'react';
 import { PersonData } from '../types/familyTree';
 import { TreeProvider, useTreeContext } from '../context/TreeContext';
 import TreeView from './TreeView';
-import ConfigPanel from './controls/ConfigPanel';
 import SearchBar from './controls/SearchBar';
 import './FamilyTree.css';
 
@@ -27,7 +26,6 @@ const FamilyTreeContent: React.FC<FamilyTreeContentProps> = ({
   onPersonDelete,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  console.log('Rendering FamilyTreeContent');
   return (
     <div className="f3 f3-cont">
       <TreeView
@@ -35,7 +33,6 @@ const FamilyTreeContent: React.FC<FamilyTreeContentProps> = ({
         onPersonAdd={onPersonAdd}
         onPersonDelete={onPersonDelete}
       />
-      <ConfigPanel />
       <SearchBar />
     </div>
   );
@@ -62,10 +59,8 @@ const FamilyTree: React.FC<FamilyTreeProps> = ({
   onPersonDelete,
   contextRef,
 }) => {
-  console.log('Rendering FamilyTree');
   return (
     <TreeProvider initialData={data} initialMainId={mainId}>
-      {/* Bridge to expose context */}
       {contextRef && <ContextBridge contextRef={contextRef} />}
       <FamilyTreeContent
         onPersonAdd={onPersonAdd}

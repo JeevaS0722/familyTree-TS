@@ -28,42 +28,30 @@ const ParentSelectionMenu: React.FC<ParentSelectionMenuProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [parentOptions, setParentOptions] = useState<ParentOption[]>([]);
 
-  // Open the menu with animation after mounting
   useEffect(() => {
     const timer = setTimeout(() => setIsOpen(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
-  // Generate parent options based on the node's relationships with enhanced logging
   useEffect(() => {
     const options: ParentOption[] = [];
 
-    // Find all spouses (current and ex)
     const spouseIds = node.data.rels.spouses || [];
-
-    console.log(`Finding spouses for node ${node.data.id}:`, spouseIds);
 
     spouseIds.forEach(spouseId => {
       const spouse = existingFamilyMembers.find(m => m.data.id === spouseId);
       if (spouse) {
-        console.log(
-          `Found spouse: ${spouse.data.id} - ${spouse.data.data.name || 'Unknown'}`
-        );
         options.push({
           id: spouse.data.id,
           name: spouse.data.data.name || 'Unknown',
-          isCurrentSpouse: true, // Could distinguish current vs ex in a real implementation
+          isCurrentSpouse: true,
         });
-      } else {
-        console.log(`Spouse with ID ${spouseId} not found in family members`);
       }
     });
 
     setParentOptions(options);
-    console.log(`Total parent options found: ${options.length}`);
   }, [node, existingFamilyMembers]);
 
-  // Menu styling
   const menuStyle: React.CSSProperties = {
     position: 'absolute',
     left: `${position.x + 180}px`,
@@ -79,11 +67,7 @@ const ParentSelectionMenu: React.FC<ParentSelectionMenuProps> = ({
     transition: 'transform 0.3s, opacity 0.3s',
   };
 
-  // Handle option selection with logging
   const handleOptionSelect = (otherParentId?: string) => {
-    console.log(
-      `Selected ${relationType} with${otherParentId ? ' other parent: ' + otherParentId : 'out other parent'}`
-    );
     onSelect(relationType, otherParentId);
   };
 
@@ -100,7 +84,6 @@ const ParentSelectionMenu: React.FC<ParentSelectionMenuProps> = ({
         Add {relationType} with:
       </div>
 
-      {/* Options for adding with each spouse */}
       {parentOptions.length > 0 ? (
         parentOptions.map(option => (
           <div
@@ -136,7 +119,6 @@ const ParentSelectionMenu: React.FC<ParentSelectionMenuProps> = ({
         </div>
       )}
 
-      {/* Single parent option */}
       <div
         style={{
           padding: '12px',
@@ -154,7 +136,6 @@ const ParentSelectionMenu: React.FC<ParentSelectionMenuProps> = ({
         Single Parent
       </div>
 
-      {/* Cancel button */}
       <div
         style={{
           padding: '12px',

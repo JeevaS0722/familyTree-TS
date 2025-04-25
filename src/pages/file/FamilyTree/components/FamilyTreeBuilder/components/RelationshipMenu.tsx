@@ -27,34 +27,6 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
   const menuRadius = 160;
   const buttonRadius = 40;
 
-  // Don't allow adding relations to phantom nodes
-  if (node.data.isPhantom) {
-    console.log(
-      'Attempted to open relationship menu for phantom node, closing'
-    );
-    onClose();
-    return null;
-  }
-
-  // Check for existing relationships
-  const hasFather = !!node.data.rels.father;
-  const hasMother = !!node.data.rels.mother;
-
-  // Filter out phantom nodes when checking for spouses
-  const nonPhantomSpouses = (node.data.rels.spouses || []).filter(spouseId => {
-    const spouse = existingFamilyMembers.find(m => m.data.id === spouseId);
-    return spouse && !spouse.data.isPhantom;
-  });
-
-  const hasSpouses = nonPhantomSpouses.length > 0;
-
-  // Open the menu with animation after mounting
-  useEffect(() => {
-    const timer = setTimeout(() => setIsOpen(true), 50);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Outside click handling
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -71,39 +43,44 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  // Handle initial relationship selection with logging
-  const handleRelationSelect = (relationType: string) => {
-    console.log(
-      `Relationship selected: ${relationType}, Has spouses: ${hasSpouses}`
-    );
+  if (node.data.isPhantom) {
+    onClose();
+    return null;
+  }
 
-    // For son/daughter, check if we need to show parent selection based on spouse existence
+  const hasFather = !!node.data.rels.father;
+  const hasMother = !!node.data.rels.mother;
+
+  const nonPhantomSpouses = (node.data.rels.spouses || []).filter(spouseId => {
+    const spouse = existingFamilyMembers.find(m => m.data.id === spouseId);
+    return spouse && !spouse.data.isPhantom;
+  });
+
+  const hasSpouses = nonPhantomSpouses.length > 0;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsOpen(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleRelationSelect = (relationType: string) => {
     if ((relationType === 'son' || relationType === 'daughter') && hasSpouses) {
-      console.log(`Showing parent selection for ${relationType}`);
       setSelectedRelationType(relationType);
       setShowParentSelection(true);
     } else {
-      // For father, mother, spouse or when no spouses exist
-      console.log(`Directly adding ${relationType} without parent selection`);
       onAddRelative(relationType);
     }
   };
 
-  // Handle parent selection for child with logging
   const handleParentSelection = (
     relationType: string,
     otherParentId?: string
   ) => {
-    console.log(
-      `Parent selected for ${relationType}: ${otherParentId || 'None'}`
-    );
     setShowParentSelection(false);
     onAddRelative(relationType, otherParentId);
   };
 
-  // Calculate menu positions
   const getItemPosition = (index: number, total: number) => {
-    // Calculate position in an arc
     const firstAngle = -90;
     const angleRange = Math.min(180, total * 40);
     const angleStep = angleRange / (total - 1);
@@ -115,7 +92,6 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
     };
   };
 
-  // Filter menu items based on node relationships
   const menuItems = [
     { type: 'father', label: 'Add Father', color: '#7EADFF', show: !hasFather },
     { type: 'mother', label: 'Add Mother', color: '#FF96BC', show: !hasMother },
@@ -124,7 +100,6 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
     { type: 'daughter', label: 'Add Daughter', color: '#FF96BC', show: true },
   ].filter(item => item.show);
 
-  // Calculate container position
   const containerStyle: React.CSSProperties = {
     position: 'absolute',
     left: `${position.x - 160}px`,
@@ -132,10 +107,9 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
     width: `${menuRadius * 2}px`,
     height: `${menuRadius * 2}px`,
     zIndex: 1000,
-    pointerEvents: 'none', // Don't block other interactions
+    pointerEvents: 'none',
   };
 
-  // Main blue circle background
   const circleStyle: React.CSSProperties = {
     position: 'absolute',
     width: `${menuRadius * 2}px`,
@@ -149,7 +123,6 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
     pointerEvents: 'auto',
   };
 
-  // Close button in the center of the circle
   const closeButtonStyle: React.CSSProperties = {
     position: 'absolute',
     left: '50%',
@@ -172,14 +145,11 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
   return (
     <>
       <div className="circular-menu" style={containerStyle}>
-        {/* Main circle background */}
         <div style={circleStyle}></div>
 
-        {/* Menu items positioned in an arc */}
         {menuItems.map((item, index) => {
           const pos = getItemPosition(index, menuItems.length);
 
-          // Menu item button style
           const itemStyle: React.CSSProperties = {
             position: 'absolute',
             left: '50%',
@@ -201,7 +171,6 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
             zIndex: 1001,
           };
 
-          // Text label style
           const labelStyle: React.CSSProperties = {
             position: 'absolute',
             left: '50%',
@@ -236,13 +205,11 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
           );
         })}
 
-        {/* Close button */}
         <div style={closeButtonStyle} onClick={onClose}>
           ✕
         </div>
       </div>
 
-      {/* Parent selection menu - only shows when needed */}
       {showParentSelection && selectedRelationType && (
         <ParentSelectionMenu
           node={node}
@@ -252,7 +219,7 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
           onClose={() => setShowParentSelection(false)}
           existingFamilyMembers={existingFamilyMembers.filter(
             m => !m.data.isPhantom
-          )} // Filter out phantom parents
+          )}
         />
       )}
     </>

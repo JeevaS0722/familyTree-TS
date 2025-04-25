@@ -51,12 +51,9 @@ export function createLinks({
     }
 
     d.children.forEach(child => {
-      // Find the other parent if it exists
       const other_parent = otherParent(child, d, tree);
 
-      // Check if this is a single parent or dual parent situation
       if (!other_parent) {
-        // SINGLE PARENT CASE - Direct connection from parent to child
         links.push({
           d: LinkSingleParent(d, child),
           _d: () => {
@@ -68,13 +65,11 @@ export function createLinks({
           id: linkId(child, d),
           depth: d.depth + 1,
           is_ancestry: false,
-          is_single_parent: true, // Mark as single parent link
+          is_single_parent: true,
           source: d,
           target: child,
         });
       } else {
-        // DUAL PARENT CASE - Connection through both parents
-        // Use child's psx/psy as connection point (set in setupProgenyParentsPos)
         const parent_pos = !is_horizontal
           ? { x: child.psx || d.x, y: d.y }
           : { x: d.x, y: child.psx || d.y };
@@ -114,7 +109,7 @@ export function createLinks({
           [spouse.x, spouse.y],
         ],
         _d: () => [
-          d.is_ancestry ? [_or(d, 'x') - 0.0001, _or(d, 'y')] : [d.x, d.y], // add -.0001 to line to have some length if d.x === spouse.x
+          d.is_ancestry ? [_or(d, 'x') - 0.0001, _or(d, 'y')] : [d.x, d.y],
           d.is_ancestry
             ? [_or(spouse, 'x'), _or(spouse, 'y')]
             : [d.x - 0.0001, d.y],
@@ -130,50 +125,44 @@ export function createLinks({
     });
   }
 
-  // New function for single parent to child links
   function LinkSingleParent(parent: any, child: any): [number, number][] {
     return is_horizontal
       ? LinkSingleParentHorizontal(parent, child)
       : LinkSingleParentVertical(parent, child);
   }
 
-  // Vertical single parent link (curved path from parent to child)
   function LinkSingleParentVertical(
     parent: any,
     child: any
   ): [number, number][] {
-    // Calculate halfway point for the curve
     const halfwayY = parent.y + (child.y - parent.y) / 2;
 
     return [
-      [parent.x, parent.y], // Start at parent
-      [parent.x, halfwayY], // Vertical line down from parent
-      [parent.x, halfwayY], // Control point for curve
-      [child.x, halfwayY], // Control point for curve to child
-      [child.x, halfwayY], // Horizontal line to child's x position
-      [child.x, child.y], // End at child
+      [parent.x, parent.y],
+      [parent.x, halfwayY],
+      [parent.x, halfwayY],
+      [child.x, halfwayY],
+      [child.x, halfwayY],
+      [child.x, child.y],
     ];
   }
 
-  // Horizontal single parent link
   function LinkSingleParentHorizontal(
     parent: any,
     child: any
   ): [number, number][] {
-    // Calculate halfway point for the curve
     const halfwayX = parent.x + (child.x - parent.x) / 2;
 
     return [
-      [parent.x, parent.y], // Start at parent
-      [halfwayX, parent.y], // Horizontal line from parent
-      [halfwayX, parent.y], // Control point for curve
-      [halfwayX, child.y], // Control point for curve to child
-      [halfwayX, child.y], // Vertical line to child's y position
-      [child.x, child.y], // End at child
+      [parent.x, parent.y],
+      [halfwayX, parent.y],
+      [halfwayX, parent.y],
+      [halfwayX, child.y],
+      [halfwayX, child.y],
+      [child.x, child.y],
     ];
   }
 
-  // Helper functions
   function getMid(
     d1: TreeNode,
     d2: TreeNode,
@@ -223,7 +212,7 @@ export function createLinks({
     return args
       .map(d => d.data.id)
       .sort()
-      .join(', '); // make unique id
+      .join(', ');
   }
 
   function otherParent(
@@ -238,7 +227,6 @@ export function createLinks({
     return getRel(p1, data, condition);
   }
 
-  // If there is overlapping of personas in different branches of same family tree, return the closest one
   function getRel(
     d: TreeNode,
     data: TreeNode[],
