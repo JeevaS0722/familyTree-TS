@@ -35,6 +35,13 @@ export function formatDateByMonth(
   if (!date) {
     return '';
   }
+  if (
+    typeof date === 'string' &&
+    (date === '0000-00-00' || date === '0000/00/00')
+  ) {
+    return '';
+  }
+
   if (moment(date).isValid()) {
     return moment(date).format('YYYY-MM-DD');
   }
@@ -98,7 +105,7 @@ export const isSearchForNaN = (searchForQuery: string): boolean => {
 export function formatDateToMonthDayYear(
   date: undefined | Moment | string | null
 ): string {
-  if (!date || date === '00/00/0000') {
+  if (!date || date === '00/00/0000' || date === '0000-00-00') {
     return '';
   }
   if (moment(date).isValid()) {
@@ -121,6 +128,14 @@ export const isMomentValidDate = (
   ) {
     return false;
   }
+
+  if (date && date.isValid()) {
+    const year = date.year();
+    if (year < 1) {
+      return false;
+    }
+  }
+
   return true;
 };
 
@@ -290,3 +305,50 @@ export function formatTitle(title: TitleData): string | null {
     ? `individually and as ${title.title} ${title.preposition} ${title.entityName}`
     : `${title.title} ${title.preposition} ${title.entityName}`;
 }
+
+export const handleEmptyDateValue = (
+  value: string | undefined | null
+): string => {
+  if (!value || value === '0000/00/00' || value === '0000-00-00') {
+    return '';
+  }
+  return formatDateToMonthDayYear(value).toString();
+};
+
+export const convertLargeNumberToCurrency = (
+  value: string,
+  options: { [key: string]: number } = {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }
+): string => {
+  let [integerPart, decimalPart = ''] = value.split('.');
+
+  // Format integer part for US numbering system
+  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  // Handle fraction digits
+  if (options.minimumFractionDigits > 0 || options.maximumFractionDigits > 0) {
+    const decimalPlaces = Math.max(
+      options.minimumFractionDigits,
+      options.maximumFractionDigits
+    );
+    decimalPart = decimalPart
+      .padEnd(decimalPlaces, '0') // Add trailing zeros if needed
+      .slice(0, decimalPlaces); // Truncate to the required decimal places
+    return `$${integerPart}.${decimalPart}`;
+  } else {
+    return `$${integerPart}`;
+  }
+};
+
+export const roundBigDecimalString = (value: string): string => {
+  const [integerPart, decimalPart = ''] = value.split('.');
+  const firstDecimalDigit = parseInt(decimalPart.charAt(0) || '0', 10);
+
+  if (firstDecimalDigit >= 5) {
+    return BigInt(integerPart) + BigInt(1) + '';
+  }
+
+  return integerPart;
+};

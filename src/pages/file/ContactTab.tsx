@@ -8,123 +8,24 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ContactsTable from './ContactsTable';
-import {
-  ContactColumn,
-  ContactData,
-  ContactTableData,
-} from '../../interface/contact';
+import { ContactData, ContactTableData } from '../../interface/contact';
 import { useLazyGetContactsByFileQuery } from '../../store/Services/contactService';
-import { setSelectedContactsSort } from '../../store/Reducers/selectContactReducer';
-import { useNavigate, useParams } from 'react-router-dom';
+import {
+  setSelectedContactsSort,
+  toggleSelectedContact,
+} from '../../store/Reducers/selectContactReducer';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   convertToMMDDYYYY,
   formatDateToMonthDayYear,
 } from '../../utils/GeneralUtil';
 import { TFunction } from 'i18next';
-import { useAppDispatch } from '../../store/hooks';
+import { QueryParams, TableColumns } from '../../interface/common';
+import NewTable from '../../component/Table';
+import Checkbox from '@mui/material/Checkbox';
 
-const localizeColumns = (t: TFunction): ContactColumn[] => {
-  const commonColumns: ContactColumn[] = [
-    {
-      label: t('select'),
-      accessor: 'select',
-      sortable: false,
-    },
-    {
-      label: t('dec'),
-      accessor: 'deceased',
-      sortable: true,
-    },
-    {
-      label: t('lastName'),
-      accessor: 'lastName',
-      sortable: true,
-    },
-    {
-      label: t('firstName'),
-      accessor: 'firstName',
-      sortable: true,
-    },
-    {
-      label: t('main'),
-      accessor: 'main',
-      sortable: false,
-    },
-    {
-      label: t('relation'),
-      accessor: 'relationship',
-      sortable: true,
-    },
-    {
-      label: t('owner-ship'),
-      accessor: 'ownership',
-      sortable: true,
-    },
-    {
-      label: t('offerDate'),
-      accessor: 'offerDate',
-      sortable: true,
-    },
-    {
-      label: t('offerAmount'),
-      accessor: 'draftAmount2',
-      sortable: true,
-    },
-    {
-      label: t('deedReturned'),
-      accessor: 'returnDate',
-      sortable: true,
-    },
-    {
-      label: t('visit/NI'),
-      accessor: 'visit',
-      sortable: true,
-    },
-    {
-      label: t('fastTrack'),
-      accessor: 'fastTrack',
-      sortable: true,
-    },
-    {
-      label: t('address'),
-      accessor: 'address',
-      sortable: true,
-    },
-    {
-      label: t('city'),
-      accessor: 'city',
-      sortable: true,
-    },
-    {
-      label: t('state'),
-      accessor: 'state',
-      sortable: true,
-    },
-    {
-      label: t('zip'),
-      accessor: 'zip',
-      sortable: true,
-    },
-    {
-      label: t('ssn'),
-      accessor: 'sSN',
-      sortable: true,
-    },
-    {
-      label: t('decDt'),
-      accessor: 'decDt',
-      sortable: true,
-    },
-    {
-      label: t('dob'),
-      accessor: 'dOB',
-      sortable: true,
-    },
-  ];
-
-  return commonColumns;
-};
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import DOMPurify from 'dompurify';
 
 const ContactTab: React.FC<{
   fileName?: string;
@@ -142,11 +43,8 @@ const ContactTab: React.FC<{
   const [ownershipSum, setOwnershipSum] = useState(0);
   const [totalPurchased, setTotalPurchased] = useState(0);
   const [totalUnPurchased, setTotalUnPurchased] = useState(0);
-  const [sortBy, setSortBy] = useState<string>('deceased, lastName, firstName');
-  const [sortOrder, setSortOrder] = useState<string>('asc');
-  const [sortLoading, setSortLoading] = React.useState(true);
 
-  const [getContactsByFile, { data: contactList }] =
+  const [getContactsByFile, { data: contactList, isLoading, isFetching }] =
     useLazyGetContactsByFileQuery();
 
   const handleEmptyDateValue = (value: string | undefined | null) => {
@@ -227,9 +125,17 @@ const ContactTab: React.FC<{
         dNC: data.dNC,
         ticklered: handleEmptyDateValue(data?.ticklered?.toString()),
         main: !!data.main,
+        isSelected: false,
       });
       return data;
     });
+    const mainContact = contactsArray.find(contact => contact.main === true);
+    if (mainContact) {
+      setMainContactId(mainContact.contactId);
+    } else {
+      setMainContactId(null);
+    }
+
     setContactTableData(contactsArray);
   };
   useEffect(() => {
@@ -240,22 +146,239 @@ const ContactTab: React.FC<{
       setTotalPurchased(contactList.data.totalPurchased);
       setTotalUnPurchased(contactList.data.totalUnpurchased);
     }
-  }, [contactList, sortBy, sortOrder]);
+  }, [contactList]);
 
-  useEffect(() => {
+  const getData = ({ sortBy, sortOrder }: QueryParams) => {
     void getContactsByFile({
       fileid: Number(fileId),
       sortBy: sortBy,
       sortOrder: sortOrder,
     })
       .then(() => {
-        setSortLoading(false);
         dispatch(
           setSelectedContactsSort({ sortBy: sortBy, sortOrder: sortOrder })
         );
       })
       .catch(err => err);
-  }, [sortOrder]);
+  };
+
+  const getVisitValue = (row: any): string => {
+    const visit = row['visit'];
+    const notInterested = row['dNC'];
+    const ticklerDt = row['ticklered'] as string;
+    if (ticklerDt) {
+      return 'Ticklered for ' + ticklerDt;
+    } else if (visit && !notInterested) {
+      return 'Visit';
+    } else if (notInterested) {
+      return 'Not Interested';
+    } else {
+      return '';
+    }
+  };
+
+  // const selectedContacts = useAppSelector(
+  //   state => state.selectedContacts.selectedContacts
+  // );
+
+  const handleCheckboxChange = (contactId: number) => {
+    dispatch(toggleSelectedContact(contactId));
+    setContactTableData(prev =>
+      prev.map(contact =>
+        contact.contactId === contactId
+          ? { ...contact, isSelected: !contact.isSelected }
+          : contact
+      )
+    );
+  };
+
+  const handleMainCheckboxChange = (contactId: number) => {
+    setMainContactId(prevMainId => {
+      const newMainId = prevMainId === contactId ? null : contactId;
+
+      // Update table data to reflect only one main
+      const updatedContacts = contactTableData.map(contact => ({
+        ...contact,
+        main: contact.contactId === newMainId,
+      }));
+
+      setContactTableData(updatedContacts);
+      return newMainId;
+    });
+  };
+
+  const localizeColumns = (t: TFunction): TableColumns[] => {
+    const commonColumns: TableColumns[] = [
+      {
+        headerName: t('select'),
+        field: 'select',
+        sortable: false,
+        cellRenderer: ({ data }) => {
+          if (!data.deceased) {
+            return (
+              <Checkbox
+                checked={data.isSelected}
+                onChange={() => handleCheckboxChange(data.contactId)}
+                size="small"
+                color="info"
+                sx={{ color: 'white' }}
+              />
+            );
+          }
+          return null;
+        },
+      },
+      {
+        headerName: t('dec'),
+        field: 'deceased',
+        sortable: true,
+      },
+      {
+        headerName: t('lastName'),
+        field: 'lastName',
+        sortable: true,
+      },
+      {
+        headerName: t('firstName'),
+        field: 'firstName',
+        sortable: true,
+        cellRenderer: ({ data }) => (
+          <Link
+            to={`/editcontact/${data.contactId}`}
+            className="hover-link text-decoration-none"
+          >
+            {data.firstName}
+          </Link>
+        ),
+      },
+      {
+        headerName: t('main'),
+        field: 'main',
+        sortable: false,
+        cellRenderer: ({ data }) => (
+          <Checkbox
+            checked={mainContactId === data.contactId}
+            onChange={() => handleMainCheckboxChange(data.contactId)}
+            disabled={
+              mainContactId !== null && mainContactId !== data.contactId
+            }
+            size="small"
+            color="info"
+            sx={{
+              color: 'white',
+              '&.Mui-disabled': {
+                color: 'gray',
+              },
+            }}
+          />
+        ),
+      },
+      {
+        headerName: t('relation'),
+        field: 'relationship',
+        sortable: true,
+        cellRenderer: ({ data }) => (
+          <div
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(data.relationship || ''),
+            }}
+          />
+        ),
+      },
+      {
+        headerName: t('owner-ship'),
+        field: 'ownership',
+        sortable: true,
+      },
+      {
+        headerName: t('offerDate'),
+        field: 'offerDate',
+        sortable: true,
+      },
+      {
+        headerName: t('offerAmount'),
+        field: 'draftAmount2',
+        sortable: true,
+      },
+      {
+        headerName: t('deedReturned'),
+        field: 'returnDate',
+        sortable: true,
+        cellRenderer: ({ data }) => {
+          if (data.deedId) {
+            return (
+              <Link
+                to={`/editdeed/${data.deedId}`}
+                className="hover-link-red text-decoration-none"
+              >
+                {data.returnDate || '-'}
+              </Link>
+            );
+          }
+          return <span></span>;
+        },
+      },
+      {
+        headerName: t('visit/NI'),
+        field: 'visit',
+        sortable: true,
+        cellRenderer: ({ data }) => {
+          return (
+            <span style={{ color: '#FF0000' }}>{getVisitValue(data)}</span>
+          );
+        },
+      },
+      {
+        headerName: t('fastTrack'),
+        field: 'fastTrack',
+        sortable: true,
+      },
+      {
+        headerName: t('address'),
+        field: 'address',
+        sortable: true,
+        cellRenderer: ({ data }) => (
+          <div
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(data.address || ''),
+            }}
+          />
+        ),
+      },
+      {
+        headerName: t('city'),
+        field: 'city',
+        sortable: true,
+      },
+      {
+        headerName: t('state'),
+        field: 'state',
+        sortable: true,
+      },
+      {
+        headerName: t('zip'),
+        field: 'zip',
+        sortable: true,
+      },
+      {
+        headerName: t('ssn'),
+        field: 'sSN',
+        sortable: true,
+      },
+      {
+        headerName: t('decDt'),
+        field: 'decDt',
+        sortable: true,
+      },
+      {
+        headerName: t('dob'),
+        field: 'dOB',
+        sortable: true,
+      },
+    ];
+
+    return commonColumns;
+  };
 
   const columns = localizeColumns(t);
 
@@ -341,7 +464,7 @@ const ContactTab: React.FC<{
                   navigate(`/family_tree/${fileId}?filename=${fileName}`);
                 }}
               >
-                {t('familyTree')}
+                {t('showFamilyTree')}
               </Button>
             </Grid>
             <Grid>
@@ -383,17 +506,17 @@ const ContactTab: React.FC<{
       </Box>
 
       <Box sx={{ width: '100%' }}>
-        <ContactsTable
+        <NewTable
+          tableId="ContactTable"
           data={contactTableData}
           columns={columns}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          setSortLoading={setSortLoading}
-          sortLoading={sortLoading}
-          mainContactId={mainContactId}
-          setMainContactId={setMainContactId}
+          count={contactCount || 0}
+          getData={getData}
+          initialLoading={isLoading}
+          loading={isFetching}
+          initialSortBy="deceased,lastName,firstName"
+          initialSortOrder="asc,asc,asc"
+          isWithoutPagination={true}
         />
       </Box>
     </Stack>

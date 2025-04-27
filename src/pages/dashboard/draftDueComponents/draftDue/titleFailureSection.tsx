@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable complexity */
 import React, { useEffect, useState } from 'react';
-import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
@@ -10,6 +9,9 @@ import {
   nl2br,
   departments,
   formatDateToMonthDayYear,
+  getCurrentDate,
+  convertLargeNumberToCurrency,
+  roundBigDecimalString,
 } from '../../../../utils/GeneralUtil';
 import Tooltip from '@mui/material/Tooltip';
 import { Table } from '../../../../component/Table';
@@ -23,30 +25,40 @@ import { addDeedNotePayload } from '../../../../interface/note';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import useTheme from '@mui/material/styles/useTheme';
 import { DraftDueSectionProps } from '../../../../interface/draftDue';
-import { Chip, CircularProgress, Skeleton } from '@mui/material';
+import { CircularProgress, Skeleton } from '@mui/material';
 import { useLogoutMutation } from '../../../../store/Services/auth';
-import TitleFailureSection from './titleFailureSection';
+import { useEditDeedTitleFailureMutation } from '../../../../store/Services/deedService';
+import { EditTitleFailure } from '../../../../interface/deed';
+import moment from 'moment';
+import CustomDateCellEditor from './customDateCellEditor';
+import CustomLossAmountCellEditor from './customLossAmountCellEditor';
 
 const validSortFields = [
   'fileName',
   'grantor',
-  'fullName',
-  'county',
   'returnDate',
+  'county',
+  'state',
   'draftAmount2',
-  'dueDt2',
-  'main',
+  'datePaid2',
+  'titleFailedReason',
+  'lossAmount',
+  'titleFailDate',
+  'notes',
 ];
 
 const columnMapping: { [key: string]: string } = {
   fileName: 'fileName',
   grantor: 'grantor',
-  main: 'main',
-  fullName: 'fullName',
-  county: 'county',
   returnDate: 'returnDate',
+  county: 'county',
+  state: 'state',
   draftAmount2: 'draftAmount2',
-  dueDt2: 'dueDt2',
+  datePaid2: 'datePaid2',
+  titleFailedReason: 'titleFailedReason',
+  lossAmount: 'lossAmount',
+  titleFailDate: 'titleFailDate',
+  notes: 'notes',
 };
 
 const handleContactName = (
@@ -74,7 +86,7 @@ const handleContactName = (
 const isUserAuthorized = (department: string) =>
   department === departments[0] || department === departments[5];
 
-const draftDueHeaders = (userDepartment: string): TableColumns[] => [
+const titleFailureHeaders = (userDepartment: string): TableColumns[] => [
   {
     headerName: 'File Name',
     field: 'fileName',
@@ -91,31 +103,18 @@ const draftDueHeaders = (userDepartment: string): TableColumns[] => [
     ),
   },
   {
-    headerName: 'Contact Name',
+    headerName: 'Grantor',
     field: 'grantor',
     width: 200,
     sortable: true,
     cellRenderer: (params: { data: TableData }) =>
       handleContactName(
         typeof params.data.grantor === 'string' ? params.data.grantor : '',
-        `/editdeed/${params.data.deedID}`
+        `/editcontact/${params.data.contactID}`
       ),
   },
   {
-    headerName: 'Main',
-    field: 'main',
-    width: 120,
-    cellRenderer: params => (
-      <span style={{ color: '#FFFFFF' }}>
-        {params.data?.main === 1 ? 'Yes' : ''}
-      </span>
-    ),
-    sortable: true,
-  },
-  { headerName: 'Buyer', field: 'fullName', width: 140, sortable: true },
-  { headerName: 'County', field: 'county', width: 140, sortable: true },
-  {
-    headerName: 'Date Deed Returned',
+    headerName: 'Deed Returned',
     field: 'returnDate',
     width: 200,
     sortable: true,
@@ -131,8 +130,10 @@ const draftDueHeaders = (userDepartment: string): TableColumns[] => [
       </Link>
     ),
   },
+  { headerName: 'County', field: 'county', width: 140, sortable: true },
+  { headerName: 'State', field: 'state', width: 140, sortable: true },
   {
-    headerName: 'Draft Amount 2',
+    headerName: 'Purchase Amount',
     field: 'draftAmount2',
     width: 200,
     sortable: true,
@@ -145,19 +146,95 @@ const draftDueHeaders = (userDepartment: string): TableColumns[] => [
       }),
   },
   {
-    headerName: 'Draft 2 Due',
-    width: 140,
-    field: 'dueDt2',
+    headerName: 'Date Paid',
+    field: 'datePaid2',
     sortable: true,
-    cellRenderer: params => {
-      return formatDateToMonthDayYear(
-        params?.data?.dueDt2 as string | null | undefined
+  },
+  {
+    headerName: 'Title Failure Reason',
+    field: 'titleFailedReason',
+    sortable: true,
+  },
+  {
+    headerName: 'Loss Amount',
+    field: 'lossAmount',
+    sortable: true,
+    editable: isUserAuthorized(userDepartment),
+    cellEditor: CustomLossAmountCellEditor,
+    cellRenderer: (params: { value: string | number }) => {
+      if (params.value === 'LOADING') {
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              width: '100%',
+            }}
+          >
+            <CircularProgress
+              size={12}
+              sx={{
+                color: '#FFF',
+                position: 'absolute',
+                top: '40%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
+          </Box>
+        );
+      }
+      if (!params.value) {
+        return '$0';
+      }
+      const amountFormatted = convertLargeNumberToCurrency(
+        params.value.toString(),
+        {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }
+      );
+      return amountFormatted;
+    },
+  },
+  {
+    headerName: 'Title Fail Date',
+    field: 'titleFailDate',
+    sortable: true,
+    cellEditor: CustomDateCellEditor,
+    editable: isUserAuthorized(userDepartment),
+    cellRenderer: (params: { value: string }) => {
+      return params.value === 'LOADING' ? (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            width: '100%',
+          }}
+        >
+          <CircularProgress
+            size={12}
+            sx={{
+              color: '#FFF',
+              position: 'absolute',
+              top: '40%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        </Box>
+      ) : (
+        params.value
       );
     },
   },
   {
     headerName: 'Notes',
-    field: 'memo',
+    field: 'notes',
     width: 200,
     sortable: true,
     editable: isUserAuthorized(userDepartment),
@@ -167,7 +244,7 @@ const draftDueHeaders = (userDepartment: string): TableColumns[] => [
       maxLength: 20000,
     },
     cellRenderer: (params: {
-      data: { memo?: unknown; id: string };
+      data: { notes?: unknown; id: string };
       value: string;
     }) => {
       if (params.value === 'LOADING') {
@@ -194,9 +271,9 @@ const draftDueHeaders = (userDepartment: string): TableColumns[] => [
           </Box>
         );
       }
-      return params.data.memo
+      return params.data.notes
         ? parse(
-            DOMPurify.sanitize(nl2br(String(params.data.memo || '')), {
+            DOMPurify.sanitize(nl2br(String(params.data.notes || '')), {
               USE_PROFILES: { html: true },
             })
           )
@@ -205,10 +282,10 @@ const draftDueHeaders = (userDepartment: string): TableColumns[] => [
   },
 ];
 
-const DraftDueSection: React.FC<DraftDueSectionProps> = () => {
+const TitleFailureSection: React.FC<DraftDueSectionProps> = () => {
   const [data, setData] = useState<TableData[]>([]);
-  const [sortBy, setSortBy] = useState<string>('fileName');
-  const [sortOrder, setSortOrder] = useState<string>('asc');
+  const [sortBy, setSortBy] = useState<string>('fileName,grantor');
+  const [sortOrder, setSortOrder] = useState<string>('asc,asc');
   const [pageNo, setPageNo] = useState<number>(1); // Add page state
   const [rowsPerPage, setRowsPerPage] = useState<number>(500); // Add page size state
   const user = useAppSelector(state => state.user);
@@ -218,6 +295,7 @@ const DraftDueSection: React.FC<DraftDueSectionProps> = () => {
     useLazyGetDeedsQuery();
   const [, { isLoading: isLogoutLoading }] = useLogoutMutation();
   const [addDeedNote] = useAddDeedNoteMutation();
+  const [editDeedTitleFailure] = useEditDeedTitleFailureMutation();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -233,16 +311,18 @@ const DraftDueSection: React.FC<DraftDueSectionProps> = () => {
     page: number,
     size: number
   ) => {
+    const from = moment().subtract(1, 'years').format('MM/DD/YYYY');
+    const to = getCurrentDate('MM/DD/YYYY');
     const mappedOrderBy = validSortFields.includes(orderBy)
       ? columnMapping[orderBy] || orderBy
-      : 'fileName';
+      : 'fileName,grantor';
     const result = await getDeeds({
-      searchType: 'drafts',
+      searchType: 'titlefail',
       pageNo: page,
       size: size,
       searchText: '',
-      from: '',
-      to: '',
+      from,
+      to,
       orderBy: mappedOrderBy,
       order,
     }).unwrap();
@@ -252,12 +332,6 @@ const DraftDueSection: React.FC<DraftDueSectionProps> = () => {
         (item: TableData, index: number) => ({
           ...item,
           id: `${item.fileID || 'file'}-${item.deedID || 'deed'}-${index}`,
-          notes:
-            typeof item.task === 'object' &&
-            item.task !== null &&
-            'memo' in item.task
-              ? String((item.task as { memo: unknown }).memo)
-              : '',
           noteId: null,
         })
       );
@@ -280,63 +354,118 @@ const DraftDueSection: React.FC<DraftDueSectionProps> = () => {
     api: { applyTransaction: (transaction: { update: TableData[] }) => void };
   }) => {
     const { data: rowData, colDef, newValue, oldValue, api } = event;
+    const field = colDef.field;
     const deedId = rowData.deedID;
-    if (colDef.field !== 'memo') {
+
+    if (!['notes', 'lossAmount', 'titleFailDate'].includes(field)) {
       return;
     }
 
     const trimmedValue = String(newValue || '').trim();
 
-    if (!trimmedValue) {
-      const updatedRows = data.map(row =>
-        row.fileID === rowData.fileID ? { ...row, memo: oldValue } : row
-      );
-      setData(updatedRows);
-      api.applyTransaction({ update: updatedRows });
-      return;
-    }
-
-    const updatedRowsWithLoading = data.map(row =>
-      row.fileID === rowData.fileID ? { ...row, memo: 'LOADING' } : row
-    );
-    setData(updatedRowsWithLoading);
-    api.applyTransaction({ update: updatedRowsWithLoading });
-
-    try {
-      const payload: addDeedNotePayload = {
-        deedId: Number(deedId),
-        type: 'Drafts Due',
-        memo: trimmedValue,
-      };
-      const response = await addDeedNote(payload).unwrap();
-      if (response?.success) {
-        dispatch(
-          open({
-            severity: severity.success,
-            message: response.message,
-          })
-        );
-
+    if (field === 'notes') {
+      if (!trimmedValue) {
         const updatedRows = data.map(row =>
-          row.fileID === rowData.fileID
-            ? {
-                ...row,
-                memo: trimmedValue,
-                noteId: response.data?.noteId,
-              }
-            : row
+          row.deedID === deedId ? { ...row, notes: oldValue } : row
         );
         setData(updatedRows);
         api.applyTransaction({ update: updatedRows });
+        return;
       }
-    } catch (error) {
-      const revertedRows = data.map(row =>
-        row.fileID === rowData.fileID
-          ? { ...row, memo: oldValue, noteId: rowData.noteId }
-          : row
+
+      const updatedRowsWithLoading = data.map(row =>
+        row.deedID === deedId ? { ...row, notes: 'LOADING' } : row
       );
-      setData(revertedRows);
-      api.applyTransaction({ update: revertedRows });
+      setData(updatedRowsWithLoading);
+      api.applyTransaction({ update: updatedRowsWithLoading });
+
+      try {
+        const payload: addDeedNotePayload = {
+          deedId: Number(deedId),
+          type: 'Title Failure',
+          memo: trimmedValue,
+        };
+        const response = await addDeedNote(payload).unwrap();
+        if (response?.success) {
+          dispatch(
+            open({ severity: severity.success, message: response.message })
+          );
+          const updatedRows = data.map(row =>
+            row.deedID === deedId
+              ? {
+                  ...row,
+                  notes: trimmedValue,
+                  noteId: response.data?.noteId,
+                }
+              : row
+          );
+          setData(updatedRows);
+          api.applyTransaction({ update: updatedRows });
+        }
+      } catch (error) {
+        const revertedRows = data.map(row =>
+          row.deedID === deedId
+            ? { ...row, notes: oldValue, noteId: rowData.noteId }
+            : row
+        );
+        setData(revertedRows);
+        api.applyTransaction({ update: revertedRows });
+      }
+    } else {
+      // Handle lossAmount and titleFailDate
+      if (field === 'lossAmount' || field === 'titleFailDate') {
+        // Set the LOADING state first
+        const updatedRowsWithLoading = data.map(row =>
+          row.deedID === deedId ? { ...row, [field]: 'LOADING' } : row
+        );
+
+        setData(updatedRowsWithLoading);
+        api.applyTransaction({ update: updatedRowsWithLoading });
+
+        let payload: EditTitleFailure;
+
+        if (field === 'lossAmount') {
+          payload = {
+            deedId,
+            lossAmount: trimmedValue || 0,
+          } as EditTitleFailure;
+        } else {
+          payload = {
+            deedId,
+            titleFailDate: trimmedValue,
+          } as EditTitleFailure;
+        }
+
+        try {
+          const response = await editDeedTitleFailure(payload).unwrap();
+          if (response?.success) {
+            dispatch(
+              open({ severity: severity.success, message: response.message })
+            );
+            const updatedRows = data.map(row =>
+              row.deedID === deedId
+                ? {
+                    ...row,
+                    [field]:
+                      field === 'lossAmount'
+                        ? roundBigDecimalString(
+                            payload.lossAmount.toString().replace(/^0+/, '')
+                          )
+                        : payload.titleFailDate,
+                  }
+                : row
+            );
+            setData(updatedRows);
+            api.applyTransaction({ update: updatedRows });
+          }
+        } catch (error) {
+          const revertedRows = data.map(row =>
+            row.deedID === deedId ? { ...row, [field]: oldValue } : row
+          );
+          setData(revertedRows);
+          api.applyTransaction({ update: revertedRows });
+        }
+      }
     }
   };
 
@@ -350,7 +479,6 @@ const DraftDueSection: React.FC<DraftDueSectionProps> = () => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
   };
-  const [selectedSection, setSelectedSection] = useState('drafts'); // or 'titleFailure'
 
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
@@ -382,62 +510,7 @@ const DraftDueSection: React.FC<DraftDueSectionProps> = () => {
                   }),
                 }),
           }}
-        >
-          {isDesktop && (
-            <>
-              <Chip
-                label={
-                  <Typography
-                    sx={selectedSection === 'drafts' ? { color: 'black' } : {}}
-                  >
-                    Drafts Due
-                  </Typography>
-                }
-                onClick={() => setSelectedSection('drafts')}
-                sx={
-                  selectedSection === 'drafts'
-                    ? {
-                        background: 'white',
-                        ':focus': { background: 'white' },
-                        color: 'black',
-                      }
-                    : {
-                        background: '#252830',
-                        color: '#FFF',
-                        '&:hover': { background: '#434857' },
-                      }
-                }
-              />
-              <Chip
-                label={
-                  <Typography
-                    sx={
-                      selectedSection === 'titleFailure'
-                        ? { color: 'black' }
-                        : {}
-                    }
-                  >
-                    Title Failure
-                  </Typography>
-                }
-                onClick={() => setSelectedSection('titleFailure')}
-                sx={
-                  selectedSection === 'titleFailure'
-                    ? {
-                        background: 'white',
-                        ':focus': { background: 'white' },
-                        color: 'black',
-                      }
-                    : {
-                        background: '#252830',
-                        color: '#FFF',
-                        '&:hover': { background: '#434857' },
-                      }
-                }
-              />
-            </>
-          )}
-        </Box>
+        ></Box>
       )}
 
       {!data?.length || isLoading || isLogoutLoading || !auth.isLoggedIn ? (
@@ -454,35 +527,31 @@ const DraftDueSection: React.FC<DraftDueSectionProps> = () => {
             width: '100%',
           }}
         >
-          {selectedSection === 'drafts' ? (
-            <Table
-              tableId="draftDueTableDashboard"
-              data={data.length > 0 ? data : []}
-              count={deedsData?.count || 0}
-              columns={draftDueHeaders(user.department || '')}
-              initialLoading={isLoading && !hasLoadedInitially}
-              loading={isFetching || (isLoading && hasLoadedInitially)}
-              onCellValueChanged={handleDraftCellEdit}
-              getDataWithoutPagination={getDraftsData}
-              getTextColor={'white'}
-              initialSortBy={sortBy}
-              initialSortOrder={sortOrder}
-              initialPage={pageNo - 1}
-              initialRowsPerPage={rowsPerPage}
-              headerEditMode="full"
-              isWithoutPagination={true}
-              fixedColumns={[]}
-              height="450px"
-              theme="dark"
-              agTheme="light"
-            />
-          ) : (
-            <TitleFailureSection />
-          )}
+          <Table
+            tableId="titleFailureTableDashboard"
+            data={data.length > 0 ? data : []}
+            count={deedsData?.count || 0}
+            columns={titleFailureHeaders(user.department || '')}
+            initialLoading={isLoading && !hasLoadedInitially}
+            loading={isFetching || (isLoading && hasLoadedInitially)}
+            onCellValueChanged={handleDraftCellEdit}
+            getDataWithoutPagination={getDraftsData}
+            getTextColor={'white'}
+            initialSortBy="fileName,grantor"
+            initialSortOrder="asc,asc"
+            initialPage={pageNo - 1}
+            initialRowsPerPage={rowsPerPage}
+            headerEditMode="full"
+            isWithoutPagination={true}
+            fixedColumns={[]}
+            height="450px"
+            theme="dark"
+            agTheme="light"
+          />
         </Box>
       )}
     </Box>
   );
 };
 
-export default DraftDueSection;
+export default TitleFailureSection;

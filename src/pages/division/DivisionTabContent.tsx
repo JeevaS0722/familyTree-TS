@@ -12,7 +12,11 @@ import {
   QueryParamsForWithoutPagination,
   TableColumns,
 } from '../../interface/common';
-import { formatDateToMonthDayYear, phoneFormat } from '../../utils/GeneralUtil';
+import {
+  formatDateToMonthDayYear,
+  handleEmptyDateValue,
+  phoneFormat,
+} from '../../utils/GeneralUtil';
 import CircularProgress from '@mui/material/CircularProgress';
 import NewTable from '../../component/Table';
 
@@ -114,6 +118,7 @@ const DivisionTabContent: React.FC<DivisionTabContentProps> = ({
       headerName: t('notice1Date'),
       field: 'notice1Date',
       sortable: true,
+      cellRenderer: params => handleEmptyDateValue(params.data?.notice1Date),
     },
     {
       headerName: t('past30days'),
@@ -135,6 +140,7 @@ const DivisionTabContent: React.FC<DivisionTabContentProps> = ({
       headerName: t('notice2Date'),
       field: 'notice2Date',
       sortable: true,
+      cellRenderer: params => handleEmptyDateValue(params.data?.notice2Date),
     },
     {
       headerName: t('3rdNotice'),
@@ -146,6 +152,7 @@ const DivisionTabContent: React.FC<DivisionTabContentProps> = ({
       headerName: t('notice3Date'),
       field: 'notice3Date',
       sortable: true,
+      cellRenderer: params => handleEmptyDateValue(params.data?.notice3Date),
     },
     {
       headerName: t('divisionOrd'),

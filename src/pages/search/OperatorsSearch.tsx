@@ -97,6 +97,12 @@ const OperatorSearch: React.FC = () => {
         width: 300,
       },
       {
+        headerName: t('ownerNumber'),
+        field: 'ownerNumber',
+        sortable: true,
+        width: 300,
+      },
+      {
         headerName: t('phoneNumber'),
         field: 'phoneNumber',
         sortable: true,

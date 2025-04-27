@@ -232,6 +232,61 @@ const Table = (props: TableProps) => {
     getHorizontalScrollHeight,
   ]);
 
+  // Column width configuration
+  const columnWidthConfig = {
+    common: [
+      {
+        columnIds: ['notes', 'memo', 'comment3'], // Wide columns
+        minWidth: 280,
+        maxWidth: 440,
+        resetMinWidth: 320,
+        multiplier: 2.2,
+      },
+      {
+        columnIds: ['titlefaildate', 'lossamount'], // editable columns
+        minWidth: 240,
+        maxWidth: 300,
+        resetMinWidth: 240,
+        multiplier: 1,
+      },
+      {
+        columnIds: [
+          'main',
+          'select',
+          'state',
+          'deceased',
+          'fasttrack',
+          'legalsstate',
+        ], // Small columns
+        minWidth: 80,
+        maxWidth: 85,
+        resetMinWidth: 80,
+        multiplier: 1,
+      },
+      {
+        columnIds: ['dob', 'decdt', 'offerdate'], // date columns
+        minWidth: 105,
+        maxWidth: 120,
+        resetMinWidth: 105,
+        multiplier: 1,
+      },
+    ],
+    tables: {
+      TXLALegalTable: {
+        defaultMin: 100,
+        defaultMax: 180,
+      },
+      OtherLegalTable: {
+        defaultMin: 100,
+        defaultMax: 180,
+      },
+      ContactTable: {
+        defaultMin: 100,
+        defaultMax: 180,
+      },
+    },
+  };
+
   const sizeColumnsToFit = useCallback(
     ({ reset = false, hide = false, gridSizeChangeWidth = 0 }) => {
       setAllRowHeights();
@@ -249,23 +304,21 @@ const Table = (props: TableProps) => {
         ) {
           return;
         }
-
         const allVisibleColumns =
           columnApiRef?.current?.getAllDisplayedColumns();
         if (!allVisibleColumns || allVisibleColumns.length === 0) {
           return;
         }
 
-        // Get current total columns width from AG Grid
+        const gridContainerWidth =
+          containerRef?.current?.querySelector('.ag-root-wrapper-body')
+            ?.clientWidth || 0;
+
         const totalColumnsWidth = allVisibleColumns.reduce(
           (sum: number, col: any) => sum + col.getActualWidth(),
           0
         );
-        const gridContainerWidth =
-          containerRef?.current?.querySelector('.ag-root-wrapper-body')
-            ?.clientWidth || 0;
-        // If hide is true and current columns already exceed container width, do nothing.
-        // Also, if reset is false and total actual widths fill the container, do nothing.
+
         if (
           (hide || !reset) &&
           totalColumnsWidth >= containerWidth &&
@@ -279,14 +332,12 @@ const Table = (props: TableProps) => {
           return;
         }
 
-        // Create a canvas element for text measurement (works in Safari and Chrome)
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           return;
         }
 
-        // Retrieve computed font styles from containerRef using CSS variables or fallback values
         const computedStyle = getComputedStyle(containerRef.current);
         const fontSize =
           computedStyle.getPropertyValue('--ag-font-size')?.trim() ||
@@ -301,40 +352,83 @@ const Table = (props: TableProps) => {
 
         ctx.font = `${fontSize} ${fontFamily}`;
 
-        // Calculate desired width for each column based on header text plus 10px padding.
-        // Use different clamping when reset is true.
+        // Calculate widths based on configuration
         const computedWidths = allVisibleColumns.map((col: any) => {
+          const colId = col.getColId().toLowerCase();
           const headerName = col.getColDef().headerName || col.getColId();
           const textWidth = ctx.measureText(headerName).width;
           const desiredWidth = Math.ceil(textWidth);
-          if (reset) {
-            // When reset is true, enforce a min of 140px and max of 180px.
-            return Math.min(180, Math.max(140, desiredWidth));
-          } else {
-            // Otherwise, enforce a min of 120px and a max of 180px.
-            return Math.min(180, Math.max(120, desiredWidth));
+
+          // Check common column configurations first
+          const commonConfig = columnWidthConfig.common.find(config =>
+            config.columnIds.includes(colId)
+          );
+
+          if (commonConfig) {
+            return reset
+              ? Math.min(
+                  commonConfig.maxWidth,
+                  Math.max(
+                    commonConfig.resetMinWidth,
+                    desiredWidth * commonConfig.multiplier
+                  )
+                )
+              : Math.min(
+                  commonConfig.maxWidth,
+                  Math.max(
+                    commonConfig.minWidth,
+                    desiredWidth * commonConfig.multiplier
+                  )
+                );
           }
+
+          // Handle table-specific defaults
+          const currentTableId = tableIdentifier;
+          const tableConfig = columnWidthConfig.tables[currentTableId];
+          const defaultMin = reset
+            ? tableConfig
+              ? tableConfig.defaultMin
+              : 140
+            : tableConfig
+              ? tableConfig.defaultMin
+              : 120;
+          const defaultMax = tableConfig ? tableConfig.defaultMax : 180;
+
+          return Math.min(defaultMax, Math.max(defaultMin, desiredWidth));
         });
 
-        // Sum computed widths
+        const verticalScrollWidth = getVerticalScrollWidth();
         const totalComputedWidth = computedWidths.reduce(
           (sum, width) => sum + width,
           0
         );
 
-        let finalWidths: number[];
-        const verticalScrollWidth = getVerticalScrollWidth();
-        if (reset && totalColumnsWidth > containerWidth) {
-          // When reset is true and current total widths exceed the container,
-          // reduce each column proportionally while keeping each width ≥ 140px.
+        let finalWidths: number[] = [];
+
+        if (
+          reset &&
+          totalColumnsWidth > containerWidth &&
+          !columnWidthConfig.common.some(config =>
+            config.columnIds.some(id =>
+              allVisibleColumns.some(
+                (col: any) => col.getColId().toLowerCase() === id
+              )
+            )
+          )
+        ) {
           const excessSpace = totalColumnsWidth - containerWidth;
           const excessPerColumn = Math.floor(
             excessSpace / computedWidths.length
           );
+
+          const currentTableId = tableIdentifier;
+          const tableConfig = columnWidthConfig.tables[currentTableId];
+          const minWidthForTable = tableConfig ? tableConfig.defaultMin : 140;
+
           finalWidths = computedWidths.map(width =>
-            Math.max(width - excessPerColumn, 140)
+            Math.max(width - excessPerColumn, minWidthForTable)
           );
-          // Check if total is still too wide; subtract a little more if needed.
+
           let totalFinalWidth = finalWidths.reduce((sum, w) => sum + w, 0);
           if (totalFinalWidth > containerWidth) {
             const additionalExcess =
@@ -343,14 +437,14 @@ const Table = (props: TableProps) => {
               additionalExcess / finalWidths.length
             );
             finalWidths = finalWidths.map(width =>
-              Math.max(width - additionalExcessPerColumn, 140)
+              Math.max(width - additionalExcessPerColumn, minWidthForTable)
             );
           }
-          // Ensure values are clamped between 140 and 180.
+
           finalWidths = finalWidths.map(width =>
-            Math.min(Math.max(width, 140), 180)
+            Math.min(Math.max(width, minWidthForTable), 180)
           );
-          // If after reduction the sum is less than container width, distribute extra space.
+
           totalFinalWidth = finalWidths.reduce((sum, w) => sum + w, 0);
           if (totalFinalWidth < containerWidth) {
             const extraSpace =
@@ -359,7 +453,6 @@ const Table = (props: TableProps) => {
             finalWidths = finalWidths.map(width => width + extraPerColumn);
           }
         } else {
-          // When computed total is less than container width, distribute extra space equally.
           if (totalComputedWidth < containerWidth) {
             const extraSpace =
               containerWidth - totalComputedWidth - verticalScrollWidth;
@@ -372,39 +465,42 @@ const Table = (props: TableProps) => {
           }
         }
 
-        // Build an array of column width objects for AG Grid's API.
         const columnWidths = allVisibleColumns.map(
           (col: any, index: number) => ({
             key: col.getColId(),
             newWidth: finalWidths[index],
           })
         );
+
         containerWPrevWidth.current = containerWidth;
-        // Apply the new widths using AG Grid's API.
+
         if (gridRef.current?.api?.setColumnWidths) {
           gridRef.current.api.setColumnWidths(columnWidths);
           setAllRowHeights();
         } else {
-          // Fallback for older versions
-          columnWidths.forEach(
-            ({ key, newWidth }: { key: string; newWidth: number }) => {
-              const column = gridRef.current?.api.getColumn(key);
-              if (column) {
-                column.setWidth(newWidth);
-              }
+          columnWidths.forEach(({ key, newWidth }) => {
+            const column = gridRef.current?.api.getColumn(key);
+            if (column) {
+              column.setWidth(newWidth);
             }
-          );
+          });
           setAllRowHeights();
         }
       } catch (error) {
         console.error('Error in sizeColumnsToFit:', error);
-        // Fallback: use AG Grid's basic sizeColumnsToFit method if available
         if (gridRef.current?.api?.sizeColumnsToFit) {
           gridRef.current.api.sizeColumnsToFit();
         }
       }
     },
-    [gridRef, containerRef, count, setAllRowHeights, containerWPrevWidth]
+    [
+      gridRef,
+      containerRef,
+      count,
+      setAllRowHeights,
+      containerWPrevWidth,
+      tableIdentifier,
+    ]
   );
 
   // Apply column order and visibility

@@ -1,9 +1,19 @@
-import { formatDateToMonthDayYear } from '../../../../utils/GeneralUtil';
+import { TreeData } from '../../../../interface/familyTree';
+import {
+  convertLargeNumberToCurrency,
+  convertToMMDDYYYY,
+} from '../../../../utils/GeneralUtil';
 import { PersonData } from '../components/FamilyTreeBuilder';
-import { Contact, ContactApiResponse, OfferData } from '../types';
+import {
+  AltData,
+  Contact,
+  ContactApiResponse,
+  OfferData,
+  TitleData,
+} from '../types';
 import moment from 'moment';
 
-export const determineGender = (contact: Contact): 'M' | 'F' => {
+export const determineGender = (contact: Contact): 'M' | 'F' | '' => {
   const relationship = contact.relationship?.toLowerCase() || '';
   const gender = contact?.gender?.toLowerCase() || '';
   if (gender === 'male' || gender === 'm') {
@@ -30,19 +40,22 @@ export const determineGender = (contact: Contact): 'M' | 'F' => {
     return 'F';
   }
 
-  return 'M';
+  return '';
 };
 
 export const calculateAge = (birthDateStr: string): string => {
   try {
-    if (
-      !birthDateStr ||
-      birthDateStr === '0000-00-00' ||
-      moment(birthDateStr).isValid() === false
-    ) {
+    const dob = convertToMMDDYYYY(birthDateStr);
+    let validDob = dob;
+    if (dob && dob.match(/^\d{2}\/00\/\d{4}$/)) {
+      validDob = dob.replace('/00/', '/01/');
+    } else if (dob && dob.match(/^\d{4}$/)) {
+      validDob = `01/01/${dob}`;
+    }
+    if (!validDob || moment(validDob).isValid() === false) {
       return '00';
     }
-    const birthDate = moment(birthDateStr, 'YYYY-MM-DD');
+    const birthDate = moment(validDob, 'MM/DD/YYYY');
     const today = moment();
     const age = today.diff(birthDate, 'years');
     return age < 0 ? '00' : age.toString();
@@ -71,10 +84,40 @@ export const formatOffer = (
   const offer = offers[0];
   return {
     offerId: offer.offerID.toString() || null,
-    amount: offer.amount?.toLocaleString() || null,
-    offer_type: offer.offerType?.toLocaleString() || null,
+    amount: offer.draftAmount2
+      ? convertLargeNumberToCurrency(offer.draftAmount2.toString(), {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        })
+      : null,
+    offer_type: offer.OfferType?.OfferTypes?.toLocaleString() || null,
     grantors: offer.grantors || null,
   };
+};
+
+export const formatAltNames = (altNames: AltData[]): string[] => {
+  if (!altNames || altNames.length === 0) {
+    return [];
+  }
+  return altNames.map(
+    (altName: { altName: string; altNameFormat: string }) =>
+      `(${altName.altNameFormat}) ${altName.altName}`
+  );
+};
+
+export const formatTitles = (titles: TitleData[]): string[] => {
+  if (!titles || titles.length === 0) {
+    return [];
+  }
+  const data = titles.map((title: TitleData) => {
+    if (!title.title || !title.preposition || !title.entityName) {
+      return '';
+    }
+    return title.individuallyAndAs
+      ? `individually and as ${title.title} ${title.preposition} ${title.entityName}`
+      : `${title.title} ${title.preposition} ${title.entityName}`;
+  });
+  return data.filter(title => title !== '');
 };
 
 export const contactsToFamilyTreemapper = (
@@ -93,8 +136,8 @@ export const contactsToFamilyTreemapper = (
       .filter(Boolean)
       .join(' '),
     relationship: rootContact.relationship || null,
-    dOB: formatDateToMonthDayYear(rootContact.dOB),
-    decDt: formatDateToMonthDayYear(rootContact.decDt),
+    dOB: convertToMMDDYYYY(rootContact.dOB),
+    decDt: convertToMMDDYYYY(rootContact.decDt),
     deceased: rootContact.deceased || null,
     age: calculateAge(rootContact.dOB || ''),
     city: rootContact.city || null,
@@ -113,9 +156,11 @@ export const contactsToFamilyTreemapper = (
     has_new_notes:
       Array.isArray(rootContact.TasksModels) &&
       rootContact.TasksModels.length > 0,
-    ownership: `${parseFloat(rootContact.ownership).toFixed(4)} %`,
+    ownership: rootContact?.ownership || '0',
     division_of_interest: 'Interest',
     offer: formatOffer(rootContact?.OffersModels || []),
+    altNames: formatAltNames(rootContact?.AlternativeNamesModels || []),
+    titles: formatTitles(rootContact?.TitlesModels || []),
   },
   rels: {},
   main: isMain || false,
@@ -164,4 +209,66 @@ export const mapContactsToFamilyTree = (
   );
 
   return rootFamilyMember;
+};
+
+export const mapFamilyTreeAndContactToTree = (
+  familyTree: TreeData[],
+  contacts: Contact[],
+  fileId?: string | number
+): PersonData[] => {
+  const familyTreeMap = new Map<string, TreeData>(
+    familyTree.map(member => [member.id, member])
+  );
+
+  const mappedContacts = contacts
+    .map(contact => {
+      const contactId = contact.contactID.toString();
+      const familyMember = familyTreeMap.get(contactId);
+      if (familyMember) {
+        return {
+          id: contactId,
+          rels: familyMember?.rels || {},
+          main: familyMember.main,
+          data: {
+            fileId: Number(fileId),
+            contactId: contact.contactID,
+            gender: determineGender(contact),
+            first_ame: contact.firstName || '',
+            last_name: contact.lastName || '',
+            name: [contact.firstName, contact.lastName]
+              .filter(Boolean)
+              .join(' '),
+            relationship: contact.relationship || null,
+            dOB: convertToMMDDYYYY(contact.dOB),
+            decDt: convertToMMDDYYYY(contact.decDt),
+            deceased: contact.deceased || null,
+            age: calculateAge(contact.dOB || ''),
+
+            city: contact.city || null,
+            state: contact.state || null,
+            address: contact.address || null,
+            full_address: [
+              contact.address,
+              contact.city,
+              contact.state,
+              contact.zip,
+            ]
+              .filter(Boolean)
+              .join(', '),
+            heir: null,
+            research_inheritance: null,
+            has_new_notes:
+              Array.isArray(contact.TasksModels) &&
+              contact.TasksModels.length > 0,
+            ownership: contact.ownership || '0',
+            division_of_interest: 'Interest',
+            offer: formatOffer(contact?.OffersModels || []),
+          },
+        };
+      }
+      return null; // Return null when no matching family member is found
+    })
+    .filter(Boolean) as PersonData[]; // Filter out null values
+
+  return mappedContacts;
 };

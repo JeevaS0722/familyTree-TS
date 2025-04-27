@@ -3,7 +3,8 @@ import { baseQueryWithReauth } from './index';
 import {
   CreateDeedResponse,
   DeedData,
-  EditDeedForm,
+  EditDeedFormInterface,
+  EditTitleFailure,
   GetAllDeedsRequest,
   GetAllDeedsResponse,
   GetDeedRequest,
@@ -39,7 +40,7 @@ export const deedApi = createApi({
       }),
       providesTags: ['Deed'],
     }),
-    editDeed: builder.mutation<CreateDeedResponse, EditDeedForm>({
+    editDeed: builder.mutation<CreateDeedResponse, EditDeedFormInterface>({
       query: DeedData => ({
         url: `/deed/edit`,
         method: 'PUT',
@@ -56,6 +57,16 @@ export const deedApi = createApi({
         params,
       }),
     }),
+    editDeedTitleFailure: builder.mutation<
+      CreateDeedResponse,
+      EditTitleFailure
+    >({
+      query: DeedData => ({
+        url: `/deed/titleFailure/edit`,
+        method: 'PUT',
+        body: DeedData,
+      }),
+    }),
   }),
 });
 
@@ -65,4 +76,5 @@ export const {
   useLazyGetAllDeedsQuery,
   useEditDeedMutation,
   useLazyGetDeedCountBuyerQuery,
+  useEditDeedTitleFailureMutation,
 } = deedApi;

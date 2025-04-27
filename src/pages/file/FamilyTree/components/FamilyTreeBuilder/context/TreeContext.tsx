@@ -7,9 +7,12 @@ import React, {
   useReducer,
   useCallback,
   useEffect,
+  useMemo,
+  useRef,
 } from 'react';
 import { PersonData, TreeData, TreeConfig } from '../types/familyTree';
 import { calculateTree } from '../utils/treeCalculator';
+import { Contact } from '../../../types';
 
 interface TreeState {
   data: PersonData[];
@@ -17,6 +20,7 @@ interface TreeState {
   config: TreeConfig;
   treeData: TreeData | null;
   isInitialRender: boolean;
+  contactsList: Contact[]; // Add contactsList to the state
 }
 
 type TreeAction =
@@ -44,7 +48,8 @@ type TreeAction =
         otherParentId?: string;
       };
     }
-  | { type: 'REMOVE_PERSON_AND_UPDATE'; payload: string };
+  | { type: 'REMOVE_PERSON_AND_UPDATE'; payload: string }
+  | { type: 'SET_CONTACTS'; payload: Contact[] }; // Add new action type
 
 const initialConfig: TreeConfig = {
   nodeSeparation: 400,
@@ -63,7 +68,7 @@ const initialConfig: TreeConfig = {
   },
   showMiniTree: true,
   linkBreak: false,
-  highlightHoverPath: true,
+  highlightHoverPath: false,
   viewMode: false,
 };
 
@@ -73,6 +78,7 @@ const initialState: TreeState = {
   config: initialConfig,
   treeData: null,
   isInitialRender: true,
+  contactsList: [], // Initialize with empty array
 };
 
 function treeReducer(state: TreeState, action: TreeAction): TreeState {
@@ -456,6 +462,12 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       };
     }
 
+    case 'SET_CONTACTS':
+      return {
+        ...state,
+        contactsList: action.payload,
+      };
+
     default:
       return state;
   }
@@ -475,6 +487,7 @@ interface TreeContextValue {
     otherParentId?: string
   ) => void;
   removePerson: (personId: string) => void;
+  setContactsList: (contacts: Contact[]) => void; // Add the new function to the context value
 }
 
 const TreeContext = createContext<TreeContextValue | undefined>(undefined);
@@ -483,10 +496,18 @@ export function TreeProvider({
   children,
   initialData,
   initialMainId,
+  initialContacts,
+  onMemberChange,
 }: {
   children: React.ReactNode;
   initialData?: PersonData[];
   initialMainId?: string;
+  initialContacts?: Contact[]; // Add prop to accept initial contacts
+  onMemberChange?: (
+    action: 'add' | 'remove',
+    memberId: string,
+    updatedData: PersonData[]
+  ) => void;
 }) {
   const [state, dispatch] = useReducer(treeReducer, {
     ...initialState,
@@ -494,7 +515,15 @@ export function TreeProvider({
     mainId:
       initialMainId ||
       (initialData && initialData.length > 0 ? initialData[0].id : null),
+    contactsList: initialContacts || [], // Initialize with provided contacts
   });
+
+  // Store last action info to track state changes
+  const lastActionRef = useRef<{
+    type: 'add' | 'remove';
+    memberId: string;
+    timestamp: number;
+  } | null>(null);
 
   const updateMainId = useCallback((id: string) => {
     dispatch({ type: 'UPDATE_MAIN_ID', payload: id });
@@ -523,6 +552,13 @@ export function TreeProvider({
       relationship: 'father' | 'mother' | 'spouse' | 'son' | 'daughter',
       otherParentId?: string
     ) => {
+      // Store the action details before dispatching
+      lastActionRef.current = {
+        type: 'add',
+        memberId: person.id,
+        timestamp: Date.now(),
+      };
+
       dispatch({
         type: 'ADD_PERSON_AND_UPDATE',
         payload: { person, parentId, relationship, otherParentId },
@@ -531,12 +567,83 @@ export function TreeProvider({
     []
   );
 
-  const removePerson = useCallback((personId: string) => {
-    dispatch({
-      type: 'REMOVE_PERSON_AND_UPDATE',
-      payload: personId,
-    });
-  }, []);
+  const removePerson = useCallback(
+    (personId: string) => {
+      // Store the action details before dispatching
+      lastActionRef.current = {
+        type: 'remove',
+        memberId: personId,
+        timestamp: Date.now(),
+      };
+
+      // Get a copy of current data before removal to check if it's the last node
+      const isLastNode = state.data.length <= 1;
+
+      dispatch({
+        type: 'REMOVE_PERSON_AND_UPDATE',
+        payload: personId,
+      });
+
+      // If removing the last node, call onMemberChange directly
+      // This is because state.data changes may not trigger useEffect when going from [lastItem] -> []
+      if (isLastNode && onMemberChange) {
+        // Use setTimeout to ensure this runs after the state update
+        setTimeout(() => {
+          onMemberChange('remove', personId, []);
+        }, 0);
+      }
+    },
+    [onMemberChange, state.data]
+  );
+
+  const setContactsList = useCallback(
+    (contacts: Contact[]) => {
+      dispatch({ type: 'SET_CONTACTS', payload: contacts });
+    },
+    [dispatch]
+  );
+
+  // Monitor state changes and call onMemberChange with updated data when needed
+  useEffect(() => {
+    const lastAction = lastActionRef.current;
+    // Skip this effect if we're handling the last node removal separately
+    if (state.data.length === 0 && lastAction?.type === 'remove') {
+      // Last node was just removed, we'll handle it in the removePerson function
+      lastActionRef.current = null;
+      return;
+    }
+
+    if (lastAction && onMemberChange && state.data !== undefined) {
+      onMemberChange(lastAction.type, lastAction.memberId, state.data);
+      // Reset the last action after handling it
+      lastActionRef.current = null;
+    }
+  }, [state.data, onMemberChange]);
+
+  const value = useMemo(
+    () => ({
+      state,
+      updateMainId,
+      updateData,
+      updateConfig,
+      updateTree,
+      setInitialRenderComplete,
+      addPerson,
+      removePerson,
+      setContactsList, // Add the new function to the context value
+    }),
+    [
+      state,
+      updateMainId,
+      updateData,
+      updateConfig,
+      updateTree,
+      setInitialRenderComplete,
+      addPerson,
+      removePerson,
+      setContactsList, // Include in dependencies
+    ]
+  );
 
   useEffect(() => {
     if (initialData && initialData.length > 0 && !state.treeData) {
@@ -544,22 +651,7 @@ export function TreeProvider({
     }
   }, [initialData, state.treeData, updateTree]);
 
-  return (
-    <TreeContext.Provider
-      value={{
-        state,
-        updateMainId,
-        updateData,
-        updateConfig,
-        updateTree,
-        setInitialRenderComplete,
-        addPerson,
-        removePerson,
-      }}
-    >
-      {children}
-    </TreeContext.Provider>
-  );
+  return <TreeContext.Provider value={value}>{children}</TreeContext.Provider>;
 }
 
 export function useTreeContext() {

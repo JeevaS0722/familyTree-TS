@@ -116,9 +116,13 @@ const AddWellMaster: React.FC = () => {
         operatorID: divisionData?.data?.OperatorsModel?.operatorID || null,
         payorID: divisionData?.data?.OperatorsModel?.operatorID || null,
       }));
-      setCompanyName(
-        `${divisionData?.data?.OperatorsModel?.companyName} - ${divisionData?.data?.OperatorsModel?.contactName}`
-      );
+
+      const companyNameStr = `${divisionData?.data?.OperatorsModel?.companyName || ''}${
+        divisionData?.data?.OperatorsModel?.contactName
+          ? ` - ${divisionData?.data?.OperatorsModel?.contactName}`
+          : ''
+      }`;
+      setCompanyName(companyNameStr);
     }
   }, [divisionData, location]);
 

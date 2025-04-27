@@ -63,6 +63,28 @@ const RenderOperatorFields = (
         />
       </Grid>
       <StyledGridItem item xs={12} md={2} xl={1}>
+        <StyledInputLabel>{t('ownerNumber')}:</StyledInputLabel>
+      </StyledGridItem>
+      <Grid item xs={12} md={10} xl={11}>
+        <Field
+          name="ownerNumber"
+          as={CustomInputField}
+          backgroundColor="#434857"
+          width="100%"
+          type="text"
+          fullWidth
+          inputProps={{
+            id: 'ownerNumber',
+            maxLength: 255,
+          }}
+        />
+        <ErrorMessage
+          id="ownerNumberValidationMsg"
+          name="ownerNumber"
+          component={ErrorTextValidation}
+        />
+      </Grid>
+      <StyledGridItem item xs={12} md={2} xl={1}>
         <StyledInputLabel>{t('phone')}:</StyledInputLabel>
       </StyledGridItem>
       <Grid item xs={12} md={10} xl={11}>

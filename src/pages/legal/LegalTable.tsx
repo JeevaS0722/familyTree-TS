@@ -1,21 +1,7 @@
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TableSortLabel from '@mui/material/TableSortLabel';
 import React, { useEffect, useState } from 'react';
-import {
-  LegalColumn,
-  LegalData,
-  LegalProps,
-  LegalTableData,
-} from '../../interface/legal';
-import { styled } from '@mui/material/styles';
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
+import { LegalData, LegalProps, LegalTableData } from '../../interface/legal';
 import { Link, useNavigate } from 'react-router-dom';
 import { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
@@ -25,170 +11,9 @@ import {
 } from '../../store/Services/legalService';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import LinearProgress from '@mui/material/LinearProgress';
 import Grid from '@mui/material/Grid';
-
-const StyledTableCell = styled(TableCell)(() => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: '#252830',
-    color: 'white',
-    padding: '8px 16px',
-  },
-  [`&.${tableCellClasses.body}`]: {
-    fontSize: 14,
-    color: 'white',
-    padding: '6px 12px',
-  },
-  borderRight: '1px solid #C0C0C0',
-}));
-
-const StyledTableRow = styled(TableRow)({
-  color: 'white',
-  '&:nth-of-type(odd)': {
-    backgroundColor: '#434857',
-    borderRight: '1px solid #C0C0C0',
-  },
-  background: '#252830',
-  '&:last-child td, &:last-child th': {
-    borderRight: '1px solid #C0C0C0',
-  },
-});
-
-const localizeOtherLegalColumns = (
-  t: TFunction,
-  stateType?: string
-): LegalColumn[] => {
-  const commonColumns: LegalColumn[] = [
-    {
-      label: t('edit'),
-      accessor: 'edit',
-      sortable: false,
-      index: 1,
-    },
-    {
-      label: t('state'),
-      accessor: 'state',
-      sortable: true,
-      index: 2,
-    },
-    {
-      label: t('county'),
-      accessor: 'county',
-      sortable: true,
-      index: 3,
-    },
-    {
-      label: t('section'),
-      accessor: 'section',
-      sortable: true,
-      index: stateType === 'Other' ? 4 : 9,
-    },
-    {
-      label: t('township'),
-      accessor: 'townshipNo',
-      sortable: true,
-      index: stateType === 'Other' ? 5 : 7,
-    },
-
-    {
-      label: t('lot'),
-      accessor: 'lot',
-      sortable: true,
-      index: 15,
-    },
-    {
-      label: t('calls'),
-      accessor: 'callNo1',
-      sortable: true,
-      index: 16,
-    },
-    {
-      label: t('status'),
-      accessor: 'status',
-      sortable: true,
-      index: 17,
-    },
-    {
-      label: t('InterestType'),
-      accessor: 'intType',
-      sortable: true,
-      index: 18,
-    },
-    {
-      label: t('divInterest'),
-      accessor: 'divInterest',
-      sortable: true,
-      index: 19,
-    },
-    {
-      label: t('NMA'),
-      accessor: 'nma',
-      sortable: true,
-      index: 20,
-    },
-    {
-      label: t('makeOffer'),
-      accessor: 'makeOffer',
-      sortable: true,
-      index: 21,
-    },
-    {
-      label: t('copy'),
-      accessor: 'copy',
-      sortable: false,
-      index: 22,
-    },
-  ];
-
-  const OtherLegalColumns: LegalColumn[] = [
-    {
-      label: t('range'),
-      accessor: 'rangeNo',
-      sortable: true,
-      index: 6,
-    },
-  ];
-  const TxLaLegalColumns: LegalColumn[] = [
-    {
-      label: t('block'),
-      accessor: 'block',
-      sortable: true,
-      index: 8,
-    },
-    {
-      label: t('survey'),
-      accessor: 'survey',
-      sortable: true,
-      index: 4,
-    },
-    {
-      label: t('league'),
-      accessor: 'league',
-      sortable: true,
-      index: 5,
-    },
-    {
-      label: t('abstract'),
-      accessor: 'abstract',
-      sortable: true,
-      index: 14,
-    },
-    {
-      label: t('labor'),
-      accessor: 'labor',
-      sortable: true,
-      index: 6,
-    },
-  ];
-
-  return stateType === 'Other'
-    ? [...commonColumns, ...OtherLegalColumns].sort(
-        (a: LegalColumn, b: LegalColumn) => a.index - b.index
-      )
-    : [...commonColumns, ...TxLaLegalColumns].sort(
-        (a: LegalColumn, b: LegalColumn) => a.index - b.index
-      );
-};
+import { QueryParams, TableColumns } from '../../interface/common';
+import NewTable from '../../component/Table';
 
 const LegalTable: React.FC<LegalProps> = ({
   fileId,
@@ -228,29 +53,14 @@ const LegalTable: React.FC<LegalProps> = ({
     React.useState(true);
 
   useEffect(() => {
-    setSortLATXLegalTableLoading(true);
     void getLegalsByFile({
       fileId: Number(fileId),
       TX_LA_legal_sortBy: sort_TX_LA_LegalBy,
       TX_LA_legal_sortOrder: sort_TX_LA_LegalOrder,
       Other_legal_sortBy: sort_Other_LegalBy,
       Other_legal_sortOrder: sort_Other_LegalOrder,
-    }).finally(() => {
-      setSortLATXLegalTableLoading(false);
     });
-  }, [sort_TX_LA_LegalOrder]);
-  useEffect(() => {
-    setSortOtherLegalTableLoading(true);
-    void getLegalsByFile({
-      fileId: Number(fileId),
-      TX_LA_legal_sortBy: sort_TX_LA_LegalBy,
-      TX_LA_legal_sortOrder: sort_TX_LA_LegalOrder,
-      Other_legal_sortBy: sort_Other_LegalBy,
-      Other_legal_sortOrder: sort_Other_LegalOrder,
-    }).finally(() => {
-      setSortOtherLegalTableLoading(false);
-    });
-  }, [sort_Other_LegalOrder]);
+  }, []);
 
   useEffect(() => {
     if (legalList && legalList.data && legalList.data.legals) {
@@ -262,27 +72,211 @@ const LegalTable: React.FC<LegalProps> = ({
       set_Other_Legals_data([]);
       set_TX_LA_legals_data([]);
     }
-  }, [
-    legalList,
-    sort_TX_LA_LegalBy,
-    sort_TX_LA_LegalOrder,
-    sort_Other_LegalBy,
-    sort_Other_LegalOrder,
-  ]);
+  }, [legalList]);
 
-  const handleSortClick = (column: string, isTXLATable: boolean) => {
-    if (column === 'edit' || column === 'copy') {
-      return;
-    }
-    if (isTXLATable) {
-      setSortLATXLegalTableLoading(true);
-      setSort_TX_LA_LegalBy(column);
-      setSort_TX_LA_LegalOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortOtherLegalTableLoading(true);
-      setSort_Other_LegalBy(column);
-      setSort_Other_LegalOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
-    }
+  const getOtherData = ({ sortBy, sortOrder }: QueryParams) => {
+    setSortOtherLegalTableLoading(true);
+    setSort_Other_LegalOrder(sortOrder);
+    setSort_Other_LegalBy(sortBy);
+    void getLegalsByFile({
+      fileId: Number(fileId),
+      TX_LA_legal_sortBy: sort_TX_LA_LegalBy,
+      TX_LA_legal_sortOrder: sort_TX_LA_LegalOrder,
+      Other_legal_sortBy: sortBy,
+      Other_legal_sortOrder: sortOrder,
+    }).finally(() => {
+      setSortOtherLegalTableLoading(false);
+    });
+  };
+
+  const getTxLaData = ({ sortBy, sortOrder }: QueryParams) => {
+    setSortLATXLegalTableLoading(true);
+    setSort_TX_LA_LegalOrder(sortOrder);
+    setSort_TX_LA_LegalBy(sortBy);
+    void getLegalsByFile({
+      fileId: Number(fileId),
+      TX_LA_legal_sortBy: sortBy,
+      TX_LA_legal_sortOrder: sortOrder,
+      Other_legal_sortBy: sort_Other_LegalBy,
+      Other_legal_sortOrder: sort_Other_LegalOrder,
+    }).finally(() => {
+      setSortLATXLegalTableLoading(false);
+    });
+  };
+
+  const localizeOtherLegalColumns = (
+    t: TFunction,
+    stateType?: string
+  ): TableColumns[] => {
+    const commonColumns: TableColumns[] = [
+      {
+        headerName: t('edit'),
+        field: 'edit',
+        sortable: false,
+        index: 1,
+        cellRenderer: ({ data }) => (
+          <Link
+            to={`/editlegal/${data.legalsId}`}
+            state={{
+              isFileView,
+              contactId,
+              isCopyLegal: false,
+            }}
+            className="hover-link"
+          >
+            {t('edit')}
+          </Link>
+        ),
+      },
+      {
+        headerName: t('state'),
+        field: 'state',
+        sortable: true,
+        index: 2,
+      },
+      {
+        headerName: t('county'),
+        field: 'county',
+        sortable: true,
+        index: 3,
+      },
+      {
+        headerName: t('section'),
+        field: 'section',
+        sortable: true,
+        index: stateType === 'Other' ? 4 : 9,
+      },
+      {
+        headerName: t('township'),
+        field: 'townshipNo',
+        sortable: true,
+        index: stateType === 'Other' ? 5 : 7,
+      },
+
+      {
+        headerName: t('lot'),
+        field: 'lot',
+        sortable: true,
+        index: 15,
+      },
+      {
+        headerName: t('calls'),
+        field: 'callNo1',
+        sortable: true,
+        index: 16,
+      },
+      {
+        headerName: t('status'),
+        field: 'status',
+        sortable: true,
+        index: 17,
+      },
+      {
+        headerName: t('InterestType'),
+        field: 'intType',
+        sortable: true,
+        index: 18,
+      },
+      {
+        headerName: t('divInterest'),
+        field: 'divInterest',
+        sortable: true,
+        index: 19,
+      },
+      {
+        headerName: t('NMA'),
+        field: 'nma',
+        sortable: true,
+        index: 20,
+      },
+      {
+        headerName: t('makeOffer'),
+        field: 'makeOffer',
+        sortable: true,
+        index: 21,
+      },
+      {
+        headerName: t('copy'),
+        field: 'copy',
+        sortable: false,
+        index: 22,
+        cellRenderer: ({ data }) => (
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            {isLoading && selectedLegalId === Number(data.legalsId) ? (
+              <CircularProgress
+                size={30}
+                sx={{ width: '24px', height: '24px' }}
+                color="inherit"
+              />
+            ) : (
+              <Button
+                onClick={() => handleCopyLegal?.(Number(data.legalsId))}
+                id={`copyLegalButton-${data.legalsId}`}
+                sx={{
+                  color: '#1997c6',
+                  border: '1px solid #1997c6',
+                  '&:hover': {
+                    backgroundColor: '#1672a3',
+                    color: '#fff',
+                  },
+                }}
+              >
+                {t('copy')}
+              </Button>
+            )}
+          </Box>
+        ),
+      },
+    ];
+
+    const OtherLegalColumns: TableColumns[] = [
+      {
+        headerName: t('range'),
+        field: 'rangeNo',
+        sortable: true,
+        index: 6,
+      },
+    ];
+    const TxLaLegalColumns: TableColumns[] = [
+      {
+        headerName: t('block'),
+        field: 'block',
+        sortable: true,
+        index: 8,
+      },
+      {
+        headerName: t('survey'),
+        field: 'survey',
+        sortable: true,
+        index: 4,
+      },
+      {
+        headerName: t('league'),
+        field: 'league',
+        sortable: true,
+        index: 5,
+      },
+      {
+        headerName: t('abstract'),
+        field: 'abstract',
+        sortable: true,
+        index: 14,
+      },
+      {
+        headerName: t('labor'),
+        field: 'labor',
+        sortable: true,
+        index: 6,
+      },
+    ];
+
+    return stateType === 'Other'
+      ? [...commonColumns, ...OtherLegalColumns].sort(
+          (a: TableColumns, b: TableColumns) => a.index - b.index
+        )
+      : [...commonColumns, ...TxLaLegalColumns].sort(
+          (a: TableColumns, b: TableColumns) => a.index - b.index
+        );
   };
 
   const columns_Other_legals = localizeOtherLegalColumns(t, 'Other');
@@ -433,264 +427,38 @@ const LegalTable: React.FC<LegalProps> = ({
         )}
       </Grid>
       {OtherLegalData && OtherLegalData.length > 0 ? (
-        <Paper
-          sx={{
-            width: '100%',
-            mb: 1,
-            border: 1,
-            borderColor: 'white',
-            borderRadius: '1px',
-            marginBottom: '20px',
-          }}
-        >
-          <TableContainer
-            sx={{
-              maxHeight: 'calc(100vh - 310px)',
-              height: 'auto',
-              backgroundColor: 'white',
-              overflow: 'auto',
-            }}
-          >
-            <Table
-              sx={{ minWidth: 700 }}
-              aria-label="customized table"
-              stickyHeader
-              id="otherLegalsTable"
-            >
-              <TableHead>
-                <TableRow>
-                  {columns_Other_legals.map((column, index) => (
-                    <StyledTableCell key={index} align="center">
-                      {column.sortable ? (
-                        <TableSortLabel
-                          active={sort_Other_LegalBy.includes(
-                            column.accessor.toString()
-                          )}
-                          direction={
-                            sort_Other_LegalOrder === 'asc' ? 'asc' : 'desc'
-                          }
-                          sx={{
-                            fontSize: '10pt',
-                            '&:hover': {
-                              color: 'white',
-                            },
-                            '&:focus': {
-                              color: '#1997c6',
-                            },
-                          }}
-                          onClick={() =>
-                            handleSortClick(column.accessor.toString(), false)
-                          }
-                        >
-                          {column.label}
-                        </TableSortLabel>
-                      ) : (
-                        <Typography display="inline" sx={{ fontSize: '10pt' }}>
-                          {column.label}
-                        </Typography>
-                      )}
-                    </StyledTableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {OtherLegalData.map(row => (
-                  <StyledTableRow key={row.legalsId}>
-                    {columns_Other_legals.map((column, index) => (
-                      <StyledTableCell key={index} component="th" scope="row">
-                        {column.accessor === 'edit' ? (
-                          <Link
-                            to={`/editlegal/${row.legalsId}`}
-                            state={{
-                              isFileView,
-                              contactId,
-                              isCopyLegal: false,
-                            }}
-                            className="hover-link"
-                          >
-                            {t('edit')}
-                          </Link>
-                        ) : column.accessor === 'copy' ? (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            {isLoading &&
-                            selectedLegalId === Number(row.legalsId) ? (
-                              <CircularProgress
-                                size={30}
-                                sx={{
-                                  width: '24px',
-                                  height: '24px',
-                                }}
-                                color="inherit"
-                              />
-                            ) : (
-                              <Button
-                                onClick={() =>
-                                  handleCopyLegal(Number(row?.legalsId))
-                                }
-                                id={`copyLegalButton-${row?.legalsId}`}
-                                sx={{
-                                  color: '#1997c6',
-                                  border: '1px solid #1997c6',
-                                  '&:hover': {
-                                    backgroundColor: '#1672a3',
-                                    color: '#fff',
-                                  },
-                                }}
-                              >
-                                {t('copy')}
-                              </Button>
-                            )}
-                          </Box>
-                        ) : (
-                          row[column.accessor]
-                        )}
-                      </StyledTableCell>
-                    ))}
-                  </StyledTableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {isFetching && sortOtherLegalTableLoading && !LegalViewLoading && (
-            <LinearProgress />
-          )}
-        </Paper>
+        <Box mb={2}>
+          <NewTable
+            tableId="OtherLegalTable"
+            data={OtherLegalData}
+            count={legalCount || 0}
+            columns={columns_Other_legals}
+            getData={getOtherData}
+            initialLoading={LegalViewLoading}
+            loading={isFetching && sortOtherLegalTableLoading}
+            initialSortBy="state,county"
+            initialSortOrder="asc"
+            isWithoutPagination={true}
+          />
+        </Box>
       ) : (
         ''
       )}
       {TXLALegalData && TXLALegalData.length > 0 ? (
-        <Paper
-          sx={{
-            width: '100%',
-            mb: 1,
-            border: 1,
-            borderColor: 'white',
-            borderRadius: '1px',
-            marginBottom: '20px',
-          }}
-        >
-          <TableContainer
-            sx={{
-              maxHeight: 'calc(100vh - 310px)',
-              height: 'auto',
-              backgroundColor: 'white',
-              overflow: 'auto',
-            }}
-          >
-            <Table
-              sx={{ minWidth: 700 }}
-              aria-label="customized table"
-              stickyHeader
-              id="TXLALegalsTable"
-            >
-              <TableHead>
-                <TableRow>
-                  {columns_TX_LA_legals.map((column, index) => (
-                    <StyledTableCell key={index} align="center">
-                      {column.sortable ? (
-                        <TableSortLabel
-                          active={sort_TX_LA_LegalBy.includes(
-                            column.accessor.toString()
-                          )}
-                          direction={
-                            sort_TX_LA_LegalOrder === 'asc' ? 'asc' : 'desc'
-                          }
-                          sx={{
-                            fontSize: '10pt',
-                            '&:hover': {
-                              color: 'white',
-                            },
-                            '&:focus': {
-                              color: '#1997c6',
-                            },
-                          }}
-                          onClick={() =>
-                            handleSortClick(column.accessor.toString(), true)
-                          }
-                        >
-                          {column.label}
-                        </TableSortLabel>
-                      ) : (
-                        <Typography display="inline" sx={{ fontSize: '10pt' }}>
-                          {column.label}
-                        </Typography>
-                      )}
-                    </StyledTableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {TXLALegalData.map(row => (
-                  <StyledTableRow key={row.legalsId}>
-                    {columns_TX_LA_legals.map((column, index) => (
-                      <StyledTableCell key={index} component="th" scope="row">
-                        {column.accessor === 'edit' ? (
-                          <Link
-                            to={`/editlegal/${row.legalsId}`}
-                            state={{
-                              isFileView,
-                              contactId,
-                              isCopyLegal: false,
-                            }}
-                            className="hover-link"
-                          >
-                            {t('edit')}
-                          </Link>
-                        ) : column.accessor === 'copy' ? (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            {isLoading &&
-                            selectedLegalId === Number(row.legalsId) ? (
-                              <CircularProgress
-                                size={30}
-                                sx={{
-                                  width: '24px',
-                                  height: '24px',
-                                }}
-                                color="inherit"
-                              />
-                            ) : (
-                              <Button
-                                onClick={() =>
-                                  handleCopyLegal(Number(row?.legalsId))
-                                }
-                                id={`copyLegalButton-${row?.legalsId}`}
-                                sx={{
-                                  color: '#1997c6',
-                                  border: '1px solid #1997c6',
-                                  '&:hover': {
-                                    backgroundColor: '#1672a3',
-                                    color: '#fff',
-                                  },
-                                }}
-                              >
-                                {t('copy')}
-                              </Button>
-                            )}
-                          </Box>
-                        ) : (
-                          row[column.accessor]
-                        )}
-                      </StyledTableCell>
-                    ))}
-                  </StyledTableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {isFetching && sortLATXLegalTableLoading && !LegalViewLoading && (
-            <LinearProgress />
-          )}
-        </Paper>
+        <Box mb={2}>
+          <NewTable
+            tableId="TXLALegalTable"
+            data={TXLALegalData}
+            columns={columns_TX_LA_legals}
+            count={legalCount || 0}
+            getData={getTxLaData}
+            initialLoading={LegalViewLoading}
+            loading={isFetching && sortLATXLegalTableLoading}
+            initialSortBy="state,county"
+            initialSortOrder="asc"
+            isWithoutPagination={true}
+          />
+        </Box>
       ) : (
         ''
       )}

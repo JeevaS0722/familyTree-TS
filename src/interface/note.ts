@@ -175,7 +175,7 @@ export interface addFileNoteValues {
 export interface addDeedNotePayload {
   type: string;
   memo: string;
-  fileStatus: string;
+  fileStatus?: string;
   deedId: number;
 }
 

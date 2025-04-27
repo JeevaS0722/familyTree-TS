@@ -35,11 +35,11 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ isOpen, onClose }) => {
     const value = e.target.checked;
     handleChange(key, value);
   };
-
+  // '⚙'
   return (
     <div className={`f3-config-panel ${isOpen ? 'open' : 'closed'}`}>
       <button className="f3-config-toggle" onClick={togglePanel}>
-        {isOpen ? '×' : '⚙'}
+        {isOpen ? '×' : ''}
       </button>
       <div className="f3-config-content">
         <h3>Tree Configuration</h3>

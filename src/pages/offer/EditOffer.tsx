@@ -398,7 +398,7 @@ const EditOffer: React.FC = () => {
                             type="text"
                             inputProps={{
                               id: 'draftLength1',
-                              maxLength: 10,
+                              maxLength: 3,
                             }}
                           />
                           <ErrorMessage
@@ -457,7 +457,7 @@ const EditOffer: React.FC = () => {
                             type="text"
                             inputProps={{
                               id: 'draftLength2',
-                              maxLength: 10,
+                              maxLength: 3,
                             }}
                           />
                           <ErrorMessage

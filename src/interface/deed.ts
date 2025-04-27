@@ -451,3 +451,9 @@ export interface EditDeedFormInterface {
     individuallyAndAs: boolean;
   }>;
 }
+
+export interface EditTitleFailure {
+  deedId: number;
+  titleFailDate: string;
+  lossAmount: number;
+}

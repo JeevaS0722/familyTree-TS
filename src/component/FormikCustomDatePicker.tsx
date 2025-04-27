@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React, { ReactElement, useEffect } from 'react';
 import {
   DesktopDatePicker,
@@ -17,6 +18,7 @@ import { useField } from 'formik';
 import Tooltip from '@mui/material/Tooltip';
 import { Box } from '@mui/material';
 import { ErrorText } from './common/CommonStyle';
+import { formatDateToMonthDayYear } from '../utils/GeneralUtil';
 
 interface CustomDatePickerProps extends DesktopDatePickerProps<moment.Moment> {
   id?: string;
@@ -76,8 +78,13 @@ const CustomDatePicker = (props: CustomDatePickerProps): ReactElement => {
   const [field, , { setValue }] = useField(props.name);
   const [initValue, setInitValue] = React.useState(field?.value || null);
   useEffect(() => {
-    setInitValue(field?.value || null);
-  }, [field?.value]);
+    if (field?.value === '0000-00-00') {
+      void setValue(null);
+      setInitValue(null);
+    } else {
+      setInitValue(field?.value || null);
+    }
+  }, [field?.value, setValue]);
 
   async function onChange(val: moment.Moment | null) {
     if (!val) {
@@ -91,7 +98,7 @@ const CustomDatePicker = (props: CustomDatePickerProps): ReactElement => {
   const parseDateValue = (
     date: string | null | undefined
   ): moment.Moment | null => {
-    if (!date) {
+    if (!date || date === '0000-00-00' || date === '0000/00/00') {
       return null;
     }
     return moment(date);
@@ -100,7 +107,8 @@ const CustomDatePicker = (props: CustomDatePickerProps): ReactElement => {
     if (date === '0000-00-00') {
       return false;
     }
-    return moment(date, ['YYYY-MM-DD', 'MM/DD/YYYY'], true).isValid();
+    const momentDate = moment(date, ['YYYY-MM-DD', 'MM/DD/YYYY'], true);
+    return momentDate.isValid() && momentDate.year() > 0;
   };
   return (
     <Box>
@@ -210,7 +218,7 @@ const CustomDatePicker = (props: CustomDatePickerProps): ReactElement => {
         <ErrorText>
           {field.value === 'Invalid date'
             ? 'The provided date is invalid.'
-            : `${field.value} is not a valid date.`}
+            : `${formatDateToMonthDayYear(field.value)} is not a valid date.`}
         </ErrorText>
       )}
     </Box>

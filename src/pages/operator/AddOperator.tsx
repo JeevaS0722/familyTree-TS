@@ -24,6 +24,7 @@ const AddOperator: React.FC = () => {
   const navigate = useNavigate();
   const [initialValues] = React.useState<CreateOperatorInitialValues>({
     companyName: '',
+    ownerNumber: '',
     contactName: '',
     phoneNumber: null,
     fax: null,

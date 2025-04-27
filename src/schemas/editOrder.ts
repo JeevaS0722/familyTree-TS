@@ -26,7 +26,6 @@ export const editOrderSchema = (
     caseNo: Yup.string() as Yup.Schema<string>,
     ordRcdDt: Yup.string()
       .nullable()
-      .defined()
       .test('isValid', t('invalidDate'), value => {
         if (value && !isMomentValidDate(value)) {
           return false;
@@ -35,7 +34,6 @@ export const editOrderSchema = (
       }),
     ordDt: Yup.string()
       .nullable()
-      .defined()
       .test('isValid', t('invalidDate'), value => {
         if (value && !isMomentValidDate(value)) {
           return false;

@@ -27,6 +27,8 @@ export interface CardHeaderProps {
   data: {
     displayName: string;
     personId: string;
+    altNames: string[];
+    titles: string[];
   };
   onPersonAdd?: (e: React.MouseEvent<HTMLDivElement>) => void;
   onPersonDelete?: (personId: string) => void;
@@ -46,11 +48,12 @@ export interface LeftContainerProps {
 }
 
 export interface RightContainerState {
-  contactId?: number;
-  fileId?: number;
+  contactId?: number | null;
+  fileId?: number | null;
   isMale: boolean;
   divisionOfInterest: string;
-  percentage: string;
+  ownership: string;
+  isDeceased: boolean;
   leftColumnWidth: number;
   offerIconHovered: boolean;
   setOfferIconHovered: (hovered: boolean) => void;

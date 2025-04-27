@@ -22,6 +22,8 @@
   "draftAmount2Valid": "Draft amount must be a number",
   "draftLength1Valid": "Draft length must be a number",
   "draftLength2Valid": "Draft length must be a number",
+  "draftLength1":"Length must not be greater than 127.",
+  "draftLength2":"Length must not be greater than 127.",
   "loading": "Loading...",
   "editOffer": "EDIT OFFER",
   "deleteOffer": "Delete Offer",

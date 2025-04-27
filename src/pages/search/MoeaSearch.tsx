@@ -6,7 +6,6 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { Field, Form, Formik, ErrorMessage } from 'formik';
-import CustomizedTable from '../../component/NewCustomizedTable';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { QueryParams, TableData } from '../../interface/common';
@@ -33,6 +32,7 @@ import StyledInputField, {
   ErrorText,
   StyledGrid,
 } from '../../component/common/CommonStyle';
+import NewTable from '../../component/Table';
 
 const MOEASearch: React.FC = () => {
   const { t } = useTranslation('moea');
@@ -51,14 +51,7 @@ const MOEASearch: React.FC = () => {
     size,
     filterType,
   } = useAppSelector(state => state.searchMoea);
-  const [sortBy, setSortBy] = React.useState<string | null | undefined>(
-    orderBy
-  );
-  const [sortOrder, setSortOrder] = React.useState<string | null | undefined>(
-    order
-  );
   const [page, setPage] = React.useState(pageNo);
-  const [rowsPerPage, setRowsPerPage] = React.useState(size);
   const initialByNameValues: SearchMoeaByNameValues = {
     name: name || '',
   };
@@ -101,7 +94,6 @@ const MOEASearch: React.FC = () => {
         });
 
         setPage(Number(pageNo) === 1 ? 0 : Number(pageNo) - 1);
-        setRowsPerPage(Number(size));
         await getMOEAByName({
           name,
           pageNo: Number(page),
@@ -126,7 +118,6 @@ const MOEASearch: React.FC = () => {
         });
 
         setPage(Number(pageNo) === 1 ? 0 : Number(pageNo) - 1);
-        setRowsPerPage(Number(size));
         await getMOEAByFilter({
           county,
           state,
@@ -146,133 +137,131 @@ const MOEASearch: React.FC = () => {
     if (eliminateDups) {
       return [
         {
-          label: t('name'),
-          accessor: 'name',
-          format: (row: TableData) => (
+          headerName: t('name'),
+          field: 'name',
+          cellRenderer: ({ data }: { data: TableData }) => (
             <Link
-              key={String(row.moeaId)}
-              to={`/editmoea/${Number(row.moeaId)}`}
+              to={`/editmoea/${Number(data.moeaId)}`}
               className="hover-link"
             >
-              {row.name}
+              {data.name}
             </Link>
           ),
           sortable: true,
         },
         {
-          label: t('amount'),
-          accessor: 'amount',
+          headerName: t('amount'),
+          field: 'amount',
           sortable: true,
         },
         {
-          label: t('orderNo'),
-          accessor: 'orderNo',
+          headerName: t('orderNo'),
+          field: 'orderNo',
           sortable: true,
         },
         {
-          label: t('calls'),
-          accessor: 'calls',
+          headerName: t('calls'),
+          field: 'calls',
           sortable: true,
         },
         {
-          label: t('section'),
-          accessor: 'section',
+          headerName: t('section'),
+          field: 'section',
           sortable: true,
         },
         {
-          label: t('township'),
-          accessor: 'township',
+          headerName: t('township'),
+          field: 'township',
           sortable: true,
         },
         {
-          label: t('range'),
-          accessor: 'range',
+          headerName: t('range'),
+          field: 'range',
           sortable: true,
         },
         {
-          label: t('county'),
-          accessor: 'county',
+          headerName: t('county'),
+          field: 'county',
           sortable: true,
         },
       ];
     } else {
       return [
         {
-          label: t('name'),
-          accessor: 'name',
-          format: (row: TableData) => (
+          headerName: t('name'),
+          field: 'name',
+          cellRenderer: ({ data }: { data: TableData }) => (
             <Link
-              key={String(row.moeaId)}
-              to={`/editmoea/${Number(row.moeaId)}`}
+              to={`/editmoea/${Number(data.moeaId)}`}
               className="hover-link"
             >
-              {row.name}
+              {data.name}
             </Link>
           ),
           sortable: true,
         },
         {
-          label: t('amount'),
-          accessor: 'amount',
+          headerName: t('amount'),
+          field: 'amount',
           sortable: true,
         },
         {
-          label: t('researched'),
-          accessor: 'researched',
+          headerName: t('researched'),
+          field: 'researched',
           sortable: true,
         },
         {
-          label: t('onr'),
-          accessor: 'onr',
+          headerName: t('onr'),
+          field: 'onr',
           sortable: true,
         },
         {
-          label: t('orderNo'),
-          accessor: 'orderNo',
+          headerName: t('orderNo'),
+          field: 'orderNo',
           sortable: true,
         },
         {
-          label: t('calls'),
-          accessor: 'calls',
+          headerName: t('calls'),
+          field: 'calls',
           sortable: true,
         },
         {
-          label: t('section'),
-          accessor: 'section',
+          headerName: t('section'),
+          field: 'section',
           sortable: true,
         },
         {
-          label: t('township'),
-          accessor: 'township',
+          headerName: t('township'),
+          field: 'township',
           sortable: true,
         },
         {
-          label: t('range'),
-          accessor: 'range',
+          headerName: t('range'),
+          field: 'range',
           sortable: true,
         },
         {
-          label: t('county'),
-          accessor: 'county',
+          headerName: t('county'),
+          field: 'county',
           sortable: true,
         },
         {
-          label: t('state'),
-          accessor: 'state',
+          headerName: t('state'),
+          field: 'state',
           sortable: true,
         },
         {
-          label: t('company'),
-          accessor: 'company',
+          headerName: t('company'),
+          field: 'company',
           sortable: true,
         },
         {
-          label: t('notes'),
-          accessor: 'notes',
-          format: (row: TableData) => {
-            return row.notes
+          headerName: t('notes'),
+          field: 'notes',
+          cellRenderer: ({ data }: { data: TableData }) => {
+            return data.notes
               ? parse(
-                  DOMPurify.sanitize(nl2br(String(row.notes)), {
+                  DOMPurify.sanitize(nl2br(String(data.notes)), {
                     USE_PROFILES: { html: true },
                   })
                 )
@@ -541,10 +530,7 @@ const MOEASearch: React.FC = () => {
                     id="find-filter-button"
                     variant="outlined"
                     onClick={() => {
-                      setSortBy('name,amount');
-                      setSortOrder('asc,asc');
                       setPage(0);
-                      setRowsPerPage(100);
                     }}
                     sx={{
                       '&:disabled': {
@@ -627,10 +613,7 @@ const MOEASearch: React.FC = () => {
                   id="find-name-button"
                   variant="outlined"
                   onClick={() => {
-                    setSortBy('name,amount');
-                    setSortOrder('asc,asc');
                     setPage(0);
-                    setRowsPerPage(100);
                   }}
                   sx={{
                     '&:disabled': {
@@ -692,7 +675,7 @@ const MOEASearch: React.FC = () => {
             {`${t('searchResultsForMoea')}: ${moeaByNameData?.data?.count || 0}`}
           </Typography>
           <Box sx={{ mt: 1 }}>
-            <CustomizedTable
+            <NewTable
               tableId="searchMOEANameTable"
               data={moeaByNameData?.data?.records || []}
               count={moeaByNameData?.data?.count || 0}
@@ -700,14 +683,8 @@ const MOEASearch: React.FC = () => {
               getData={getData}
               initialLoading={byNameLoading}
               loading={byNameFetching}
-              page={page}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              rowsPerPage={rowsPerPage}
-              setSortBy={setSortBy}
-              setPage={setPage}
-              setRowsPerPage={setRowsPerPage}
-              setSortOrder={setSortOrder}
+              initialSortBy="name,amount"
+              initialSortOrder="asc,asc"
             />
           </Box>
         </>
@@ -738,7 +715,7 @@ const MOEASearch: React.FC = () => {
             }${state} with ${t('amountGreater')} ${amount || 0}`}
           </Typography>
           <Box sx={{ mt: 1 }}>
-            <CustomizedTable
+            <NewTable
               tableId="searchMOEAFilterTable"
               data={moeaByFilterData?.data?.records || []}
               count={moeaByFilterData?.data?.count || 0}
@@ -746,14 +723,8 @@ const MOEASearch: React.FC = () => {
               getData={getData}
               initialLoading={byFilterLoading}
               loading={byFilterFetching}
-              page={page}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              rowsPerPage={rowsPerPage}
-              setSortBy={setSortBy}
-              setPage={setPage}
-              setRowsPerPage={setRowsPerPage}
-              setSortOrder={setSortOrder}
+              initialSortBy="name,amount"
+              initialSortOrder="asc,asc"
             />
           </Box>
         </>

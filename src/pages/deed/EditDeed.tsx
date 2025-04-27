@@ -1,5 +1,6 @@
 /* eslint-disable max-depth */
 /* eslint-disable complexity */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React, { useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Container from '@mui/material/Container';
@@ -11,7 +12,7 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
 import LocalPrintshopIcon from '@mui/icons-material/LocalPrintshop';
-import { Field, Form, Formik } from 'formik';
+import { Field, Form, Formik, FormikProps } from 'formik';
 import { Deed, EditDeedFormInterface } from '../../interface/deed';
 import ContactInfo from '../contact/ContactInfo';
 import { useAppDispatch } from '../../store/hooks';
@@ -29,7 +30,11 @@ import {
 import { formatDateByMonth, convertToMMDDYYYY } from '../../utils/GeneralUtil';
 import { severity } from '../../interface/snackbar';
 import { open } from '../../store/Reducers/snackbar';
-import { useEditContactMutation } from '../../store/Services/contactService';
+import {
+  useDeleteEmailMutation,
+  useDeletePhoneMutation,
+  useEditContactMutation,
+} from '../../store/Services/contactService';
 import moment from 'moment';
 import { editDeedSchema } from '../../schemas/editDeedSchema';
 import { editContactSchema } from '../../schemas/editContact';
@@ -44,6 +49,8 @@ import { StyledInputLabel } from '../../component/common/CommonStyle';
 import EditDeedForm from './EditDeedForm';
 import Tooltip from '@mui/material/Tooltip';
 import * as Yup from 'yup';
+import CustomModel from '../../component/common/CustomModal';
+import { DeleteCannotDone } from '../../utils/constants';
 
 const DocumentTab = React.lazy(
   () =>
@@ -201,8 +208,97 @@ const EditDeed: React.FC = () => {
   const phone2Ref = React.useRef<(HTMLInputElement | null)[]>([]);
   const phone3Ref = React.useRef<(HTMLInputElement | null)[]>([]);
   const errorCountyRef = React.useRef<HTMLDivElement>(null);
+  const [deletePhone] = useDeletePhoneMutation();
+  const [deleteEmail] = useDeleteEmailMutation();
 
   const [error, setError] = React.useState<string>('');
+  const [deleteModalState, setDeleteModalState] = React.useState({
+    open: false,
+    type: '', // "phone" or "email"
+    index: null,
+    title: '',
+    header: '',
+  });
+  const openDeleteModal = (
+    type: 'phone' | 'email',
+    index: number,
+    header: string,
+    title: string
+  ) => {
+    const formikEntry = formikRef.current.values[type][index];
+    const currentEntry = type === 'phone' ? phone[index] : email[index];
+    const originalEntry = formikRef.current.initialValues[type]?.[index];
+    const idField = type === 'phone' ? 'phoneID' : 'Id';
+
+    const currentDesc = formikEntry?.phoneDesc || formikEntry?.emailDesc;
+    const originalDesc = originalEntry?.phoneDesc || originalEntry?.emailDesc;
+    // Check if it's a new unsaved entry (no ID) or completely empty
+    const isNewOrEmpty =
+      !currentEntry[idField] ||
+      (type === 'phone'
+        ? !currentEntry.areaCode &&
+          !currentEntry.prefix &&
+          !currentEntry.phoneID &&
+          !currentEntry.phoneNo &&
+          !currentDesc
+        : !currentEntry.email && !currentEntry.Id && !currentDesc);
+
+    // Check if existing record has been modified
+    const hasUnsavedChanges =
+      currentEntry[idField] &&
+      (type === 'phone'
+        ? currentEntry.areaCode !== originalEntry?.areaCode ||
+          currentEntry.prefix !== originalEntry?.prefix ||
+          currentEntry.phoneNo !== originalEntry?.phoneNo ||
+          currentDesc !== originalDesc
+        : currentEntry.email !== originalEntry?.email ||
+          currentDesc !== originalDesc);
+    if (isNewOrEmpty) {
+      // Delete immediately if new or empty
+      const updatedEntries = [...(type === 'phone' ? phone : email)];
+      updatedEntries.splice(index, 1);
+
+      if (type === 'phone') {
+        setPhone(updatedEntries);
+      } else {
+        setEmail(updatedEntries);
+      }
+
+      formikRef.current.setFieldValue(type, updatedEntries);
+      return;
+    } else if (hasUnsavedChanges) {
+      // Show error for modified existing records
+      dispatch(
+        open({
+          severity: severity.error,
+          message: DeleteCannotDone,
+        })
+      );
+      return;
+    }
+    const detailTitle =
+      type === 'phone'
+        ? `Delete Phone: ${currentEntry.areaCode || ''}-${currentEntry.prefix || ''}-${currentEntry.phoneNo || ''} ${currentDesc ? `(${currentDesc})` : ''}`
+        : `Delete Email: ${currentEntry.email || ''} ${currentDesc ? `(${currentDesc})` : ''}`;
+
+    // Show confirmation for unmodified existing records
+    setDeleteModalState({
+      open: true,
+      type,
+      index,
+      header: detailTitle.trim() || header,
+      title,
+    });
+  };
+  const closeDeleteModal = () => {
+    setDeleteModalState({
+      open: false,
+      type: '',
+      index: null,
+      title: '',
+      header: '',
+    });
+  };
 
   const addNewPhone = () => {
     setPhone([
@@ -340,7 +436,7 @@ const EditDeed: React.FC = () => {
         : undefined,
       checkNo1: deed?.checkNo1,
       dueDt2: deed?.dueDt2
-        ? moment(deed.dueDt2, 'YYYYMMDD').format('YYYY-MM-DD')
+        ? formatDateByMonth(deed?.dueDt2).toString()
         : undefined,
       datePaid2: deed?.datePaid2
         ? formatDateByMonth(deed?.datePaid2).toString()
@@ -364,7 +460,9 @@ const EditDeed: React.FC = () => {
       zip: deed?.ContactsModel?.zip,
       visit: deed?.ContactsModel?.visit,
       dNC: deed?.ContactsModel?.dNC,
-      ticklered: deed?.ContactsModel?.ticklered,
+      ticklered: deed?.ContactsModel?.ticklered
+        ? formatDateByMonth(deed?.ContactsModel?.ticklered).toString()
+        : null,
       fastTrack: deed?.ContactsModel?.fastTrack,
       company: deed?.FilesModel.company,
       drillingInfo: !!deed?.drillingInfo,
@@ -755,6 +853,39 @@ const EditDeed: React.FC = () => {
   } else if (actionType === 'saveContact') {
     validationSchema = editContactSchema(ec);
   }
+  const formikRef = React.useRef<FormikProps<EditDeedFormInterface>>(null);
+  const handleItemDelete = async () => {
+    const { type, index } = deleteModalState;
+
+    const currentEntry = type === 'phone' ? phone[index] : email[index];
+    const idField = type === 'phone' ? 'phoneID' : 'Id';
+    try {
+      const response =
+        type === 'phone'
+          ? await deletePhone({ phoneId: Number(currentEntry?.[idField]) })
+          : await deleteEmail({ emailId: Number(currentEntry?.[idField]) });
+
+      if ('data' in response) {
+        if (response?.data?.success) {
+          void getDeed({ deedId: Number(deedId) });
+          dispatch(
+            open({
+              severity: severity.success,
+              message: response?.data?.message,
+            })
+          );
+          closeDeleteModal();
+        }
+      }
+    } catch (error) {
+      dispatch(
+        open({
+          severity: severity.error,
+          message: 'unaccepted error occurred',
+        })
+      );
+    }
+  };
 
   return (
     <Container component="main" fixed sx={{ marginTop: 2 }}>
@@ -861,6 +992,7 @@ const EditDeed: React.FC = () => {
             </Typography>
           </Grid>
           <Formik
+            innerRef={formikRef}
             initialValues={deedDetailsData}
             enableReinitialize={true}
             validationSchema={validationSchema}
@@ -987,6 +1119,7 @@ const EditDeed: React.FC = () => {
                                 handleTitleChange={handleTitleChange}
                                 title={title}
                                 addNewTitle={addNewTitle}
+                                openDeleteModal={openDeleteModal}
                               />
                               <Grid
                                 container
@@ -1685,6 +1818,14 @@ const EditDeed: React.FC = () => {
                         </Box>
                       </Grid>
                     </Grid>
+                    <CustomModel
+                      open={deleteModalState.open}
+                      handleClose={closeDeleteModal}
+                      handleDelete={handleItemDelete}
+                      modalHeader={deleteModalState.header}
+                      modalTitle={deleteModalState.title}
+                      modalButtonLabel="Delete"
+                    />
                   </Stack>
                 </Box>
               </Form>

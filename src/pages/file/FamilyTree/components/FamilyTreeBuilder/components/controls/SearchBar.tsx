@@ -96,9 +96,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSelectPerson }) => {
                 <div
                   className={`f3-result-gender-indicator ${person.data.gender === 'M' ? 'male' : 'female'}`}
                 />
-                <span>
-                  {person.data['first name']} {person.data['last name']}
-                </span>
+                <span>{person.data.name || ''}</span>
               </div>
             ))}
           </div>

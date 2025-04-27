@@ -2,6 +2,7 @@ export interface OperatorResponse {
   operatorID?: number | null;
   companyName?: string | null;
   contactName?: string | null;
+  ownerNumber?: string | null;
   phoneNumber?: number | null;
   fax?: number | null;
   email?: string | null;
@@ -23,6 +24,7 @@ export interface OperatorsModel {
   operatorID: number;
   companyName: string;
   contactName: string;
+  ownerNumber: string;
   phoneNumber: number;
   fax: number;
   email: string;
@@ -42,6 +44,7 @@ export interface GetAllOperatorResponse {
 export interface CreateOperatorInitialValues {
   companyName: string;
   contactName?: string;
+  ownerNumber?: string;
   phoneNumber?: number | null;
   fax?: number | null;
   email?: string;
@@ -74,6 +77,7 @@ export interface UpdateOperatorInitialValues {
   operatorID: number;
   companyName: string;
   contactName?: string;
+  ownerNumber?: string;
   phoneNumber?: number | null;
   fax?: number | null;
   email?: string;

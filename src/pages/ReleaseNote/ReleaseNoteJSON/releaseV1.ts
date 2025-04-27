@@ -2,6 +2,414 @@ import { ReleaseNoteInterface } from '../../../interface/common';
 
 const releaseV1: ReleaseNoteInterface[] = [
   {
+    version: '2.0.31',
+    release_date: 'April 22, 2025',
+    sections: [
+      {
+        title: {
+          name: 'Improvements',
+          sx: 'header1',
+        },
+        details: [
+          {
+            content: `<ul style="list-style: none; padding: 0;">
+                          <li style="display: flex; margin: 8px 0;">
+                             <span style="
+                                  display: inline-flex;
+                                  justify-content: center;
+                                  align-items: start;
+                                  margin-right: 15px;
+                                  font-weight: bold;
+                                  font-size: 1.0rem;
+                                  margin-top: 5px;
+                                ">1.</span>
+                                <span style="text-align: justify;">
+                                FM-5447
+                                <span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>Brooklyn Paz<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>I've noticed a couple files recently where the same phone number is added to a contact 2 times. There is no way to delete a phone number, so it would be helpful to have that option. But maybe, after clicking delete, include an "are you sure?" button of some sort, so that numbers don't accidentally get deleted.
+                              </span>
+                            </li>
+                            <li style="display: flex; margin: 8px 0; margin-top: 20px; margin-left: 30px;">
+                          <b>Delete Phone and Email:</b>
+                        </li>
+                        <ul style="list-style: none; padding: 0; margin-left: 50px;">
+                          <li style="display: flex; align-items: center; margin: 8px 0;">
+                            <span style="
+                              display: inline-flex;
+                              justify-content: center;
+                              align-items: center;
+                              margin-right: 15px;
+                              font-weight: bold;
+                              font-size: 1.3rem;
+                            ">•</span> Delete functionality has been implemented for both phone numbers and email addresses to ensure consistency and standard behavior across contact details on the Edit Contact and Edit Deed pages.
+                          </li>
+                          <li style="display: flex; align-items: center; margin: 8px 0;">
+                            <span style="
+                              display: inline-flex;
+                              justify-content: center;
+                              align-items: center;
+                              margin-right: 15px;
+                              font-weight: bold;
+                              font-size: 1.3rem;
+                            ">•</span> When a user clicks the delete icon for an existing phone number or email under the Contact tab, a confirmation alert appears with a header ("Delete Phone:" or "Delete Email:") and the corresponding value. Upon confirmation, the selected item is removed.
+                          </li>
+                          <li style="display: flex; align-items: center; margin: 8px 0;">
+                            <span style="
+                              display: inline-flex;
+                              justify-content: center;
+                              align-items: center;
+                              margin-right: 15px;
+                              font-weight: bold;
+                              font-size: 1.3rem;
+                            ">•</span> If a user attempts to delete a phone number or email that is currently being edited, an error message is shown: "Delete cannot be done. Please save or discard your changes and try again".
+                          </li>
+                          <li style="display: flex; align-items: center; margin: 8px 0;">
+                            <span style="
+                              display: inline-flex;
+                              justify-content: center;
+                              align-items: center;
+                              margin-right: 15px;
+                              font-weight: bold;
+                              font-size: 1.3rem;
+                            ">•</span> To prevent accidental deletions, erasing the text in a phone number or email field does not remove the entry. Only explicitly clicking the delete icon will remove the phone or email.
+                          </li>
+                        </ul>
+                      </ul>`,
+            type: 'image',
+            src: '/assets/rel-2.0-delete-phone.png',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.0.30',
+    release_date: 'April 18, 2025',
+    sections: [
+      {
+        title: {
+          name: 'Bug Fixes',
+          sx: 'header1',
+        },
+        details: [
+          {
+            content: `<ul style="list-style: none; padding: 0; margin-left: 10px">
+                          <li style="display: flex; margin: 8px 0;">
+                             <span style="
+                                  display: inline-flex;
+                                  justify-content: center;
+                                  align-items: start;
+                                  margin-right: 15px;
+                                  font-weight: bold;
+                                  font-size: 1.0rem;
+                                  margin-top: 5px;
+                                ">1.</span>
+                                <span style="text-align: justify;">
+                                Bug Report FM-5451 Fixed<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>Brooklyn Paz<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>When sorting tasks by priority, it is messed up and making "high" lower than "Low". for instance, I want to sort them lowest priority to highest and it makes the order "high", "low", "medium", "urgent". it does the same when sorting from highest priority to lowest, it goes "urgent", "medium", "low", "high"
+                              </span>
+                          </li>
+                      </ul>`,
+            type: 'text',
+            src: '',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.0.29',
+    release_date: 'April 16, 2025',
+    sections: [
+      {
+        title: {
+          name: 'Bug Fixes',
+          sx: 'header1',
+        },
+        details: [
+          {
+            content: `<ul style="list-style: none; padding: 0; margin-left: 10px">
+                          <li style="display: flex; margin: 8px 0;">
+                             <span style="
+                                  display: inline-flex;
+                                  justify-content: center;
+                                  align-items: start;
+                                  margin-right: 15px;
+                                  font-weight: bold;
+                                  font-size: 1.0rem;
+                                  margin-top: 5px;
+                                ">1.</span>
+                                <span style="text-align: justify;">
+                                Bug Report FM-5448 Fixed<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>Monica Brooks<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>When you go into a file, and go to the Notes page, why do all the columns have to be the same width?  That just makes the Notes column have to be huge sometimes?  All the other columns do not need to be as big as they are and that would make it look alot better and easier to read to me at least. 
+                               <li style="display: flex; margin: 8px 0; margin-left: 30px;">
+                            <span style="
+                                  display: inline-flex;
+                                  justify-content: center;
+                                  align-items: start;
+                                  margin-right: 15px;
+                                  font-size: 1.0rem;
+                                  margin-top: 5px;
+                                ">
+                               The Date Completed, Date Created, Task Type, Created By, Assigned To, Conact - all those columns don’t need to be as big as they are and that would leave more room for the notes column so it isn’t so squished into a small space.  ??
+                              </span>
+                            </li>
+                              </span>
+                          </li>
+                      </ul>`,
+            type: 'text',
+            src: '',
+          },
+          {
+            content: `<ul style="list-style: none; padding: 0; margin-left: 10px">
+                        <li style="display: flex; margin: 8px 0;">
+                          <span style="
+                              display: inline-flex;
+                              justify-content: center;
+                              align-items: start;
+                              margin-right: 15px;
+                              font-weight: bold;
+                              font-size: 1.0rem;
+                              margin-top: 5px;
+                            ">2.</span>
+                          <span style="text-align: justify;">
+                            Bug Report FM-5457 Fixed
+                            <span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>Sterling Snead<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">
+                          </span>
+                        </li>
+                        <ul style="list-style: none; padding: 0; margin-left: 50px;">
+                          <li style="display: flex; align-items: center; margin: 8px 0;">
+                            <span style="
+                              display: inline-flex;
+                              justify-content: center;
+                              align-items: center;
+                              margin-right: 15px;
+                              font-weight: bold;
+                              font-size: 1.3rem;
+                            ">•</span>Properties are not retained when the user switches between min and max view in the graph and vice versa.
+                          </li>
+                          <li style="display: flex; align-items: center; margin: 8px 0;">
+                            <span style="
+                              display: inline-flex;
+                              justify-content: center;
+                              align-items: center;
+                              margin-right: 15px;
+                              font-weight: bold;
+                              font-size: 1.3rem;
+                            ">•</span>Chart view legend changes are not retained when switching between Goals / Wells / Deals.
+                          </li>
+                          <li style="display: flex; align-items: center; margin: 8px 0;">
+                            <span style="
+                              display: inline-flex;
+                              justify-content: center;
+                              align-items: center;
+                              margin-right: 15px;
+                              font-weight: bold;
+                              font-size: 1.3rem;
+                            ">•</span>A "Reset Graph" button has been added so users can revert all graph customizations.
+                          </li>
+                        </ul>
+                      </ul>`,
+            type: 'text',
+            src: '',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.0.28',
+    release_date: 'April 11, 2025',
+    sections: [
+      {
+        title: {
+          name: 'Improvements',
+          sx: 'header1',
+        },
+        details: [
+          {
+            content: `<ul style="list-style: none; padding: 0;">
+                          <li style="display: flex; margin: 8px 0;">
+                             <span style="
+                                  display: inline-flex;
+                                  justify-content: center;
+                                  align-items: start;
+                                  margin-right: 15px;
+                                  font-weight: bold;
+                                  font-size: 1.0rem;
+                                  margin-top: 5px;
+                                ">1.</span>
+                                <span style="text-align: justify;">
+                                FM-5442
+                                <span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>Julia Lees<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>I would like to be able to add Owner Number as a TEXT input field to editoperator and newoperator screens.  Each oil & gas operator assigns Enerlex a unique owner number (usually on the division order) when we are put in pay status.  I am currently tracking this information in a spreadsheet.
+                              </span>
+                            </li>
+                      </ul>`,
+            type: 'text',
+            src: '',
+          },
+        ],
+      },
+      {
+        title: {
+          name: 'Bug Fixes',
+          sx: 'header1',
+        },
+        details: [
+          {
+            content: `<ul style="list-style: none; padding: 0; margin-left: 10px">
+                          <li style="display: flex; margin: 8px 0;">
+                             <span style="
+                                  display: inline-flex;
+                                  justify-content: center;
+                                  align-items: start;
+                                  margin-right: 15px;
+                                  font-weight: bold;
+                                  font-size: 1.0rem;
+                                  margin-top: 5px;
+                                ">1.</span>
+                                <span style="text-align: justify;">
+                                Bug Report FM-5445 Fixed<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>Tamara Maxwell<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>When adding data beyond the view of the page it isn't saving. I have added data beyond the view and when I save this data it disappears. We need to be able to scroll over to see the additional data added beyond.
+                              </span>
+                          </li>
+                      </ul>`,
+            type: 'text',
+            src: '',
+          },
+          {
+            content: `<ul style="list-style: none; padding: 0; margin-left: 10px">
+                          <li style="display: flex; margin: 8px 0;">
+                             <span style="
+                                  display: inline-flex;
+                                  justify-content: center;
+                                  align-items: start;
+                                  margin-right: 15px;
+                                  font-weight: bold;
+                                  font-size: 1.0rem;
+                                  margin-top: 5px;
+                                ">2.</span>
+                                <span style="text-align: justify;">
+                                Bug Report FM-5450 Fixed<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>Sterling Snead<span style="
+                                display: inline-flex;
+                                justify-content: center;
+                                align-items: start;
+                                margin-right: 5px;
+                                margin-left: 5px;
+                                font-weight: bold;
+                                font-size: 1.3rem;
+                              ">•</span>In all places in filemaster (drafts due, contact notes, and file notes) the notes wrap around text is double spaced. Please make them single spaced.
+                              </span>
+                          </li>
+                      </ul>`,
+            type: 'text',
+            src: '',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2.0.27',
     release_date: 'April 7, 2025',
     sections: [

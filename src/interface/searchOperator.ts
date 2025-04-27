@@ -24,6 +24,7 @@ export interface OperatorsSearchItem {
     operatorID?: number;
     companyName?: string | null;
     contactName?: string | null;
+    ownerNumber?: string | null;
     phoneNumber?: number | null;
     fax?: number | null;
     email?: string | null;

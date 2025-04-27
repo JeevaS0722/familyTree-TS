@@ -1,8 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable complexity */
-import React, { useEffect, useState, useMemo } from 'react';
+import React from 'react';
 import Grid from '@mui/material/Grid';
 import './style.css';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -16,6 +13,7 @@ import {
   createTheme,
   IconButton,
   Skeleton,
+  Button,
 } from '@mui/material';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import CloseIcon from '@mui/icons-material/Close';
@@ -26,7 +24,6 @@ import { severity } from '../../../../interface/snackbar';
 import Tooltip from '@mui/material/Tooltip';
 import { open } from '../../../../store/Reducers/snackbar';
 import { TableColumns, TableData } from '../../../../interface/common';
-// Import the new Table component instead of NewTable
 import { Table } from '../../../../component/Table';
 import {
   useGetAllNewWellCountMutation,
@@ -80,6 +77,9 @@ export interface SectionRendererProps {
   handleOpenChartModal: (section: 'newWells' | 'offers' | 'deals') => void;
   getTableRowBackgroundColor: () => string;
   currentYearField: string;
+  hiddenMonths: string[];
+  onLegendClick: (month: string) => void;
+  onResetLegends: () => void;
 }
 
 const isUserAuthorized = (department: string) =>
@@ -121,8 +121,8 @@ const updateGoalData = async (
               acc: { [key: string]: string },
               entry: { year: string; goal?: string }
             ) => {
-              const goalValue = entry.goal ?? '???';
-              acc[`${entry.year} - ${goalValue}`] = goalValue.toString();
+              const goalValue = !entry?.goal ? '0' : entry.goal;
+              acc[`${entry.year} - ${goalValue}`] = goalValue;
               return acc;
             },
             {}
@@ -223,14 +223,16 @@ const CustomLegend: React.FC<CustomLegendProps> = ({
   dimmedMonths,
   onLegendClick,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   return (
     <Box
       sx={{
         display: 'flex',
         justifyContent: 'center',
         flexWrap: 'wrap',
-        gap: 2,
-        p: 1,
+        gap: isMobile ? '10px' : '15px',
       }}
     >
       {visibleMonths.map(month => {
@@ -281,6 +283,9 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   getTableRowBackgroundColor,
   onHeaderValueChange,
   currentYearField,
+  hiddenMonths,
+  onLegendClick,
+  onResetLegends,
 }) => {
   const currentYear = new Date().getFullYear();
   const theme = useTheme();
@@ -299,14 +304,36 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
     return relevantYears.includes(year);
   });
 
-  // Use your helper to transform table data to chart data.
   const fullChartData = transformTableDataToChartData(data, filteredColumns);
+
+  const visibleMonths =
+    fullChartData.length > 0
+      ? Object.keys(fullChartData[0]).filter(
+          key => key !== 'name' && !hiddenMonths.includes(key)
+        )
+      : [];
+  const allMonths =
+    fullChartData.length > 0
+      ? Object.keys(fullChartData[0]).filter(key => key !== 'name')
+      : [];
+
+  const filteredFullChartData = fullChartData.map((item: any) => {
+    const newItem: any = { name: item.name };
+    visibleMonths.forEach(key => {
+      newItem[key] = item[key];
+    });
+    return newItem;
+  });
+
+  const allValues = filteredFullChartData.flatMap((obj: any) =>
+    visibleMonths.map(key => obj[key])
+  );
+  const maxVal = Math.max(...allValues, 0);
 
   const onToggleClick = (mode: 'list' | 'bar') => {
     handleViewModeToggle(mode, section);
   };
 
-  // Handle header changes for the Table component.
   const handleHeaderValueChanged = (params: {
     colId: string;
     oldValue: string;
@@ -344,9 +371,26 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'stretch',
+        position: 'relative',
       }}
     >
-      {/* Content area - table or chart */}
+      {viewMode === 'bar' && (
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={onResetLegends}
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            whiteSpace: 'nowrap',
+            zIndex: 1000,
+            minWidth: '60px',
+          }}
+        >
+          Reset
+        </Button>
+      )}
       <Box sx={{ width: '100%', flex: '1 1 auto' }}>
         {viewMode === 'list' ? (
           data.length > 0 && columns.length > 0 ? (
@@ -382,7 +426,6 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
             </Box>
           )
         ) : (
-          // Updated bar chart view using Apache ECharts to fit in the screen:
           <Box
             sx={{
               width: '100%',
@@ -394,75 +437,119 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
               padding: '40px 10px 10px 10px',
             }}
           >
-            <Typography
-              variant="h6"
-              sx={{
-                color: '#FFFFFF',
-                position: 'absolute',
-                top: '10px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 3,
-              }}
-            >
-              {section === 'newWells'
-                ? 'New Wells'
-                : section === 'offers'
-                  ? 'Offers'
-                  : 'Deals'}
-            </Typography>
-            <Tooltip title="View Fullscreen" placement="bottom">
-              <IconButton
-                onClick={() => handleOpenChartModal(section)}
+            {isMobile ? (
+              <Box
                 sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   position: 'absolute',
                   top: 8,
-                  right: 8,
-                  color: '#FFF',
+                  left: 0,
+                  right: 0,
                   zIndex: 3,
+                  px: 1,
                 }}
               >
-                <FullscreenIcon />
-              </IconButton>
-            </Tooltip>
-            {/* Prepare data for ECharts */}
-            {(() => {
-              // Determine visible month keys (exclude "name" and hidden months)
-              const visibleMonths =
-                fullChartData.length > 0
-                  ? Object.keys(fullChartData[0]).filter(key => key !== 'name')
-                  : [];
-              // Build filtered data: each row only contains keys for visible months.
-              const filteredFullChartData = fullChartData.map((item: any) => {
-                const newItem: any = { name: item.name };
-                visibleMonths.forEach(key => {
-                  newItem[key] = item[key];
-                });
-                return newItem;
-              });
-              // Compute common maximum value
-              const allValues = filteredFullChartData.flatMap((obj: any) =>
-                visibleMonths.map(key => obj[key])
-              );
-              const maxVal = Math.max(...allValues, 0);
-              // Build ECharts option for "fit in screen" bar chart.
-              const option = {
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: '#FFFFFF',
+                    flex: 1,
+                    textAlign: 'center',
+                    position: 'static',
+                  }}
+                >
+                  {section === 'newWells'
+                    ? 'New Wells'
+                    : section === 'offers'
+                      ? 'Offers'
+                      : 'Deals'}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Tooltip title="View Fullscreen" placement="bottom">
+                    <IconButton
+                      onClick={() => handleOpenChartModal(section)}
+                      sx={{
+                        color: '#FFF',
+                        zIndex: 3,
+                        position: 'static',
+                      }}
+                    >
+                      <FullscreenIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
+            ) : (
+              <>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: '#FFFFFF',
+                    position: 'absolute',
+                    top: '10px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 3,
+                  }}
+                >
+                  {section === 'newWells'
+                    ? 'New Wells'
+                    : section === 'offers'
+                      ? 'Offers'
+                      : 'Deals'}
+                </Typography>
+                <Tooltip title="View Fullscreen" placement="bottom">
+                  <IconButton
+                    onClick={() => handleOpenChartModal(section)}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 48,
+                      color: '#FFF',
+                      zIndex: 3,
+                    }}
+                  >
+                    <FullscreenIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 10,
+                zIndex: 2,
+                backgroundColor: '#10141F',
+              }}
+            >
+              <CustomLegend
+                visibleMonths={allMonths}
+                dimmedMonths={hiddenMonths}
+                onLegendClick={onLegendClick}
+              />
+            </Box>
+
+            <ReactECharts
+              key={hiddenMonths.join(',')}
+              option={{
                 tooltip: {
                   trigger: 'item',
                   formatter: (params: any) => {
                     return `
-                      <div style="background: white; padding: 10px; border-radius: 5px; text-align: center; color: white;">
-                        <div style="font-size: 18px; font-weight: bold; color: black; margin-bottom: 8px;">
-                          ${params.name}
-                        </div>
-                        <div style="display: flex; align-items: center; justify-content: center;">
-                          <div style="width: 12px; height: 12px; background-color: ${params.color}; margin-right: 8px;"></div>
-                          <div style="font-size: 16px; color: black;">
-                            ${params.seriesName}: ${params.value}
-                          </div>
-                        </div>
-                      </div>
-                    `;
+          <div style="background: white; padding: 10px; border-radius: 5px; text-align: center; color: white;">
+            <div style="font-size: 18px; font-weight: bold; color: black; margin-bottom: 8px;">
+              ${params.name}
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <div style="width: 12px; height: 12px; background-color: ${params.color}; margin-right: 8px;"></div>
+              <div style="font-size: 16px; color: black;">
+                ${params.seriesName}: ${params.value}
+              </div>
+            </div>
+          </div>
+        `;
                   },
                 },
                 grid: {
@@ -476,7 +563,6 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
                   type: 'category',
                   data: filteredFullChartData.map((item: any) => item.name),
                   axisLabel: {
-                    // interval: 0,
                     color: '#FFF',
                   },
                   axisLine: { lineStyle: { color: '#FFF' } },
@@ -488,37 +574,24 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
                   axisLabel: { color: '#FFF' },
                   axisLine: { lineStyle: { color: '#FFF' } },
                 },
-                series: visibleMonths.map((month, index) => ({
+                series: visibleMonths.map(month => ({
                   name: month,
                   type: 'bar',
-                  data: filteredFullChartData.map((item: any) => item[month]),
+                  data: filteredFullChartData.map(
+                    (item: any) => item[month] ?? 0
+                  ),
                   itemStyle: {
-                    color: MONTH_COLORS[index % MONTH_COLORS.length],
+                    color: monthColorMap[month] || '#1f77b4',
                   },
                   barMaxWidth: 50,
                 })),
-                legend: {
-                  show: true,
-                  data: visibleMonths,
-                  bottom: 60,
-                  left: 'center',
-                  textStyle: { color: '#FFF' },
-                },
-              };
-              return (
-                <Box>
-                  <ReactECharts
-                    option={option}
-                    style={{ width: '100%', height: 400 }}
-                  />
-                </Box>
-              );
-            })()}
+              }}
+              style={{ width: '100%', height: 400 }}
+            />
           </Box>
         )}
       </Box>
 
-      {/* Toggle buttons at the bottom */}
       <Box
         sx={{
           display: 'flex',
@@ -591,14 +664,13 @@ export const SectionRenderer: React.FC<SectionRendererProps> = ({
   );
 };
 
-// Rest of the file remains the same...
 const GoalsSection: React.FC<GoalsSectionProps> = ({
   active = 0,
   section,
   handleChange,
   isMobileOrTablet,
 }) => {
-  const [viewModes, setViewModes] = useState<{
+  const [viewModes, setViewModes] = React.useState<{
     newWells: 'list' | 'bar';
     offers: 'list' | 'bar';
     deals: 'list' | 'bar';
@@ -607,9 +679,18 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
     offers: 'list',
     deals: 'list',
   });
-  const [hiddenMonthsInModal, setHiddenMonthsInModal] = useState<string[]>([]);
-  const [isSectionSwitchLoading, setIsSectionSwitchLoading] = useState(false);
-  const [data, setData] = useState<{
+  const [hiddenMonthsBySection, setHiddenMonthsBySection] = React.useState<{
+    newWells: string[];
+    offers: string[];
+    deals: string[];
+  }>({
+    newWells: [],
+    offers: [],
+    deals: [],
+  });
+  const [isSectionSwitchLoading, setIsSectionSwitchLoading] =
+    React.useState(false);
+  const [data, setData] = React.useState<{
     newWells: {
       data: TableData[];
       headers: { [key: string]: string };
@@ -630,12 +711,14 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
     offers: { data: [], headers: {}, viewMode: 'list' },
     deals: { data: [], headers: {}, viewMode: 'list' },
   });
-  const [isChartModalOpen, setIsChartModalOpen] = useState(false);
-  const [activeChartSection, setActiveChartSection] = useState<
+  const [isChartModalOpen, setIsChartModalOpen] = React.useState(false);
+  const [activeChartSection, setActiveChartSection] = React.useState<
     'newWells' | 'offers' | 'deals' | null
   >(null);
-  const [isGoalCountLoading, setIsGoalCountLoading] = useState(true);
-  const [chipActions, setChipActions] = useState<{ actionName: string }[]>([]);
+  const [isGoalCountLoading, setIsGoalCountLoading] = React.useState(true);
+  const [chipActions, setChipActions] = React.useState<
+    { actionName: string }[]
+  >([]);
   const user = useAppSelector(state => state.user);
   const dispatch = useAppDispatch();
   const [getAllWellCount] = useGetAllNewWellCountMutation();
@@ -661,24 +744,28 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
     ];
     const dataArray = Array.isArray(apiData) ? apiData : [apiData];
     const yearData: {
-      [year: string]: { goal: string } & { [month: string]: number | null };
+      [year: string]: { goal: string } & { [month: string]: number };
     } = {};
+
     dataArray.forEach(entry => {
-      const yearKey = entry.year.toString();
-      const goalValue = entry.goal ?? '???';
+      const yearKey = entry.year ?? new Date().getFullYear().toString();
+      const goalValue = !entry?.goal ? '0' : entry.goal;
       if (!yearData[yearKey]) {
         yearData[yearKey] = { goal: goalValue };
         months.forEach(month => {
           const monthKey = month.toLowerCase();
-          yearData[yearKey][monthKey] = entry[monthKey] ?? null;
+          yearData[yearKey][monthKey] =
+            entry[monthKey] === null ? 0 : (entry[monthKey] ?? 0);
         });
       }
     });
+
     const result = months.map((month, index) => {
       const row: TableData = { id: index + 1, month };
       Object.keys(yearData).forEach(year => {
         const yearGoalKey = `${year} - ${yearData[year].goal}`;
-        row[yearGoalKey] = yearData[year][month.toLowerCase()] ?? null;
+        const value = yearData[year][month.toLowerCase()];
+        row[yearGoalKey] = value;
       });
       return row;
     });
@@ -697,9 +784,9 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
             data: transformGoalCountData(result.data.WellCountDetails || []),
             headers: (result.data.WellCountDetails || []).reduce(
               (acc: { [key: string]: string }, entry: any) => {
-                const goal =
-                  typeof entry.goal === 'string' ? entry.goal : '???';
-                acc[`${entry.year} - ${goal}`] = goal.toString();
+                const year = !entry?.year ? '0' : entry.year;
+                const goal = !entry?.goal ? '0' : entry.goal;
+                acc[`${year} - ${goal}`] = goal.toString();
                 return acc;
               },
               {}
@@ -710,9 +797,9 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
             data: transformGoalCountData(result.data.OffersCountDetails || []),
             headers: (result.data.OffersCountDetails || []).reduce(
               (acc: { [key: string]: string }, entry: any) => {
-                const goal =
-                  typeof entry.goal === 'string' ? entry.goal : '???';
-                acc[`${entry.year} - ${goal}`] = goal.toString();
+                const year = !entry?.year ? '0' : entry.year;
+                const goal = !entry?.goal ? '0' : entry.goal;
+                acc[`${year} - ${goal}`] = goal.toString();
                 return acc;
               },
               {}
@@ -723,9 +810,9 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
             data: transformGoalCountData(result.data.DealsCountDetails || []),
             headers: (result.data.DealsCountDetails || []).reduce(
               (acc: { [key: string]: string }, entry: any) => {
-                const goal =
-                  typeof entry.goal === 'string' ? entry.goal : '???';
-                acc[`${entry.year} - ${goal}`] = goal.toString();
+                const year = !entry?.year ? '0' : entry.year;
+                const goal = !entry?.goal ? '0' : entry.goal;
+                acc[`${year} - ${goal}`] = goal.toString();
                 return acc;
               },
               {}
@@ -754,7 +841,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     void fetchCombinedData();
   }, [getAllWellCount]);
 
@@ -767,7 +854,6 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       return newViewModes;
     });
 
-    // Update the viewMode in the data state as well
     setData(prev => ({
       ...prev,
       [section]: {
@@ -810,27 +896,12 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       oldValue?: string | number | null;
     };
 
-    if (newValue === null) {
-      setData(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          data: prev[section].data.map(r =>
-            r.id === event.data.id
-              ? { ...r, [event.colDef.field]: event.oldValue }
-              : r
-          ),
-        },
-      }));
-      return;
-    }
-
     if (!rowData) {
       await handleHeaderEdit(event, section);
       return;
     }
     const integerRegex = /^-?\d+$/;
-    const value = event.newValue;
+    const value = event?.newValue || 0;
     if (
       (typeof value === 'string' && !integerRegex.test(value)) ||
       (typeof value === 'number' && !Number.isInteger(value)) ||
@@ -852,7 +923,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
 
     const [yearStr, goalStr] = colDef.field.split(' - ');
     const year = Number(yearStr);
-    const goal = goalStr === '???' ? '' : goalStr;
+    const goal = goalStr === '' ? '' : goalStr;
     const month =
       typeof rowData.month === 'string' ? rowData.month.toLowerCase() : '';
     const previousData = JSON.parse(JSON.stringify(data[section].data));
@@ -906,12 +977,6 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
           ),
         },
       }));
-      dispatch(
-        open({
-          severity: severity.error,
-          message: 'Decimal values are not allowed',
-        })
-      );
     }
   };
 
@@ -919,7 +984,6 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
     event: any,
     section: 'newWells' | 'offers' | 'deals'
   ) => {
-    // This function handles new header API signature
     const {
       fileId,
       colId,
@@ -928,23 +992,22 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       columnOrder,
       oldValue,
     } = event;
-    const fielD =
+    const field =
       fileId || colId || event.colDef?.field || event.colDef?.colId || '';
-    if (!fielD) {
+    if (!field) {
       return;
     }
 
-    const year = newHeaderValue.includes(' - ')
-      ? newHeaderValue.split(' - ')[0]
-      : newHeaderValue;
-    const newValueParts =
-      newHeaderValue && newHeaderValue.includes(' - ')
-        ? newHeaderValue.split(' - ')
-        : [year, newHeaderValue || ''];
-    const newValue =
-      newValueParts.length > 1
-        ? newValueParts[1].trim()
-        : newValueParts[0].trim();
+    const [year, oldGoal] = oldValue.split(' - ').map(part => part.trim());
+
+    const newGoalValue =
+      newHeaderValue === null || newHeaderValue === undefined
+        ? '0'
+        : newHeaderValue.includes(' - ')
+          ? newHeaderValue.split(' - ')[1]?.trim() || '0'
+          : newHeaderValue.trim() === year
+            ? '0'
+            : newHeaderValue.trim() || '0';
 
     setData(prev => ({
       ...prev,
@@ -956,7 +1019,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
 
     const updatePayload: UpdateGoalRequest = {
       year: Number(year),
-      goal: newValue,
+      goal: newGoalValue,
       section: section === 'newWells' ? 'well' : section,
     };
 
@@ -975,7 +1038,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       const newVisibleColumns = visibleColumns.filter(c => c !== colId);
       const columnNewOrder = columnOrder.map(c => {
         if (c === colId) {
-          return `${section}_${newHeaderValue}`;
+          return `${section}_${year} - ${newGoalValue}`;
         }
         return c;
       });
@@ -988,23 +1051,21 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       dispatch(
         setTableVisibleColumns({
           tableId: section,
-          columns: [...newVisibleColumns, `${section}_${newHeaderValue}`],
+          columns: [
+            ...newVisibleColumns,
+            `${section}_${year} - ${newGoalValue}`,
+          ],
         })
       );
     } catch (error) {
+      const revertedValue = `${year} - 0`;
       setData(prev => ({
         ...prev,
         [section]: {
           ...prev[section],
-          headers: { ...prev[section].headers, [colId]: newHeaderValue },
+          headers: { ...prev[section].headers, [colId]: revertedValue },
         },
       }));
-      dispatch(
-        open({
-          severity: severity.error,
-          message: 'Failed to update goal header',
-        })
-      );
     }
   };
 
@@ -1060,7 +1121,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
           editable: isUserAuthorized(user.department || ''),
           sortable: false,
           headerEdit: isUserAuthorized(user.department || ''),
-          headerEditMode: 'partial', // partial editing for year-value headers
+          headerEditMode: 'partial',
           cellRenderer: customCellRenderer,
           cellEditor: 'agNumberCellEditor',
           cellEditorParams: {
@@ -1086,11 +1147,11 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
     const currentYear = new Date().getFullYear().toString();
     const currentYearField =
       columns.find(col => col.field.startsWith(currentYear))?.field ||
-      `${currentYear} - ???`;
+      `${currentYear} - '0'`;
     return { columns, currentYearField };
   };
 
-  const sectionColumns = useMemo(() => {
+  const sectionColumns = React.useMemo(() => {
     return {
       newWells: generateColumns('newWells'),
       offers: generateColumns('offers'),
@@ -1113,9 +1174,29 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
     setActiveChartSection(null);
   };
 
+  const handleLegendClick = (
+    month: string,
+    section: 'newWells' | 'offers' | 'deals'
+  ) => {
+    setHiddenMonthsBySection(prev => ({
+      ...prev,
+      [section]: prev[section].includes(month)
+        ? prev[section].filter(m => m !== month)
+        : [...prev[section], month],
+    }));
+  };
+
+  const handleResetLegends = (section: 'newWells' | 'offers' | 'deals') => {
+    setHiddenMonthsBySection(prev => ({
+      ...prev,
+      [section]: [],
+    }));
+  };
+
   interface FullscreenChartModalProps {
     hiddenMonths: string[];
     onLegendClick: (month: string) => void;
+    onResetLegends: () => void;
     data: {
       [key: string]: {
         data: TableData[];
@@ -1134,6 +1215,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
   const FullscreenChartModal: React.FC<FullscreenChartModalProps> = ({
     hiddenMonths,
     onLegendClick,
+    onResetLegends,
     data,
     activeChartSection,
     sectionColumns,
@@ -1143,14 +1225,10 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
     if (!activeChartSection) {
       return null;
     }
-    // 1. Transform table data to chart data.
     const fullChartData = transformTableDataToChartData(
       data[activeChartSection].data,
       sectionColumns[activeChartSection].columns
     );
-    // fullChartData: [{ name: '2025 - 300', January: 30, February: 23, ... }, ...]
-
-    // 2. Determine visible month keys (exclude "name" and hidden months)
     const visibleMonths =
       fullChartData.length > 0
         ? Object.keys(fullChartData[0]).filter(
@@ -1162,7 +1240,6 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
         ? Object.keys(fullChartData[0]).filter(key => key !== 'name')
         : [];
 
-    // 3. Build filtered data using only visible month keys.
     const filteredFullChartData = fullChartData.map((item: any) => {
       const newItem: any = { name: item.name };
       visibleMonths.forEach(key => {
@@ -1171,22 +1248,18 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       return newItem;
     });
 
-    // 4. Compute common max value from filtered data.
     const allValues = filteredFullChartData.flatMap((obj: any) =>
       visibleMonths.map(key => obj[key])
     );
     const maxVal = Math.max(...allValues, 0);
 
-    // 5. Compute chart width for scrollable mode.
     const chartWidth = Math.max(filteredFullChartData.length * 200, 1000);
     const commonHeight = 'calc(100vh - 200px)';
     const gridTop = 20,
       gridBottom = 80;
-    // ---------------------------
-    // Left Chart Option (Y-axis only)
+
     const leftOption = {
       grid: {
-        // Enough left margin so axis labels appear
         left: isMobile ? 70 : 90,
         right: 0,
         top: 20,
@@ -1194,7 +1267,6 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
         containLabel: false,
       },
       xAxis: {
-        // Just a placeholder category axis so ECharts has a valid dimension
         type: 'category',
         data: ['Placeholder'],
         show: false,
@@ -1202,7 +1274,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       yAxis: {
         type: 'value',
         min: 0,
-        max: maxVal, // same maxVal as your right chart
+        max: maxVal,
         axisLine: {
           show: true,
           lineStyle: { color: '#FFF' },
@@ -1226,8 +1298,6 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       tooltip: { show: false },
     };
 
-    // ---------------------------
-    // Right Chart Option (bars, X-axis, tooltip, legend)
     const rightOption = {
       tooltip: {
         trigger: 'item',
@@ -1271,9 +1341,9 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
         emphasis: {
           itemStyle: { color: hoverColorMap[month] },
         },
-        // barWidth: 80,
       })),
     };
+
     return (
       <Modal
         open={isChartModalOpen}
@@ -1299,38 +1369,57 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
             boxSizing: 'border-box',
           }}
         >
-          <Typography
-            variant="h6"
+          <Box
             sx={{
-              color: '#FFF',
+              display: 'flex',
+              alignItems: 'center',
               position: 'absolute',
-              top: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              top: 8,
+              left: 0,
+              right: 0,
               zIndex: 3,
+              justifyContent: 'space-between',
+              px: 2,
             }}
           >
-            {activeChartSection === 'newWells'
-              ? 'New Wells'
-              : activeChartSection === 'offers'
-                ? 'Offers'
-                : 'Deals'}
-          </Typography>
-          <Tooltip title="Close Fullscreen">
-            <IconButton
-              onClick={handleCloseChartModal}
+            <Typography
+              variant="h6"
               sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
                 color: '#FFF',
-                zIndex: 3,
+                flex: 1,
+                textAlign: 'center',
               }}
             >
-              <CloseIcon />
-            </IconButton>
-          </Tooltip>
-          {/* Fixed Legend at Bottom Center */}
+              {activeChartSection === 'newWells'
+                ? 'New Wells'
+                : activeChartSection === 'offers'
+                  ? 'Offers'
+                  : 'Deals'}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={onResetLegends}
+                sx={{
+                  whiteSpace: 'nowrap',
+                  marginLeft: '5px',
+                }}
+              >
+                Reset
+              </Button>
+              <Tooltip title="Close Fullscreen">
+                <IconButton
+                  onClick={handleCloseChartModal}
+                  sx={{
+                    color: '#FFF',
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
           <Box
             sx={{
               position: 'absolute',
@@ -1347,16 +1436,13 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
               onLegendClick={onLegendClick}
             />
           </Box>
-          {/* Chart Area */}
           <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'row' }}>
-            {/* Left: Fixed Y-Axis Chart Container */}
             <Box sx={{ width: 100, overflow: 'hidden' }}>
               <ReactECharts
                 option={leftOption}
                 style={{ width: '100%', height: commonHeight }}
               />
             </Box>
-            {/* Right: Scrollable Bars Chart Container */}
             <Box
               sx={{
                 width: isMobile ? `calc(100vw - 100px)` : `calc(100vw - 200px)`,
@@ -1436,32 +1522,11 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
               />
             </Grid>
           ))}
-          <Grid
-            item
-            container
-            sx={{ justifyContent: 'center' }}
-            md={12}
-            sm={12}
-            xs={12}
-          >
-            <Chip
-              label={
-                <Typography sx={{ color: 'black' }}>
-                  Title Failure (Coming Soon)
-                </Typography>
-              }
-              disabled
-              sx={{
-                background: '#e0e0e0',
-                color: 'grey',
-                marginTop: 1,
-              }}
-            />
-          </Grid>
         </>
       )}
     </Grid>
   );
+
   const RenderSectionContent = () => {
     const effectiveSection =
       section ||
@@ -1492,13 +1557,20 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       handleOpenChartModal,
       getTableRowBackgroundColor,
       currentYearField,
+      hiddenMonths: hiddenMonthsBySection[effectiveSection],
+      onLegendClick: (month: string) =>
+        handleLegendClick(month, effectiveSection),
+      onResetLegends: () => handleResetLegends(effectiveSection),
     };
+
     if (section) {
       return <SectionRenderer {...sectionProps} />;
     }
 
     const desktopChipActions = chipActions.filter(
-      action => action.actionName !== 'Drafts Due'
+      action =>
+        action.actionName !== 'Drafts Due' &&
+        action.actionName !== 'Title Failure'
     );
     const isLargeScreen = useMediaQuery('(min-width:1800px)');
 
@@ -1507,6 +1579,7 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
       handleChange && handleChange(index);
       setTimeout(() => setIsSectionSwitchLoading(false), 500);
     };
+
     return (
       <Box
         sx={{
@@ -1647,19 +1720,20 @@ const GoalsSection: React.FC<GoalsSectionProps> = ({
     );
   };
 
-  const handleLegendClickInModal = (month: string) => {
-    setHiddenMonthsInModal(prev =>
-      prev.includes(month) ? prev.filter(m => m !== month) : [...prev, month]
-    );
-  };
-
   return (
     <>
       {isMobileOrTablet && !section && RenderMobileTabletChips()}
       {(!isMobileOrTablet || section) && RenderSectionContent()}
       <FullscreenChartModal
-        hiddenMonths={hiddenMonthsInModal}
-        onLegendClick={handleLegendClickInModal}
+        hiddenMonths={
+          activeChartSection ? hiddenMonthsBySection[activeChartSection] : []
+        }
+        onLegendClick={(month: string) =>
+          activeChartSection && handleLegendClick(month, activeChartSection)
+        }
+        onResetLegends={() =>
+          activeChartSection && handleResetLegends(activeChartSection)
+        }
         data={data}
         activeChartSection={activeChartSection}
         sectionColumns={sectionColumns}

@@ -4,6 +4,7 @@
   "operatorName": "Operator Name",
   "contactName": "Contact Name",
   "companyName": "Company Name",
+  "ownerNumber": "Owner Number",
   "phoneNumber": "Phone",
   "fax": "Fax",
   "email": "Email",

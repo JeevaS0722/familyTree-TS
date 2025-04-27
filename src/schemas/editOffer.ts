@@ -52,12 +52,14 @@ export const editOfferSchema = (
     draftLength1: Yup.number()
       .typeError(t('draftLength1Valid'))
       .nullable()
+      .max(127, t('draftLength1'))
       .notRequired(),
 
     // 7) draftLength2: number or null (not required)
     draftLength2: Yup.number()
       .typeError(t('draftLength2Valid'))
       .nullable()
+      .max(127, t('draftLength2'))
       .notRequired(),
 
     // 8) comment3: string or null (not required)

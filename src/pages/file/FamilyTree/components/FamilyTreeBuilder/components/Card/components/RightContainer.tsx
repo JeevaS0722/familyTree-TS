@@ -1,11 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { RightContainerProps } from '../types';
+import { useTreeContext } from '../../../context/TreeContext';
 
 const RightContainer: React.FC<RightContainerProps> = data => {
+  const { state } = useTreeContext();
   const [offerIconHovered, setOfferIconHovered] = useState(false);
-  const { isMale, divisionOfInterest, percentage, leftColumnWidth, offer } =
-    data.data;
-  const { amount } = offer || {};
+  // Add state for ownership popup
+  const [ownershipPopupOpen, setOwnershipPopupOpen] = useState(false);
+  const {
+    isMale,
+    divisionOfInterest,
+    ownership,
+    leftColumnWidth,
+    offer,
+    isDeceased,
+    contactId,
+    fileId,
+  } = data.data;
+  const { amount, offerId, offer_type, grantors } = offer || {};
+  const formatOwnershipToFloat = parseFloat(ownership);
+  const heirColor = isDeceased
+    ? '#FF0000'
+    : formatOwnershipToFloat > 0
+      ? '#00BF0A'
+      : '#838383';
+
+  // Toggle function for ownership popup
+  const toggleOwnershipPopup = () => {
+    setOwnershipPopupOpen(!ownershipPopupOpen);
+    setOfferIconHovered(false);
+  };
+
+  const toggleOfferPopup = () => {
+    setOfferIconHovered(!offerIconHovered);
+    setOwnershipPopupOpen(false);
+  };
+
+  // Get related ownership data from contacts list
+  const relatedOwnership = useMemo(() => {
+    if (!contactId || !state.contactsList?.length) {
+      return [];
+    }
+    const ownersshipData = state.contactsList.map(contact => {
+      if (contact.contactID !== contactId) {
+        return {
+          name: [contact.firstName, contact.lastName].filter(Boolean).join(' '),
+          ownership: contact.ownership || '0',
+        };
+      }
+    });
+    return ownersshipData;
+  }, [state.contactsList, contactId]);
+
   return (
     <g className="right-column">
       <rect
@@ -58,26 +104,189 @@ const RightContainer: React.FC<RightContainerProps> = data => {
         fontWeight="bold"
         fill="black"
       >
-        {percentage}
+        {`${ownership} %`}
       </text>
-      <g transform={`translate(0,0)`} style={{ cursor: 'pointer' }}>
+      <g
+        transform={`translate(0,0)`}
+        style={{ cursor: 'pointer' }}
+        onClick={toggleOwnershipPopup}
+      >
         <rect x="266" y="73" width="15" height="15" fill="transparent" />
-        <svg
-          x={270}
-          y={75}
-          width="8"
-          height="11"
-          viewBox="0 0 8 13"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0.772624 10.8045L0.772601 10.8046C0.684289 10.8988 0.615809 11.0089 0.56961 11.1278C0.523423 11.2468 0.5 11.3732 0.5 11.5003C0.5 11.6273 0.523423 11.7538 0.56961 11.8727C0.615809 11.9917 0.684289 12.1018 0.772601 12.196C0.860978 12.2903 0.967658 12.3669 1.08746 12.4198C1.20735 12.4728 1.33711 12.5006 1.46901 12.5006C1.60091 12.5006 1.73067 12.4728 1.85056 12.4198C1.97036 12.3669 2.07704 12.2903 2.16542 12.196L6.85273 7.1962C6.94113 7.10201 7.00969 6.99188 7.05594 6.87287C7.10218 6.75389 7.12563 6.62737 7.12563 6.50028C7.12563 6.37319 7.10218 6.24667 7.05594 6.12769C7.00969 6.00868 6.94113 5.89855 6.85273 5.80435L2.16542 0.804557C1.98655 0.613767 1.7368 0.5 1.46901 0.5C1.20122 0.5 0.951467 0.613767 0.772601 0.804557C0.59476 0.994255 0.5 1.24503 0.5 1.50028C0.5 1.75553 0.59476 2.0063 0.772601 2.196L0.772624 2.19602L4.80841 6.50028L0.772624 10.8045Z"
-            fill="black"
-            stroke="black"
-          />
-        </svg>
+        {!ownershipPopupOpen ? (
+          <svg
+            x={270}
+            y={75}
+            width="8"
+            height="11"
+            viewBox="0 0 8 13"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ transition: 'all 0.3s ease-in-out' }}
+          >
+            <title>Click here to view ownership of other contacts</title>
+            <path
+              d="M0.772624 10.8045L0.772601 10.8046C0.684289 10.8988 0.615809 11.0089 0.56961 11.1278C0.523423 11.2468 0.5 11.3732 0.5 11.5003C0.5 11.6273 0.523423 11.7538 0.56961 11.8727C0.615809 11.9917 0.684289 12.1018 0.772601 12.196C0.860978 12.2903 0.967658 12.3669 1.08746 12.4198C1.20735 12.4728 1.33711 12.5006 1.46901 12.5006C1.60091 12.5006 1.73067 12.4728 1.85056 12.4198C1.97036 12.3669 2.07704 12.2903 2.16542 12.196L6.85273 7.1962C6.94113 7.10201 7.00969 6.99188 7.05594 6.87287C7.10218 6.75389 7.12563 6.62737 7.12563 6.50028C7.12563 6.37319 7.10218 6.24667 7.05594 6.12769C7.00969 6.00868 6.94113 5.89855 6.85273 5.80435L2.16542 0.804557C1.98655 0.613767 1.7368 0.5 1.46901 0.5C1.20122 0.5 0.951467 0.613767 0.772601 0.804557C0.59476 0.994255 0.5 1.24503 0.5 1.50028C0.5 1.75553 0.59476 2.0063 0.772601 2.196L0.772624 2.19602L4.80841 6.50028L0.772624 10.8045Z"
+              fill="black"
+              stroke="black"
+            />
+          </svg>
+        ) : (
+          <svg
+            x={260}
+            y={65}
+            width="30"
+            height="30"
+            viewBox="0 0 100 100"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ transition: 'all 0.3s ease-in-out' }}
+          >
+            <circle cx="50" cy="50" r="50" fill="black" />
+            <line
+              x1="30"
+              y1="30"
+              x2="70"
+              y2="70"
+              stroke="white"
+              strokeWidth="12"
+              strokeLinecap="square"
+            />
+            <line
+              x1="70"
+              y1="30"
+              x2="30"
+              y2="70"
+              stroke="white"
+              strokeWidth="12"
+              strokeLinecap="square"
+            />
+          </svg>
+        )}
       </g>
+
+      {/* Ownership Popup */}
+      {ownershipPopupOpen && (
+        <g className="ownership-popup" transform="translate(290, 60)">
+          <rect
+            width={250}
+            height={210}
+            rx={10}
+            ry={10}
+            fill="white"
+            stroke="#D9D9D9"
+            strokeWidth={1}
+            filter="drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1))"
+          />
+
+          {/* Header Section - Sticky */}
+          <rect
+            x={0}
+            y={0}
+            width={250}
+            height={36}
+            rx={10}
+            ry={10}
+            fill="#f0f0f0"
+          />
+          <text
+            x={25}
+            y={24}
+            fontSize={14}
+            fontWeight="bold"
+            textAnchor="start"
+            fill="#333"
+          >
+            Name
+          </text>
+          <text
+            x={225}
+            y={24}
+            fontSize={14}
+            fontWeight="bold"
+            textAnchor="end"
+            fill="#333"
+          >
+            Ownership
+          </text>
+
+          {/* Divider Line */}
+          <line
+            x1={10}
+            y1={36}
+            x2={240}
+            y2={36}
+            stroke="#e0e0e0"
+            strokeWidth={1.5}
+          />
+
+          {/* Use HTML-based scrolling with foreignObject for better scrolling support */}
+          <foreignObject x={0} y={36} width={250} height={174}>
+            <div
+              xmlns="http://www.w3.org/1999/xhtml"
+              style={{
+                height: '100%',
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                scrollbarWidth: 'thin',
+              }}
+            >
+              <div style={{ padding: '5px 0' }}>
+                {relatedOwnership.map((person, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      backgroundColor: index % 2 === 0 ? '#ffffff' : '#f7f7f7',
+                      minHeight: '32px',
+                      borderBottom: '1px solid #f0f0f0',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '65%',
+                        fontSize: '13px',
+                        color: '#333',
+                        fontWeight: 500,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {person?.name || '-'}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        color: '#222',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {`${person?.ownership || '0'} %`}
+                    </div>
+                  </div>
+                ))}
+
+                {(!relatedOwnership || relatedOwnership.length === 0) && (
+                  <div
+                    style={{
+                      padding: '20px 0',
+                      textAlign: 'center',
+                      color: '#777',
+                      fontSize: '13px',
+                    }}
+                  >
+                    No related ownership data
+                  </div>
+                )}
+              </div>
+            </div>
+          </foreignObject>
+        </g>
+      )}
+
       {/* Icons Row */}
       <g className="icons-container" transform="translate(163, 100)">
         {/* Container background */}
@@ -85,8 +294,8 @@ const RightContainer: React.FC<RightContainerProps> = data => {
         {/* Icons row - evenly spaced */}
         <g transform="translate(0, 0)">
           {/* Heir Icon - Dollar sign in circle */}
-          <g className="card-icon heir-icon" style={{ cursor: 'pointer' }}>
-            <circle cx="14" cy="14" r="14" fill="#00BF0A" />
+          <g className="card-icon heir-icon">
+            <circle cx="14" cy="14" r="14" fill={heirColor} />
             <path
               d="M20 16.8571C19.9989 17.7662 19.5771 18.6377 18.8272 19.2805C18.0773 19.9232 17.0605 20.2848 16 20.2857H14.6667V21.4286C14.6667 21.5801 14.5964 21.7255 14.4714 21.8326C14.3464 21.9398 14.1768 22 14 22C13.8232 22 13.6536 21.9398 13.5286 21.8326C13.4036 21.7255 13.3333 21.5801 13.3333 21.4286V20.2857H12C10.9395 20.2848 9.9227 19.9232 9.17279 19.2805C8.42288 18.6377 8.0011 17.7662 8 16.8571C8 16.7056 8.07024 16.5602 8.19526 16.4531C8.32029 16.3459 8.48986 16.2857 8.66667 16.2857C8.84348 16.2857 9.01305 16.3459 9.13807 16.4531C9.2631 16.5602 9.33333 16.7056 9.33333 16.8571C9.33333 17.4634 9.61428 18.0447 10.1144 18.4734C10.6145 18.902 11.2928 19.1429 12 19.1429H16C16.7072 19.1429 17.3855 18.902 17.8856 18.4734C18.3857 18.0447 18.6667 17.4634 18.6667 16.8571C18.6667 16.2509 18.3857 15.6696 17.8856 15.2409C17.3855 14.8122 16.7072 14.5714 16 14.5714H12.6667C11.6058 14.5714 10.5884 14.2102 9.83824 13.5672C9.08809 12.9242 8.66667 12.0522 8.66667 11.1429C8.66667 10.2335 9.08809 9.36147 9.83824 8.71849C10.5884 8.07551 11.6058 7.71429 12.6667 7.71429H13.3333V6.57143C13.3333 6.41988 13.4036 6.27453 13.5286 6.16737C13.6536 6.0602 13.8232 6 14 6C14.1768 6 14.3464 6.0602 14.4714 6.16737C14.5964 6.27453 14.6667 6.41988 14.6667 6.57143V7.71429H15.3333C16.3939 7.71523 17.4106 8.07676 18.1605 8.71954C18.9104 9.36231 19.3322 10.2338 19.3333 11.1429C19.3333 11.2944 19.2631 11.4398 19.1381 11.5469C19.013 11.6541 18.8435 11.7143 18.6667 11.7143C18.4899 11.7143 18.3203 11.6541 18.1953 11.5469C18.0702 11.4398 18 11.2944 18 11.1429C18 10.5366 17.719 9.95527 17.219 9.52661C16.7189 9.09796 16.0406 8.85714 15.3333 8.85714H12.6667C11.9594 8.85714 11.2811 9.09796 10.781 9.52661C10.281 9.95527 10 10.5366 10 11.1429C10 11.7491 10.281 12.3304 10.781 12.7591C11.2811 13.1878 11.9594 13.4286 12.6667 13.4286H16C17.0605 13.4295 18.0773 13.791 18.8272 14.4338C19.5771 15.0766 19.9989 15.9481 20 16.8571Z"
               fill="black"
@@ -98,8 +307,16 @@ const RightContainer: React.FC<RightContainerProps> = data => {
             className="card-icon notes-icon"
             transform="translate(30, 0)"
             style={{ cursor: 'pointer' }}
+            onClick={() =>
+              window.open(
+                `/editcontact/${data.data.contactId}?tab=notes`,
+                '_blank'
+              )
+            }
           >
-            <rect x="0" y="0" width="30" height="30" fill="transparent" />
+            <rect x="0" y="0" width="30" height="30" fill="transparent">
+              <title>Click here to open notes</title>
+            </rect>
             <path
               d="M10.7083 11.6667C10.7083 11.4125 10.8093 11.1687 10.989 10.989C11.1687 10.8093 11.4125 10.7083 11.6667 10.7083H19.3333C19.5875 10.7083 19.8312 10.8093 20.011 10.989C20.1907 11.1687 20.2917 11.4125 20.2917 11.6667C20.2917 11.9208 20.1907 12.1646 20.011 12.3443C19.8312 12.524 19.5875 12.625 19.3333 12.625H11.6667C11.4125 12.625 11.1687 12.524 10.989 12.3443C10.8093 12.1646 10.7083 11.9208 10.7083 11.6667ZM11.6667 16.4583H19.3333C19.5875 16.4583 19.8312 16.3574 20.011 16.1776C20.1907 15.9979 20.2917 15.7542 20.2917 15.5C20.2917 15.2458 20.1907 15.0021 20.011 14.8224C19.8312 14.6426 19.5875 14.5417 19.3333 14.5417H11.6667C11.4125 14.5417 11.1687 14.6426 10.989 14.8224C10.8093 15.0021 10.7083 15.2458 10.7083 15.5C10.7083 15.7542 10.8093 15.9979 10.989 16.1776C11.1687 16.3574 11.4125 16.4583 11.6667 16.4583ZM15.5 18.375H11.6667C11.4125 18.375 11.1687 18.476 10.989 18.6557C10.8093 18.8354 10.7083 19.0792 10.7083 19.3333C10.7083 19.5875 10.8093 19.8312 10.989 20.011C11.1687 20.1907 11.4125 20.2917 11.6667 20.2917H15.5C15.7542 20.2917 15.9979 20.1907 16.1776 20.011C16.3574 19.8312 16.4583 19.5875 16.4583 19.3333C16.4583 19.0792 16.3574 18.8354 16.1776 18.6557C15.9979 18.476 15.7542 18.375 15.5 18.375ZM27 5.91667V18.9368C27.0008 19.1886 26.9515 19.4381 26.8551 19.6706C26.7586 19.9032 26.6169 20.1143 26.4382 20.2917L20.2917 26.4382C20.1143 26.6169 19.9032 26.7586 19.6706 26.8551C19.4381 26.9515 19.1886 27.0008 18.9368 27H5.91667C5.40833 27 4.92082 26.7981 4.56138 26.4386C4.20193 26.0792 4 25.5917 4 25.0833V5.91667C4 5.40833 4.20193 4.92082 4.56138 4.56138C4.92082 4.20193 5.40833 4 5.91667 4H25.0833C25.5917 4 26.0792 4.20193 26.4386 4.56138C26.7981 4.92082 27 5.40833 27 5.91667ZM5.91667 25.0833H18.375V19.3333C18.375 19.0792 18.476 18.8354 18.6557 18.6557C18.8354 18.476 19.0792 18.375 19.3333 18.375H25.0833V5.91667H5.91667V25.0833ZM20.2917 20.2917V23.7297L23.7285 20.2917H20.2917Z"
               fill="black"
@@ -120,8 +337,13 @@ const RightContainer: React.FC<RightContainerProps> = data => {
             className="card-icon document-icon"
             transform="translate(65, 3)"
             style={{ cursor: 'pointer' }}
+            onClick={() =>
+              window.open(`/editfile/${data.data.fileId}?tab=docs`, '_blank')
+            }
           >
-            <rect x="-3" y="-3" width="30" height="30" fill="transparent" />
+            <rect x="-3" y="-3" width="30" height="30" fill="transparent">
+              <title>Click to open documents </title>
+            </rect>
             <path
               d="M2.93879 14.375H0.979597C0.719791 14.375 0.470627 14.476 0.286917 14.6557C0.103207 14.8354 0 15.0792 0 15.3333V22.0417C0 22.2958 0.103207 22.5396 0.286917 22.7193C0.470627 22.899 0.719791 23 0.979597 23H2.93879C4.10791 23 5.22915 22.5456 6.05585 21.7369C6.88254 20.9281 7.34697 19.8312 7.34697 18.6875C7.34697 17.5438 6.88254 16.4469 6.05585 15.6381C5.22915 14.8294 4.10791 14.375 2.93879 14.375ZM2.93879 21.0833H1.95919V16.2917H2.93879C3.5883 16.2917 4.21121 16.5441 4.67049 16.9934C5.12976 17.4427 5.38778 18.0521 5.38778 18.6875C5.38778 19.3229 5.12976 19.9323 4.67049 20.3816C4.21121 20.8309 3.5883 21.0833 2.93879 21.0833ZM23.6977 20.4952C23.8854 20.6709 23.994 20.9123 23.9998 21.1664C24.0055 21.4205 23.9078 21.6664 23.7283 21.85C23.3872 22.2092 22.9747 22.4965 22.5161 22.6942C22.0575 22.892 21.5625 22.996 21.0613 23C18.9001 23 17.1429 21.0654 17.1429 18.6875C17.1429 16.3096 18.9001 14.375 21.0613 14.375C21.5625 14.379 22.0575 14.483 22.5161 14.6808C22.9747 14.8785 23.3872 15.1658 23.7283 15.525C23.9039 15.7093 23.9983 15.9539 23.991 16.2059C23.9836 16.4578 23.8751 16.6967 23.689 16.8709C23.5028 17.0452 23.254 17.1406 22.9964 17.1367C22.7389 17.1328 22.4932 17.0297 22.3128 16.8499C22.1538 16.6787 21.9608 16.5409 21.7457 16.445C21.5305 16.349 21.2977 16.2968 21.0613 16.2917C19.9813 16.2917 19.1021 17.3698 19.1021 18.6875C19.1021 20.0052 19.9813 21.0833 21.0613 21.0833C21.2977 21.0782 21.5305 21.026 21.7457 20.93C21.9608 20.8341 22.1538 20.6963 22.3128 20.5251C22.4924 20.3415 22.7392 20.2352 22.9989 20.2296C23.2586 20.2239 23.5099 20.3195 23.6977 20.4952ZM12.245 14.375C10.0837 14.375 8.32657 16.3096 8.32657 18.6875C8.32657 21.0654 10.0837 23 12.245 23C14.4062 23 16.1633 21.0654 16.1633 18.6875C16.1633 16.3096 14.4062 14.375 12.245 14.375ZM12.245 21.0833C11.165 21.0833 10.2858 20.0052 10.2858 18.6875C10.2858 17.3698 11.165 16.2917 12.245 16.2917C13.325 16.2917 14.2042 17.3698 14.2042 18.6875C14.2042 20.0052 13.325 21.0833 12.245 21.0833ZM2.44899 11.5C2.7088 11.5 2.95796 11.399 3.14167 11.2193C3.32538 11.0396 3.42859 10.7958 3.42859 10.5417V1.91667H14.2042V7.66667C14.2042 7.92083 14.3074 8.16459 14.4911 8.34431C14.6748 8.52403 14.9239 8.625 15.1837 8.625H21.0613V10.5417C21.0613 10.7958 21.1645 11.0396 21.3482 11.2193C21.532 11.399 21.7811 11.5 22.0409 11.5C22.3007 11.5 22.5499 11.399 22.7336 11.2193C22.9173 11.0396 23.0205 10.7958 23.0205 10.5417V7.66667C23.0206 7.54078 22.9954 7.41611 22.9462 7.29977C22.897 7.18343 22.8249 7.07771 22.734 6.98865L15.8768 0.280313C15.7858 0.191347 15.6777 0.1208 15.5588 0.0727029C15.4399 0.024606 15.3124 -9.86948e-05 15.1837 2.96315e-07H3.42859C2.90898 2.96315e-07 2.41065 0.201934 2.04323 0.561379C1.67581 0.920824 1.46939 1.40834 1.46939 1.91667V10.5417C1.46939 10.7958 1.5726 11.0396 1.75631 11.2193C1.94002 11.399 2.18919 11.5 2.44899 11.5ZM16.1633 3.27151L19.6764 6.70833H16.1633V3.27151Z"
               fill="black"
@@ -133,10 +355,11 @@ const RightContainer: React.FC<RightContainerProps> = data => {
             className="card-icon dollar-icon"
             transform="translate(97, 3)"
             style={{ cursor: 'pointer' }}
-            onMouseEnter={() => setOfferIconHovered(true)}
-            onMouseLeave={() => setOfferIconHovered(false)}
+            onClick={toggleOfferPopup}
           >
-            <rect x="-5" y="-3" width="30" height="30" fill="transparent" />
+            <rect x="-5" y="-3" width="30" height="30" fill="transparent">
+              <title>Click her to view offer</title>
+            </rect>
             <path
               d="M20.7208 6.33185L14.039 0.253969C13.9503 0.173364 13.845 0.109447 13.7291 0.0658703C13.6132 0.0222935 13.489 -8.94195e-05 13.3636 2.68468e-07H1.90909C1.40277 2.68468e-07 0.917184 0.182956 0.55916 0.508621C0.201136 0.834285 0 1.27598 0 1.73654V9.55096C0 9.78124 0.100568 10.0021 0.27958 10.1649C0.458592 10.3278 0.701384 10.4192 0.954545 10.4192C1.20771 10.4192 1.4505 10.3278 1.62951 10.1649C1.80852 10.0021 1.90909 9.78124 1.90909 9.55096V1.73654H12.4091V6.94615C12.4091 7.17643 12.5097 7.39728 12.6887 7.56011C12.8677 7.72295 13.1105 7.81442 13.3636 7.81442H19.0909V20.8385H15.2727C15.0196 20.8385 14.7768 20.9299 14.5978 21.0928C14.4187 21.2556 14.3182 21.4765 14.3182 21.7067C14.3182 21.937 14.4187 22.1579 14.5978 22.3207C14.7768 22.4835 15.0196 22.575 15.2727 22.575H19.0909C19.5972 22.575 20.0828 22.392 20.4408 22.0664C20.7989 21.7407 21 21.299 21 20.8385V6.94615C21.0001 6.8321 20.9755 6.71914 20.9276 6.61374C20.8797 6.50833 20.8094 6.41255 20.7208 6.33185ZM14.3182 2.96405L17.7414 6.07789H14.3182V2.96405Z"
               fill="black"
@@ -151,7 +374,7 @@ const RightContainer: React.FC<RightContainerProps> = data => {
 
       {/* Offer Popup that shows on hover */}
       {offerIconHovered && (
-        <g className="offer-popup" transform={`translate(300, 80)`}>
+        <g className="offer-popup" transform={`translate(290, 90)`}>
           <rect
             width={160}
             height={80}
@@ -179,7 +402,7 @@ const RightContainer: React.FC<RightContainerProps> = data => {
             textAnchor="middle"
             fill="#000000"
           >
-            ${amount || '0.00'}
+            $ {amount || '0.00'}
           </text>
           <text
             x={80}
@@ -189,13 +412,45 @@ const RightContainer: React.FC<RightContainerProps> = data => {
             textAnchor="middle"
             fill="#0066FF"
             style={{ cursor: 'pointer' }}
-            onClick={() => {
-              // Handle link to offer letter click
-              console.log('View offer letter clicked');
-            }}
+            onClick={() =>
+              offerId &&
+              window.open(
+                `/offer/letter?offerId=${offerId}&offerType=${encodeURIComponent(offer_type ?? '')}&grantors=${encodeURIComponent(JSON.stringify(grantors ?? ''))}&fileId=${fileId}&contactId=${contactId}`,
+                '_blank'
+              )
+            }
           >
             Link to offer letter
           </text>
+          <svg
+            x={-30}
+            y={10}
+            width="30"
+            height="30"
+            viewBox="0 0 100 100"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ transition: 'all 0.3s ease-in-out' }}
+          >
+            <circle cx="50" cy="50" r="50" fill="black" />
+            <line
+              x1="30"
+              y1="30"
+              x2="70"
+              y2="70"
+              stroke="white"
+              strokeWidth="12"
+              strokeLinecap="square"
+            />
+            <line
+              x1="70"
+              y1="30"
+              x2="30"
+              y2="70"
+              stroke="white"
+              strokeWidth="12"
+              strokeLinecap="square"
+            />
+          </svg>
         </g>
       )}
     </g>

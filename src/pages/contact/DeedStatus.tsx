@@ -1,6 +1,9 @@
 import React from 'react';
 import { useLazyGetAllDeedsQuery } from '../../store/Services/deedService';
-import { formatDateToMonthDayYear } from '../../utils/GeneralUtil';
+import {
+  formatDateToMonthDayYear,
+  handleEmptyDateValue,
+} from '../../utils/GeneralUtil';
 import { DeedStatusProps, ListOfDeeds } from '../../interface/deed';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -31,7 +34,9 @@ const DeedStatus: React.FC<DeedStatusProps> = ({ contactId }) => {
     if (allDeedDetails && allDeedDetails?.deeds) {
       const formattedDeeds = allDeedDetails.deeds.map(deed => ({
         ...deed,
-        returnDate: formatDateToMonthDayYear(deed.returnDate).toString(),
+        returnDate: handleEmptyDateValue(
+          formatDateToMonthDayYear(deed.returnDate).toString()
+        ),
       }));
       setListOfDeeds(formattedDeeds);
     }

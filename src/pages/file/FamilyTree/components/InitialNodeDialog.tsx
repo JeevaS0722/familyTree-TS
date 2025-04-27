@@ -36,7 +36,7 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
   const { fileId } = useParams<{ fileId: string }>();
 
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [gender, setGender] = useState<'M' | 'F' | null>('M');
+  const [gender, setGender] = useState<'M' | 'F' | ''>('M');
   const [validationErrors, setValidationErrors] = useState<{
     contact?: string;
     gender?: string;
@@ -74,7 +74,7 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
     }
 
     const newMember: PersonData = contactsToFamilyTreemapper(
-      selectedContact as Contact,
+      { ...selectedContact, gender: gender } as Contact,
       fileId,
       isFirstNode
     );
@@ -107,7 +107,7 @@ const InitialNodeDialog: React.FC<InitialNodeDialogProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ pt: 3, pb: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
           <Box>
             <Autocomplete
               options={contactList}

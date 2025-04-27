@@ -22,6 +22,7 @@ const MiniTree: React.FC<MiniTreeProps> = ({ node, visible }) => {
     e.stopPropagation(); // Prevent card click from firing
     updateMainId(node.data.id);
     updateTree();
+  };
 
   return (
     <g

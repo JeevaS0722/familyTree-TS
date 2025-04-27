@@ -56,6 +56,7 @@ const EditOperator: React.FC = () => {
         operatorID: operatorData.data.operatorID,
         companyName: operatorData.data.companyName,
         contactName: operatorData.data.contactName,
+        ownerNumber: operatorData.data.ownerNumber,
         phoneNumber: operatorData.data.phoneNumber,
         fax: operatorData.data.fax,
         email: operatorData.data.email,

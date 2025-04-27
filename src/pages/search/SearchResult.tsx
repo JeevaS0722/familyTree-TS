@@ -239,7 +239,6 @@ const SearchResult: React.FC = () => {
                 backgroundColor: '#1672a3',
                 color: '#fff',
               },
-              width: '200px',
             }}
             id={
               params.data?.deedID

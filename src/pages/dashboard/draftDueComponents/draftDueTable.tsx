@@ -3,6 +3,7 @@ import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import useTheme from '@mui/material/styles/useTheme';
+import TitleFailureSection from './draftDue/titleFailureSection';
 
 const DraftDueSection = React.lazy(
   () =>
@@ -44,6 +45,7 @@ const DraftDueTable: React.FC = () => {
             {active === 1 && <GoalsSection section="newWells" />}
             {active === 2 && <GoalsSection section="offers" />}
             {active === 3 && <GoalsSection section="deals" />}
+            {active === 4 && <TitleFailureSection />}
           </Grid>
         </Grid>
       ) : (

@@ -559,6 +559,32 @@ const DeedSearch: React.FC = () => {
             field: 'titleFailedReason',
             sortable: true,
           },
+          {
+            headerName: t('lossAmount'),
+            field: 'lossAmount',
+            sortable: true,
+            cellRenderer: params => {
+              return `${Number(params.data.lossAmount ?? 0).toLocaleString(
+                'en-US',
+                {
+                  style: 'currency',
+                  currency: 'USD',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                }
+              )}`;
+            },
+          },
+          {
+            headerName: t('titleFailDate'),
+            field: 'titleFailDate',
+            sortable: true,
+          },
+          {
+            headerName: t('notes'),
+            field: 'notes',
+            sortable: true,
+          },
         ];
         return columns;
       case 'paidclaims':

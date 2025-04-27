@@ -31,7 +31,7 @@ import { contactsToFamilyTreemapper } from '../utils/mapper';
 interface EditDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (member: FamilyMember) => void;
+  onSave: (member: FamilyMember, type?: string) => void;
   parentMember?: FamilyMember | null;
   contactList?: Contact[];
   existingFamilyMembers?: FamilyMember[];
@@ -56,6 +56,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
   const [createContact, { isLoading: isCreating }] = useCreateContactMutation();
 
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [gender, setGender] = useState<'M' | 'F' | ''>('');
   const [isAddingNewContact, setIsAddingNewContact] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
     contact?: string;
@@ -67,7 +68,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
     relationship: '',
     ownership: '',
     lastName: '',
-    gender: '',
     firstName: '',
     deceased: false,
     decDt: '',
@@ -81,6 +81,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
   useEffect(() => {
     if (open && initialRelationshipType) {
       let gender = '';
+      console.log('initialRelationshipType', initialRelationshipType);
       if (
         initialRelationshipType === 'father' ||
         initialRelationshipType === 'son'
@@ -105,10 +106,10 @@ const EditDialog: React.FC<EditDialogProps> = ({
       } else if (initialRelationshipType === 'mother') {
         formatRelationship = `Mother of ${parentMember?.data?.name || ''}`;
       }
+      setGender(gender);
       setNewContactForm(prev => ({
         ...prev,
         relationship: formatRelationship,
-        gender,
       }));
     }
   }, []);
@@ -157,14 +158,17 @@ const EditDialog: React.FC<EditDialogProps> = ({
     if (!validateSelectContactInputs()) {
       return;
     }
-
+    console.log('selectedContact', selectedContact);
     const newMember = contactsToFamilyTreemapper(
-      selectedContact as Contact,
+      {
+        ...selectedContact,
+        gender: selectedContact?.gender || gender,
+      } as Contact,
       fileId,
       false
     );
 
-    onSave(newMember);
+    onSave(newMember, 'exsisting_contact');
   };
 
   const handleSaveNewContact = async () => {
@@ -186,7 +190,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
         city: newContactForm.city,
         state: newContactForm.state,
         zip: newContactForm.zip,
-        gender: newContactForm.gender,
+        gender: gender,
       };
 
       const response = await createContact(contactData).unwrap();
@@ -212,21 +216,24 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 hasNotes
               );
 
-              onSave(newMember);
+              onSave(newMember, 'new_contact');
               return;
             }
-          } catch (refreshError) {}
+          } catch (refreshError) {
+            console.error('Error refreshing contacts:');
+          }
         }
 
         const newMember = contactsToFamilyTreemapper(
           {
             ...newContactForm,
+            gender,
             contactID: newContactId,
           } as Contact,
           fileId,
           false
         );
-        onSave(newMember);
+        onSave(newMember, 'new_contact');
       }
     } catch (error) {}
   };
@@ -317,23 +324,23 @@ const EditDialog: React.FC<EditDialogProps> = ({
         .map(member => member.data.contactId)
     );
 
-    if (parentMember?.data.contactId) {
-      existingContactIds.delete(parentMember?.data?.contactId);
-    }
+    // if (parentMember?.data.contactId) {
+    //   existingContactIds.delete(parentMember?.data?.contactId);
+    // }
 
-    if (otherParentId) {
-      const otherParent = existingFamilyMembers.find(
-        m => m.id === otherParentId
-      );
-      if (otherParent?.data.contactId) {
-        existingContactIds.delete(otherParent.data.contactId);
-      }
-    }
+    // if (otherParentId) {
+    //   const otherParent = existingFamilyMembers.find(
+    //     m => m.id === otherParentId
+    //   );
+    //   if (otherParent?.data.contactId) {
+    //     existingContactIds.delete(otherParent.data.contactId);
+    //   }
+    // }
 
     return contactList.filter(
       contact => !existingContactIds.has(contact.contactID)
     );
-  }, [contactList, existingFamilyMembers, parentMember, otherParentId]);
+  }, [contactList, existingFamilyMembers]);
 
   return (
     <Dialog
@@ -361,7 +368,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
 
       <DialogContent sx={{ pt: 3, pb: 3 }}>
         {!isAddingNewContact ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Autocomplete
@@ -494,7 +501,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
             </Box>
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <TextField

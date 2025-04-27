@@ -43,6 +43,7 @@ import modalReducer from './Reducers/modalReducer';
 import errorReducer from './Reducers/errorReducer';
 import appReducer from './Reducers/appReducer';
 import tableReducer from './Reducers/tableReducer';
+import { familyTreeApi } from './Services/familyTreeService';
 
 const store = configureStore({
   reducer: {
@@ -91,6 +92,7 @@ const store = configureStore({
     serverTimezone: timezoneReducer,
     [requestCheckApi.reducerPath]: requestCheckApi.reducer,
     table: tableReducer,
+    [familyTreeApi.reducerPath]: familyTreeApi.reducer,
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
@@ -123,7 +125,8 @@ const store = configureStore({
       MOEAAPI.middleware,
       wellMasterApi.middleware,
       documentApi.middleware,
-      requestCheckApi.middleware
+      requestCheckApi.middleware,
+      familyTreeApi.middleware
     ),
 });
 

@@ -22,8 +22,8 @@ const LayoutsPage: React.FC = () => {
   ) : (
     <>
       <MetricsLayout />
-      <DraftDue />
       <ActionsLayout />
+      <DraftDue />
     </>
   );
 };

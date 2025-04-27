@@ -1,6 +1,7 @@
 {
   "companyName": "Company Name",
   "contactName": "Contact Name",
+  "ownerNumber": "Owner Number",
   "phone": "Phone",
   "fax": "Fax",
   "email": "Email",

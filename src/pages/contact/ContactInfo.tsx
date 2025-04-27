@@ -4,11 +4,13 @@ import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import { useTranslation } from 'react-i18next';
 import { Field, FieldArray, FormikErrors } from 'formik';
 import { CustomInputField } from '../../component/common/CustomInputField';
 import { CustomCheckbox } from '../../component/common/CustomCheckbox';
 import CustomDatePicker from '../../component/FormikCustomDatePicker';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { CustomTextArea } from '../../component/CommonComponent';
 import {
   AltData,
@@ -36,6 +38,8 @@ import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import RadioGroup from '@mui/material/RadioGroup';
 import FormikTextField from '../../component/common/fields/TextField';
+import IconButton from '@mui/material/IconButton';
+import { emailDeleteTitle, phoneDeleteTitle } from '../../utils/constants';
 
 const ContactInfo: React.FC<{
   values: EditContactData;
@@ -77,6 +81,12 @@ const ContactInfo: React.FC<{
   ) => void;
   addNewTitle: () => void;
   title: TitleData[];
+  openDeleteModal: (
+    type: 'phone' | 'email',
+    index: number,
+    header: string,
+    title: string
+  ) => void;
 }> = ({
   values,
   handlePhoneChange,
@@ -97,6 +107,7 @@ const ContactInfo: React.FC<{
   handleTitleChange,
   addNewTitle,
   title,
+  openDeleteModal,
 }) => {
   const { t } = useTranslation('editContact');
   const errorOwnerShipRef = useRef<HTMLDivElement>(null);
@@ -868,9 +879,7 @@ const ContactInfo: React.FC<{
                               <Field
                                 name={`phone.${index}.prefix`}
                                 as={CustomPhoneField}
-                                sx={{
-                                  width: '100%',
-                                }}
+                                sx={{ width: '100%' }}
                                 length={3}
                                 innerRef={(el: HTMLInputElement | null) => {
                                   if (phone2Ref.current) {
@@ -900,9 +909,7 @@ const ContactInfo: React.FC<{
                               <Field
                                 name={`phone.${index}.phoneNo`}
                                 as={CustomPhoneField}
-                                sx={{
-                                  width: '100%',
-                                }}
+                                sx={{ width: '100%' }}
                                 length={4}
                                 innerRef={(el: HTMLInputElement | null) => {
                                   if (phone3Ref.current) {
@@ -926,18 +933,44 @@ const ContactInfo: React.FC<{
                             </Box>
                           </Grid>
                           <Grid item xs={12} md={8} xl={9}>
-                            <ConstantDropdown
-                              type="phoneDesc"
-                              name={`phone.${index}.phoneDesc`}
-                              inputProps={{
-                                id: `phoneDesc_${index}`,
-                              }}
+                            <Box
                               sx={{
-                                width: { xs: '100%', md: '30%' },
-                                background: '#434857',
-                                outline: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
                               }}
-                            />
+                            >
+                              <ConstantDropdown
+                                type="phoneDesc"
+                                name={`phone.${index}.phoneDesc`}
+                                inputProps={{
+                                  id: `phoneDesc_${index}`,
+                                }}
+                                sx={{
+                                  width: { xs: '100%', md: '30%' },
+                                  background: '#434857',
+                                  outline: 'none',
+                                }}
+                              />
+                              <Tooltip title="Delete Phone">
+                                <IconButton
+                                  color="error"
+                                  id={`delete-phone-${index}`}
+                                  onClick={() =>
+                                    openDeleteModal(
+                                      'phone',
+                                      index,
+                                      'Delete Phone',
+                                      phoneDeleteTitle
+                                    )
+                                  }
+                                  aria-label={`Delete phone ${index + 1}`}
+                                  size="small"
+                                >
+                                  <CancelIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
                           </Grid>
                         </Grid>
                         {errors.phone && errors.phone[index] && (
@@ -1043,6 +1076,8 @@ const ContactInfo: React.FC<{
                       <Box
                         sx={{
                           width: { xs: '100%', md: '20%' },
+                          display: 'flex',
+                          alignItems: 'center',
                         }}
                       >
                         <ConstantDropdown
@@ -1054,10 +1089,30 @@ const ContactInfo: React.FC<{
                           sx={{
                             background: '#434857',
                             outline: 'none',
+                            width: { xs: '100%', md: '70%' },
                             marginTop: { xs: '5px', md: '0px' },
                             marginLeft: { xs: '0', md: '5px' },
                           }}
                         />
+                        <Tooltip title="Delete Email">
+                          <IconButton
+                            color="error"
+                            id={`delete-email-${index}`}
+                            onClick={() =>
+                              openDeleteModal(
+                                'email',
+                                index,
+                                'Delete Email',
+                                emailDeleteTitle
+                              )
+                            }
+                            aria-label={`Delete email ${index + 1}`}
+                            size="small"
+                            sx={{ marginLeft: '8px' }}
+                          >
+                            <CancelIcon />
+                          </IconButton>
+                        </Tooltip>
                       </Box>
                     </Grid>
                   </React.Fragment>

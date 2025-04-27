@@ -21,7 +21,10 @@ import { useEditFileMutation } from '../../store/Services/fileService';
 import { useAppDispatch } from '../../store/hooks';
 import { severity } from '../../interface/snackbar';
 import { open } from '../../store/Reducers/snackbar';
-import { CustomTextArea, SingleLineTextArea } from '../../component/CommonComponent';
+import {
+  CustomTextArea,
+  SingleLineTextArea,
+} from '../../component/CommonComponent';
 import useDateTime from '../../hooks/useDateTime';
 import MultiLineTabs from '../../component/CustomTab';
 import LazyTab from '../../component/common/wrapper/LazyTab';
@@ -228,7 +231,7 @@ const EditFileForm: React.FC<EditFileFormProps> = ({
         validationSchema={editFileSchema(t)}
         onSubmit={handleSubmit}
         validateOnBlur={true}
-        validateOnChange={true}
+        validateOnChange={false}
         validate={values => {
           try {
             editFileSchema(t).validateSync(values, {
@@ -1119,6 +1122,7 @@ const EditFileForm: React.FC<EditFileFormProps> = ({
                             type="text"
                             inputProps={{
                               id: 'boxNo',
+                              maxLength: 10,
                             }}
                           />
                         </Grid>

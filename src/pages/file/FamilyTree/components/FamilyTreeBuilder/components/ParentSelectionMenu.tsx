@@ -57,9 +57,9 @@ const ParentSelectionMenu: React.FC<ParentSelectionMenuProps> = ({
     left: `${position.x + 180}px`,
     top: `${position.y - 100}px`,
     width: '280px',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.2)',
     borderRadius: '10px',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
     padding: '15px',
     zIndex: 1100,
     transform: isOpen ? 'scale(1)' : 'scale(0.8)',
@@ -91,12 +91,12 @@ const ParentSelectionMenu: React.FC<ParentSelectionMenuProps> = ({
             style={{
               padding: '12px',
               borderRadius: '8px',
-              backgroundColor: '#f5f5f5',
+              backgroundColor: '#D3D3D3',
               marginBottom: '8px',
               cursor: 'pointer',
               transition: 'background-color 0.2s',
               '&:hover': {
-                backgroundColor: '#e0e0e0',
+                backgroundColor: '#B0B0B0',
               },
             }}
             onClick={() => handleOptionSelect(option.id)}
@@ -123,12 +123,12 @@ const ParentSelectionMenu: React.FC<ParentSelectionMenuProps> = ({
         style={{
           padding: '12px',
           borderRadius: '8px',
-          backgroundColor: '#f5f5f5',
+          backgroundColor: '#D3D3D3',
           marginBottom: '8px',
           cursor: 'pointer',
           transition: 'background-color 0.2s',
           '&:hover': {
-            backgroundColor: '#e0e0e0',
+            backgroundColor: '#B0B0B0',
           },
         }}
         onClick={() => handleOptionSelect()}

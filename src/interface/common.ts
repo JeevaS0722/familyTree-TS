@@ -55,6 +55,7 @@ export interface TableColumns {
   cellRendererParams?: Record<string, unknown>;
   valueFormatter?: (row: TableData) => string;
   pinned?: string;
+  index?: number;
 }
 export interface QueryParams {
   page?: number;

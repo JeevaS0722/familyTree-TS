@@ -22,7 +22,7 @@ export interface PersonData {
     research_inheritance?: boolean | null;
     has_new_notes?: boolean | null;
     division_of_interest?: string | null;
-    ownership?: string | null;
+    ownership?: string;
     alt_names?: string[];
     titles?: string[];
     offer: {
@@ -31,6 +31,8 @@ export interface PersonData {
       offer_type?: string | null;
       grantors?: string | null;
     };
+    altNames?: string[];
+    tittles?: string[];
   };
   rels: {
     father?: string;

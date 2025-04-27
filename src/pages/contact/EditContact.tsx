@@ -1,3 +1,5 @@
+/* eslint-disable complexity */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React, { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -8,7 +10,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useTranslation } from 'react-i18next';
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
-import { Field, Form, Formik } from 'formik';
+import { Field, Form, Formik, FormikProps } from 'formik';
 import { CustomInputField } from '../../component/common/CustomInputField';
 import CustomDatePicker from '../../component/FormikCustomDatePicker';
 import {
@@ -23,6 +25,8 @@ import {
   useEditContactMutation,
   useLazyGetContactDetailsQuery,
   useDeleteContactMutation,
+  useDeletePhoneMutation,
+  useDeleteEmailMutation,
 } from '../../store/Services/contactService';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { convertToMMDDYYYY, formatDateByMonth } from '../../utils/GeneralUtil';
@@ -32,7 +36,7 @@ import { useAppDispatch } from '../../store/hooks';
 import { open } from '../../store/Reducers/snackbar';
 import { editContactSchema } from '../../schemas/editContact';
 import CustomModel from '../../component/common/CustomModal';
-import { deleteContactTitle } from '../../utils/constants';
+import { DeleteCannotDone, deleteContactTitle } from '../../utils/constants';
 import { toggleSelectedContact } from '../../store/Reducers/selectContactReducer';
 import { useGetUserQuery } from '../../store/Services/userService';
 import { clearTabName } from '../../store/Reducers/tabReducer';
@@ -147,6 +151,96 @@ const EditContact: React.FC = () => {
   const phone1Ref = React.useRef<(HTMLInputElement | null)[]>([]);
   const phone2Ref = React.useRef<(HTMLInputElement | null)[]>([]);
   const phone3Ref = React.useRef<(HTMLInputElement | null)[]>([]);
+
+  const [deleteModalState, setDeleteModalState] = React.useState({
+    open: false,
+    type: '', // "phone" or "email"
+    index: null,
+    title: '',
+    header: '',
+  });
+
+  const openDeleteModal = (
+    type: 'phone' | 'email',
+    index: number,
+    header: string,
+    title: string
+  ) => {
+    const formikEntry = formikRef.current.values[type][index];
+    const currentEntry = type === 'phone' ? phone[index] : email[index];
+    const originalEntry = formikRef.current.initialValues[type]?.[index];
+    const idField = type === 'phone' ? 'phoneID' : 'Id';
+
+    const currentDesc = formikEntry?.phoneDesc || formikEntry?.emailDesc;
+    const originalDesc = originalEntry?.phoneDesc || originalEntry?.emailDesc;
+    // Check if it's a new unsaved entry (no ID) or completely empty
+    const isNewOrEmpty =
+      !currentEntry[idField] ||
+      (type === 'phone'
+        ? !currentEntry.areaCode &&
+          !currentEntry.prefix &&
+          !currentEntry.phoneID &&
+          !currentEntry.phoneNo &&
+          !currentDesc
+        : !currentEntry.email && !currentEntry.Id && !currentDesc);
+
+    // Check if existing record has been modified
+    const hasUnsavedChanges =
+      currentEntry[idField] &&
+      (type === 'phone'
+        ? currentEntry.areaCode !== originalEntry?.areaCode ||
+          currentEntry.prefix !== originalEntry?.prefix ||
+          currentEntry.phoneNo !== originalEntry?.phoneNo ||
+          currentDesc !== originalDesc
+        : currentEntry.email !== originalEntry?.email ||
+          currentDesc !== originalDesc);
+    if (isNewOrEmpty) {
+      // Delete immediately if new or empty
+      const updatedEntries = [...(type === 'phone' ? phone : email)];
+      updatedEntries.splice(index, 1);
+
+      if (type === 'phone') {
+        setPhone(updatedEntries);
+      } else {
+        setEmail(updatedEntries);
+      }
+
+      formikRef.current.setFieldValue(type, updatedEntries);
+      return;
+    } else if (hasUnsavedChanges) {
+      // Show error for modified existing records
+      dispatch(
+        open({
+          severity: severity.error,
+          message: DeleteCannotDone,
+        })
+      );
+      return;
+    }
+    const detailTitle =
+      type === 'phone'
+        ? `Delete Phone: ${currentEntry.areaCode || ''}-${currentEntry.prefix || ''}-${currentEntry.phoneNo || ''} ${currentDesc ? `(${currentDesc})` : ''}`
+        : `Delete Email: ${currentEntry.email || ''} ${currentDesc ? `(${currentDesc})` : ''}`;
+
+    // Show confirmation for unmodified existing records
+    setDeleteModalState({
+      open: true,
+      type,
+      index,
+      header: detailTitle.trim() || header,
+      title,
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalState({
+      open: false,
+      type: '',
+      index: null,
+      title: '',
+      header: '',
+    });
+  };
 
   const addNewPhone = () => {
     setPhone([
@@ -340,7 +434,7 @@ const EditContact: React.FC = () => {
       zip: contact?.zip,
       visit: contact?.visit,
       dNC: contact?.dNC,
-      ticklered: contact?.ticklered,
+      ticklered: formatDateByMonth(contact?.ticklered).toString() || '',
       fastTrack: contact?.fastTrack,
       fileName: contact?.FilesModel.fileName,
       whose: contact?.FilesModel.whose,
@@ -491,6 +585,8 @@ const EditContact: React.FC = () => {
   }, [contactDetails]);
 
   const [deleteContact] = useDeleteContactMutation();
+  const [deletePhone] = useDeletePhoneMutation();
+  const [deleteEmail] = useDeleteEmailMutation();
   const [openModel, setOpenModel] = React.useState(false);
   const handleOpen = () => setOpenModel(true);
   const handleClose = () => setOpenModel(false);
@@ -525,6 +621,38 @@ const EditContact: React.FC = () => {
   const handleTabChange = () => {
     void getContactDetails({ contactId: Number(contactId) });
   };
+  const formikRef = React.useRef<FormikProps<EditContactData>>(null);
+  const handleItemDelete = async () => {
+    const { type, index } = deleteModalState;
+    const currentEntry = type === 'phone' ? phone[index] : email[index];
+    const idField = type === 'phone' ? 'phoneID' : 'Id';
+    try {
+      const response =
+        type === 'phone'
+          ? await deletePhone({ phoneId: Number(currentEntry?.[idField]) })
+          : await deleteEmail({ emailId: Number(currentEntry?.[idField]) });
+
+      if ('data' in response) {
+        if (response?.data?.success) {
+          void getContactDetails({ contactId: Number(contactId) });
+          dispatch(
+            open({
+              severity: severity.success,
+              message: response?.data?.message,
+            })
+          );
+          closeDeleteModal();
+        }
+      }
+    } catch (error) {
+      dispatch(
+        open({
+          severity: severity.error,
+          message: 'unaccepted error occurred',
+        })
+      );
+    }
+  };
   return (
     <Container component="main" fixed sx={{ marginTop: 2 }}>
       {contactDetailsLoading ? (
@@ -556,6 +684,7 @@ const EditContact: React.FC = () => {
           </Grid>
 
           <Formik
+            innerRef={formikRef}
             initialValues={contactDetailsData}
             enableReinitialize={true}
             onSubmit={onSubmit}
@@ -785,6 +914,7 @@ const EditContact: React.FC = () => {
                                 handleTitleChange={handleTitleChange}
                                 addNewTitle={addNewTitle}
                                 title={title}
+                                openDeleteModal={openDeleteModal}
                               />
                               <Grid
                                 container
@@ -913,6 +1043,14 @@ const EditContact: React.FC = () => {
                       handleDelete={handleDelete}
                       modalHeader="Delete Contact"
                       modalTitle={deleteContactTitle}
+                      modalButtonLabel="Delete"
+                    />
+                    <CustomModel
+                      open={deleteModalState.open}
+                      handleClose={closeDeleteModal}
+                      handleDelete={handleItemDelete}
+                      modalHeader={deleteModalState.header}
+                      modalTitle={deleteModalState.title}
                       modalButtonLabel="Delete"
                     />
                   </Stack>

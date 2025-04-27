@@ -135,8 +135,6 @@ const PartialEditHeader: React.FC<PartialEditHeaderProps> = memo(
         // Validate the input
         if (headerValidation) {
           setError(!headerValidation(newValue));
-        } else {
-          setError(newValue.trim().length === 0);
         }
       },
       [headerEditFormatter, headerValidation]
@@ -148,7 +146,7 @@ const PartialEditHeader: React.FC<PartialEditHeaderProps> = memo(
         return cancelEditing();
       }
 
-      let newValue = value;
+      let newValue = value || '0';
 
       // Apply parser if provided
       if (headerEditParser) {

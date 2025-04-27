@@ -9,9 +9,12 @@ import {
   ContactsResult,
   CreateContactResponse,
   DeleteContactResponse,
+  DeletePhoneEmailResponse,
   EditContactData,
   EditContactResponse,
+  EmailDetailQueryParams,
   NewContactPayload,
+  PhoneDetailQueryParams,
 } from '../../interface/contact';
 
 export const contactApi = createApi({
@@ -66,6 +69,26 @@ export const contactApi = createApi({
         params: { contactId },
       }),
     }),
+    deletePhone: builder.mutation<
+      DeletePhoneEmailResponse,
+      PhoneDetailQueryParams
+    >({
+      query: ({ phoneId }) => ({
+        url: `/contact/phone/delete`,
+        method: 'DELETE',
+        params: { phoneId },
+      }),
+    }),
+    deleteEmail: builder.mutation<
+      DeletePhoneEmailResponse,
+      EmailDetailQueryParams
+    >({
+      query: ({ emailId }) => ({
+        url: `/contact/email/delete`,
+        method: 'DELETE',
+        params: { emailId },
+      }),
+    }),
   }),
 });
 
@@ -76,4 +99,6 @@ export const {
   useLazyGetContactsByIdsQuery,
   useEditContactMutation,
   useDeleteContactMutation,
+  useDeletePhoneMutation,
+  useDeleteEmailMutation,
 } = contactApi;

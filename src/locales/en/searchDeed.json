@@ -45,5 +45,8 @@
   "invalidDate": "Please select valid date",
   "RcvdFunds": "Rcvd Funds",
   "taxingEntity": "Taxing Entity",
-  "main": "Main"
+  "main": "Main",
+  "lossAmount": "Loss Amount",
+  "titleFailDate": "Title Fail Date",
+  "notes": "Notes"
 }

@@ -1,5 +1,5 @@
 export interface OfferData {
-  offerID: number;
+  offerID: number | null;
   offerDate: string;
   draftAmount2: string;
   modifyDt: string;
@@ -30,14 +30,14 @@ export interface TaskData {
   fromUserID: string | null;
   toUserID: string | null;
   toUserDept: string | null;
-  dateDue: string | null;
-  dateComplete: string | null;
+  dateDue: Date | string | null;
+  dateComplete: Date | string | null;
   priority: string | null;
   memo: string | null;
-  createDate: string | null;
+  createDate: Date | string | null;
 }
 
-export interface Contact {
+export interface ContactData {
   contactID: number;
   fileID: number;
   fileName?: string;
@@ -47,9 +47,9 @@ export interface Contact {
   firstName?: string | null;
   gender?: string | null;
   sSN?: string | null;
-  dOB?: string;
+  dOB?: Date | string;
   deceased?: boolean | false;
-  decDt?: string;
+  decDt?: Date | string;
   address?: string | null;
   city?: string | null;
   state?: string | null;
@@ -69,29 +69,29 @@ export interface Contact {
   email?: string | null;
   visit: boolean | false;
   dNC: boolean | false;
-  ticklered?: string;
+  ticklered?: Date | string;
   fastTrack: boolean | false;
   contactStatus: string | null;
   comment2: string | null;
   probOrd: number | null;
   probNA: number | null;
   probOrdCty: string | null;
-  probOrdDt: null;
-  probRcdDt: null;
+  probOrdDt: Date | null;
+  probRcdDt: Date | null;
   dCOrd: number | null;
   dCNA: number | null;
   dCOrdCty: string | null;
-  dCOrdDt: null;
-  dCRcdDt: null;
+  dCOrdDt: Date | null;
+  dCRcdDt: Date | null;
   obitOrd: number | null;
   obitNA: number | null;
   obitOrdCty: string | null;
-  obitOrdDt: null;
-  obitRcdDt: null;
+  obitOrdDt: Date | null;
+  obitRcdDt: Date | null;
   teamMember: string | null;
   modifyBy: string;
   modifyDt: string;
-  returnDt: string;
+  returnDt: Date | string;
   main?: boolean | null;
   OffersModels?: OfferData[] | [];
   AlternativeNamesModels?: AltData[] | [];
@@ -99,14 +99,69 @@ export interface Contact {
   TasksModels?: TaskData[] | [];
 }
 
-export interface ContactApiResponse {
+export interface ContactListResult {
+  contact: ContactData[];
+  count: number;
+  ownershipSum: number;
+  totalPurchased: number;
+  totalUnpurchased: number;
+}
+
+interface Response {
   success: boolean;
   message: string;
-  data: {
-    contact: Contact[];
-    count: number;
-    ownershipSum: number;
-    totalPurchased: number;
-    totalUnpurchased: number;
+}
+export interface ContactFileResponse extends Response {
+  data: ContactListResult;
+}
+
+export interface TreeData {
+  id: string;
+  rels: {
+    father?: string;
+    mother?: string;
+    spouses?: string[];
+    children?: string[];
   };
+  main?: boolean;
+  isPhantom?: boolean;
+}
+
+export interface FamilyTreeData {
+  treeId?: number;
+  fileId?: number;
+  treeData?: TreeData[];
+  createdBy?: string | null;
+  createDate?: Date;
+  modifyBy?: string | null;
+  modifyDt?: Date;
+}
+
+export interface CreateTreeResponse {
+  success: boolean;
+  message: string;
+  data?: FamilyTreeData | null;
+}
+
+export interface NewTreePayload {
+  fileId: number;
+  treeData: TreeData[] | null;
+}
+
+export interface TreeQueryParams {
+  fileId: number;
+}
+
+export interface ContactFileQueryParams {
+  fileId: number;
+}
+
+export interface ContactUpdateQueryParams {
+  contactId: number;
+  gender: string | null;
+}
+
+export interface ContactUpdateResponse {
+  success: boolean;
+  message: string;
 }

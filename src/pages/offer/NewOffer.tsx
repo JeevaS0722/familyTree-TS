@@ -489,7 +489,7 @@ const NewOffer: React.FC = () => {
                           type="text"
                           inputProps={{
                             id: `draftLength1-${contact.contactID}`,
-                            maxLength: 10,
+                            maxLength: 3,
                           }}
                         />
                         <ErrorMessage
@@ -539,7 +539,7 @@ const NewOffer: React.FC = () => {
                           type="text"
                           inputProps={{
                             id: `draftLength2-${contact.contactID}`,
-                            maxLength: 10,
+                            maxLength: 3,
                           }}
                         />
                         <ErrorMessage

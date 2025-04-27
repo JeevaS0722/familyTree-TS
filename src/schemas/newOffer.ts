@@ -25,9 +25,15 @@ export const offerDataSchema = (
     grantors: Yup.string().trim().required(t('grantorRequired')), // text field
 
     // If these can be null or empty, allow them:
-    draftLength1: Yup.number().typeError(t('draftLength1Valid')).nullable(), // Let null pass
+    draftLength1: Yup.number()
+      .typeError(t('draftLength1Valid'))
+      .max(127, t('draftLength1'))
+      .nullable(), // Let null pass
 
-    draftLength2: Yup.number().typeError(t('draftLength2Valid')).nullable(), // Let null pass
+    draftLength2: Yup.number()
+      .typeError(t('draftLength2Valid'))
+      .nullable() // Let null pass
+      .max(127, t('draftLength1')),
 
     comment3: Yup.string().nullable(), // Let null or empty string pass
   });

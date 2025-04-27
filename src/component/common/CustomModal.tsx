@@ -24,6 +24,12 @@ const CustomModel: React.FC<CustomModelProps> = ({
   modalButtonLabel,
 }) => {
   const [disabled, setDisabled] = useState(false);
+  React.useEffect(() => {
+    if (!open) {
+      // When modal closes, reset disabled state
+      setDisabled(false);
+    }
+  }, [open]);
 
   return (
     <Dialog

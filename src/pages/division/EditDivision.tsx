@@ -27,6 +27,7 @@ import Box from '@mui/material/Box';
 import OverlayLoader from '../../component/common/OverlayLoader';
 import NavigationModel from '../../component/common/NavigationModel';
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
+import { formatDateByMonth } from '../../utils/GeneralUtil';
 const LazyWellTableContent = React.lazy(
   () => import(/* webpackChunkName: "WellTable" */ '../wells/WellTable')
 );
@@ -159,15 +160,19 @@ const EditDivision: React.FC = () => {
       setInitialValues({
         operId: divisionData?.data?.OperatorsModel?.operatorID,
         notified: divisionData?.data?.notified ? true : null,
-        notice1Date: divisionData?.data?.notice1Date || '',
-        notice2Date: divisionData?.data?.notice2Date || '',
-        notice3Date: divisionData?.data?.notice3Date || '',
+        notice1Date: formatDateByMonth(divisionData?.data?.notice1Date || ''),
+        notice2Date: formatDateByMonth(divisionData?.data?.notice2Date || ''),
+        notice3Date: formatDateByMonth(divisionData?.data?.notice3Date || ''),
         dorcvd: divisionData?.data?.received ? true : null,
         referenceId: divisionData?.data?.referenceId || '',
       });
-      setCompanyName(
-        `${divisionData?.data?.OperatorsModel?.companyName} - ${divisionData?.data?.OperatorsModel?.contactName}`
-      );
+
+      const companyNameStr = `${divisionData?.data?.OperatorsModel?.companyName || ''}${
+        divisionData?.data?.OperatorsModel?.contactName
+          ? ` - ${divisionData?.data?.OperatorsModel?.contactName}`
+          : ''
+      }`;
+      setCompanyName(companyNameStr);
     }
   }, [divisionData, location]);
 

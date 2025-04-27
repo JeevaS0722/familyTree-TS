@@ -5,15 +5,22 @@ import React, { memo, useEffect, useRef } from 'react';
 import { PersonData } from '../types/familyTree';
 import { TreeProvider, useTreeContext } from '../context/TreeContext';
 import TreeView from './TreeView';
-import SearchBar from './controls/SearchBar';
+// import SearchBar from './controls/SearchBar';
 import './FamilyTree.css';
+import { Contact } from '../../../types';
 
 interface FamilyTreeProps {
   data: PersonData[];
+  contactsList: Contact[];
   mainId?: string;
   onPersonAdd?: (personId: string, relationType: string) => void;
   onPersonDelete?: (personId: string) => void;
   contextRef?: (context: any) => void;
+  onMemberChange?: (
+    action: 'add' | 'remove',
+    memberId: string,
+    updatedData: PersonData[]
+  ) => void;
 }
 
 interface FamilyTreeContentProps {
@@ -33,7 +40,7 @@ const FamilyTreeContent: React.FC<FamilyTreeContentProps> = ({
         onPersonAdd={onPersonAdd}
         onPersonDelete={onPersonDelete}
       />
-      <SearchBar />
+      {/* <SearchBar /> */}
     </div>
   );
 };
@@ -54,13 +61,20 @@ const ContextBridge: React.FC<{
 
 const FamilyTree: React.FC<FamilyTreeProps> = ({
   data,
+  contactsList,
   mainId,
   onPersonAdd,
   onPersonDelete,
   contextRef,
+  onMemberChange,
 }) => {
   return (
-    <TreeProvider initialData={data} initialMainId={mainId}>
+    <TreeProvider
+      initialData={data}
+      initialMainId={mainId}
+      initialContacts={contactsList}
+      onMemberChange={onMemberChange}
+    >
       {contextRef && <ContextBridge contextRef={contextRef} />}
       <FamilyTreeContent
         onPersonAdd={onPersonAdd}

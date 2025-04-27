@@ -165,6 +165,7 @@ export interface ContactTableData {
   dNC: boolean | null;
   ticklered: string | Date | undefined;
   main: boolean | null;
+  isSelected?: boolean;
 }
 
 export interface ContactListResult {
@@ -341,6 +342,13 @@ export interface ContactDetailQueryParams {
   contactId: number;
 }
 
+export interface PhoneDetailQueryParams {
+  phoneId: number;
+}
+
+export interface EmailDetailQueryParams {
+  emailId: number;
+}
 export interface ViewContactResult {
   success: boolean;
   message: string;
@@ -357,6 +365,11 @@ export interface DeleteContactResponse {
   success: boolean;
   message: string;
   data: object;
+}
+
+export interface DeletePhoneEmailResponse {
+  success: boolean;
+  message: string;
 }
 
 export interface ContactDetails {

@@ -41,6 +41,12 @@ export const deleteTaxTitle =
   'Are you sure you want to delete this Tax? This cannot be undone!';
 export const taskTypeDead =
   '“You can not edit a dead file task”, please change in file status drop down. ';
+export const phoneDeleteTitle =
+  'Are you sure you want to delete this phone? This cannot be undone!';
+export const emailDeleteTitle =
+  'Are you sure you want to delete this email? This cannot be undone!';
+export const DeleteCannotDone =
+  'Delete cannot be done. Please save or discard your changes and try again';
 
 export const townShipNS = [
   { key: '1', value: 'N' },

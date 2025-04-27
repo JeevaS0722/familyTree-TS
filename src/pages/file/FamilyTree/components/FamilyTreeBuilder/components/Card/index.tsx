@@ -75,9 +75,11 @@ const Card: React.FC<CardProps> = ({
     fullAddress: data?.full_address || data?.address || '-',
     relationshipType: data?.relationship || 'Unknown',
     divisionOfInterest: data?.division_of_interest || '0.000 %',
-    percentage: data?.ownership || '0.000 %',
+    ownership: data?.ownership || '0',
     isMale: data?.gender === 'M',
     offer: data?.offer || {},
+    altNames: data?.altNames || [],
+    titles: data?.titles || [],
   };
 
   const cardWidth = 300;
@@ -135,6 +137,8 @@ const Card: React.FC<CardProps> = ({
               data={{
                 displayName: formatedData.displayName,
                 personId: node.data.id,
+                altNames: formatedData.altNames,
+                titles: formatedData.titles,
               }}
               onPersonAdd={e => onPersonAdd && onPersonAdd(node, e)}
               onPersonDelete={onPersonDelete}
@@ -158,11 +162,12 @@ const Card: React.FC<CardProps> = ({
                 contactId: formatedData.contactId,
                 isMale: formatedData.isMale,
                 divisionOfInterest: formatedData.divisionOfInterest,
-                percentage: formatedData.percentage,
+                ownership: formatedData.ownership,
                 leftColumnWidth,
                 offerIconHovered: false,
                 setOfferIconHovered: () => {},
                 offer: formatedData.offer,
+                isDeceased: formatedData.isDeceased,
               }}
             />
 

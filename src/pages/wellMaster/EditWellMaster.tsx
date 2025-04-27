@@ -135,7 +135,10 @@ const EditWellMaster: React.FC = () => {
       const operator = operatorData.data;
       const { operatorID } = wellMasterData?.data || {};
       if (operator.operatorID === operatorID) {
-        setOperatorName(`${operator?.companyName} - ${operator?.contactName}`);
+        const operatorNameStr = `${operator?.companyName || ''}${
+          operator?.contactName ? ` - ${operator.contactName}` : ''
+        }`;
+        setOperatorName(operatorNameStr);
       }
     } else {
       setOperatorName('');
@@ -145,7 +148,10 @@ const EditWellMaster: React.FC = () => {
       const payor = payorData.data;
       const { payorID } = wellMasterData?.data || {};
       if (payor.operatorID === payorID) {
-        setPayorName(`${payor?.companyName} - ${payor?.contactName}`);
+        const payorNameStr = `${payor?.companyName || ''}${
+          payor?.contactName ? ` - ${payor.contactName}` : ''
+        }`;
+        setPayorName(payorNameStr);
       }
     } else {
       setPayorName('');

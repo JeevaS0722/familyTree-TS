@@ -5,27 +5,32 @@ export const newOperatorSchema = (
   t: TFunction<string>
 ): Yup.ObjectSchema<{
   companyName: string;
-  contactName?: string;
+  ownerNumber?: string | null;
+  contactName?: string | null;
   phoneNumber?: number | null;
   fax?: number | null;
   email?: string;
-  address?: string;
-  city?: string;
-  state?: string;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
   zip?: string | null;
-  notes?: string;
+  notes?: string | null;
 }> => {
   return Yup.object().shape({
     companyName: Yup.string().trim().required(t('companyNameRequired')),
-    contactName: Yup.string() as Yup.Schema<string>,
-    state: Yup.string() as Yup.Schema<string>,
-    city: Yup.string() as Yup.Schema<string>,
-    address: Yup.string() as Yup.Schema<string>,
+    contactName: Yup.string().nullable() as Yup.Schema<string | null>,
+    ownerNumber: Yup.string()
+      .nullable()
+      .optional()
+      .typeError(t('ownerNumberValidation')),
+    state: Yup.string().nullable() as Yup.Schema<string | null>,
+    city: Yup.string().nullable() as Yup.Schema<string | null>,
+    address: Yup.string().nullable() as Yup.Schema<string | null>,
     zip: Yup.string()
       .matches(/^[0-9-]+$/, t('zipValidation'))
       .max(10, t('zipLength'))
       .nullable()
-      .optional() as Yup.StringSchema<string>,
+      .optional() as Yup.StringSchema<string | null>,
     phoneNumber: Yup.number()
       .nullable()
       .typeError(t('phoneValidation'))
@@ -43,6 +48,6 @@ export const newOperatorSchema = (
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         t('emailValidation')
       ) as Yup.StringSchema<string>,
-    notes: Yup.string() as Yup.Schema<string>,
+    notes: Yup.string().nullable() as Yup.Schema<string | null>,
   });
 };

@@ -84,7 +84,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ zoomIn, zoomOut, fitTree }) => {
           </button>
         </div>
       </div>
-      <ConfigPanel isOpen={isOpen} onClose={toggleConfigPanel} />
+      {isOpen && <ConfigPanel isOpen={isOpen} onClose={toggleConfigPanel} />}
     </>
   );
 };
