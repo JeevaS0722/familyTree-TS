@@ -1,4 +1,3 @@
-// src/utils/linkCreator.ts
 import { TreeNode, TreeLink } from '../types/familyTree';
 
 export function createLinks({
@@ -71,8 +70,8 @@ export function createLinks({
         });
       } else {
         const parent_pos = !is_horizontal
-          ? { x: child.psx || d.x, y: d.y }
-          : { x: d.x, y: child.psx || d.y };
+          ? { x: child.psx !== undefined ? child.psx : d.x, y: d.y }
+          : { x: d.x, y: child.psx !== undefined ? child.psx : d.y };
 
         links.push({
           d: Link(child, parent_pos),
@@ -224,20 +223,31 @@ export function createLinks({
       d0.data.id !== p1.data.id &&
       (d0.data.id === child.data.rels.mother ||
         d0.data.id === child.data.rels.father);
-    return getRel(p1, data, condition);
-  }
+    const directParent = data.find(condition);
+    if (directParent) {
+      return directParent;
+    }
+    if (child.data.rels.mother && child.data.rels.father) {
+      return getRel(p1, data, condition);
+    }
 
+    return undefined;
+  }
   function getRel(
-    d: TreeNode,
+    p1: TreeNode,
     data: TreeNode[],
     condition: (d: TreeNode) => boolean
   ): TreeNode | undefined {
     const rels = data.filter(condition);
+
+    if (rels.length === 0) {
+      return undefined;
+    }
     const dist_xy = (a: TreeNode, b: TreeNode) =>
       Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
 
     if (rels.length > 1) {
-      return rels.sort((d0, d1) => dist_xy(d0, d) - dist_xy(d1, d))[0];
+      return rels.sort((d0, d1) => dist_xy(d0, p1) - dist_xy(d1, p1))[0];
     } else {
       return rels[0];
     }

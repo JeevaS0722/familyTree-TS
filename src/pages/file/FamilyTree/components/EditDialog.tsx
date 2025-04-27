@@ -80,19 +80,18 @@ const EditDialog: React.FC<EditDialogProps> = ({
 
   useEffect(() => {
     if (open && initialRelationshipType) {
-      let gender = '';
-      console.log('initialRelationshipType', initialRelationshipType);
+      let gender = '' as 'M' | 'F' | '';
       if (
         initialRelationshipType === 'father' ||
         initialRelationshipType === 'son'
       ) {
-        gender = 'male';
+        gender = 'M';
       } else if (
         initialRelationshipType === 'mother' ||
         initialRelationshipType === 'daughter' ||
-        initialRelationshipType === 'suppose'
+        initialRelationshipType === 'spouse'
       ) {
-        gender = 'female';
+        gender = 'F';
       }
       let formatRelationship = initialRelationshipType || '';
       if (initialRelationshipType === 'spouse') {
@@ -158,7 +157,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
     if (!validateSelectContactInputs()) {
       return;
     }
-    console.log('selectedContact', selectedContact);
     const newMember = contactsToFamilyTreemapper(
       {
         ...selectedContact,

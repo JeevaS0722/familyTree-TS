@@ -212,7 +212,6 @@ const App: React.FC = () => {
         console.error('Cannot add member: missing parent ID or tree context');
         return;
       }
-      console.log('Adding new family member:', newPerson);
 
       try {
         treeContext.addPerson(
@@ -233,9 +232,11 @@ const App: React.FC = () => {
             newPerson?.data?.gender
           );
         }
-        setTimeout(() => {
-          treeContext.updateMainId(currentParentId);
-        }, 1000);
+
+        // Set focus back to the parent node
+        // setTimeout(() => {
+        //   treeContext.updateMainId(currentParentId);
+        // }, 1000);
       } catch (error) {
         console.error('Error adding family member:', error);
       }
@@ -249,108 +250,243 @@ const App: React.FC = () => {
     ]
   );
 
-  /**
-   * Checks the various connection conditions for a person to determine if they can be deleted
-   * Returns an object with the result and appropriate message
-   */
-  // const checkDeletionConditions = useCallback(
-  //   (personId: string) => {
-  //     if (!familyData || !treeContext) {
-  //       return { canDelete: false, message: 'Cannot access family data' };
-  //     }
+  const checkDeletionConditions = useCallback(
+    (personId: string) => {
+      if (!familyData || !treeContext) {
+        return {
+          canDelete: false,
+          message: 'Cannot access family data',
+          dialogType: 'error',
+        };
+      }
 
-  //     const person = familyData.find(p => p.id === personId);
-  //     if (!person) {
-  //       return { canDelete: false, message: 'Person not found' };
-  //     }
+      const person = familyData.find(p => p.id === personId);
+      if (!person) {
+        return {
+          canDelete: false,
+          message: 'Person not found',
+          dialogType: 'error',
+        };
+      }
 
-  //     // Check if person has children
-  //     const hasChildren =
-  //       person.rels.children && person.rels.children.length > 0;
+      const personName = person.data.name || 'This person';
 
-  //     if (hasChildren) {
-  //       // Case 1: Person has children - warning
-  //       return {
-  //         canDelete: false,
-  //         message: `${person.data.name} has children in the family tree. Please remove these connections first.`,
-  //         dialogType: 'warning',
-  //       };
-  //     }
+      // SCENARIO 1: Main node with connections
+      // if (person.main && familyData.length > 1) {
+      //   const hasAnyRelationships =
+      //     (person.rels.children && person.rels.children.length > 0) ||
+      //     (person.rels.spouses && person.rels.spouses.length > 0) ||
+      //     person.rels.father ||
+      //     person.rels.mother;
 
-  //     // Check if person has spouses
-  //     const hasSpouses = person.rels.spouses && person.rels.spouses.length > 0;
+      //   if (hasAnyRelationships) {
+      //     return {
+      //       canDelete: false,
+      //       message: `${personName} is the main person in this family tree. Please make another person the main person before deleting.`,
+      //       dialogType: 'error',
+      //     };
+      //   }
+      // }
 
-  //     if (!hasSpouses) {
-  //       // Case 2: Person has no children and no spouse - can delete
-  //       return { canDelete: true, message: '', dialogType: 'warning' };
-  //     }
+      // SCENARIO 2: Has children (block deletion)
+      if (person.rels.children && person.rels.children.length > 0) {
+        return {
+          canDelete: false,
+          message: `${personName} has children in the family tree. Please remove these connections first.`,
+          dialogType: 'error',
+        };
+      }
 
-  //     // Person has spouse(s) but no children, check each spouse's connections
-  //     for (const spouseId of person.rels.spouses || []) {
-  //       const spouse = familyData.find(p => p.id === spouseId);
-  //       if (!spouse) {
-  //         continue;
-  //       }
+      // SCENARIO 3: Is the critical parent for other nodes
+      // Check if person is the only parent for any children
+      const fatherOf = familyData.filter(p => p.rels.father === personId);
+      const motherOf = familyData.filter(p => p.rels.mother === personId);
 
-  //       // Check if spouse has other spouses besides this person
-  //       const spouseHasOtherSpouses =
-  //         spouse.rels.spouses &&
-  //         spouse.rels.spouses.filter(id => id !== personId).length > 0;
+      if (fatherOf.length > 0) {
+        const fatherOnlyChildren = fatherOf.filter(child => !child.rels.mother);
+        if (fatherOnlyChildren.length > 0) {
+          return {
+            canDelete: false,
+            message: `${personName} is the only parent of ${fatherOnlyChildren.length} ${fatherOnlyChildren.length === 1 ? 'child' : 'children'}. Please add another parent or remove these connections first.`,
+            dialogType: 'error',
+          };
+        }
+      }
 
-  //       // Check if spouse has any children
-  //       const spouseHasChildren =
-  //         spouse.rels.children && spouse.rels.children.length > 0;
+      if (motherOf.length > 0) {
+        const motherOnlyChildren = motherOf.filter(child => !child.rels.father);
+        if (motherOnlyChildren.length > 0) {
+          return {
+            canDelete: false,
+            message: `${personName} is the only parent of ${motherOnlyChildren.length} ${motherOnlyChildren.length === 1 ? 'child' : 'children'}. Please add another parent or remove these connections first.`,
+            dialogType: 'error',
+          };
+        }
+      }
 
-  //       // Check if spouse has children with current person
-  //       let spouseHasChildrenWithPerson = false;
-  //       if (spouseHasChildren && person.data.gender && spouse.data.gender) {
-  //         const childrenWithPerson = familyData.filter(
-  //           p =>
-  //             spouse.rels.children?.includes(p.id) &&
-  //             ((person.data.gender === 'M' && p.rels.father === personId) ||
-  //               (person.data.gender === 'F' && p.rels.mother === personId))
-  //         );
-  //         spouseHasChildrenWithPerson = childrenWithPerson.length > 0;
-  //       }
+      // SCENARIO 4: Is the only child of a parent (could disconnect branches)
+      if (person.rels.father || person.rels.mother) {
+        const father = person.rels.father
+          ? familyData.find(p => p.id === person.rels.father)
+          : null;
+        const mother = person.rels.mother
+          ? familyData.find(p => p.id === person.rels.mother)
+          : null;
 
-  //       // Case 3: Spouse has no other connections
-  //       if (!spouseHasOtherSpouses && !spouseHasChildren) {
-  //         return {
-  //           canDelete: false,
-  //           message: `${person.data.name} is connected to ${spouse.data.name}. Are you sure you want to delete this person?`,
-  //           dialogType: 'warning',
-  //         };
-  //       }
+        // Check if person is the only connection between two family branches
+        if (father && mother) {
+          const isOnlyChildOfBothParents =
+            (!father.rels.children || father.rels.children.length === 1) &&
+            (!mother.rels.children || mother.rels.children.length === 1);
 
-  //       // Case 4: Spouse has children (not with this person)
-  //       if (!spouseHasChildrenWithPerson && spouseHasChildren) {
-  //         return {
-  //           canDelete: false,
-  //           message: `${person.data.name}'s spouse ${spouse.data.name} has children. Are you sure you want to delete this person?`,
-  //           dialogType: 'warning',
-  //         };
-  //       }
+          // Only link between father's family and mother's family
+          if (
+            isOnlyChildOfBothParents &&
+            (!father.rels.spouses ||
+              !father.rels.spouses.includes(mother.id)) &&
+            (!mother.rels.spouses || !mother.rels.spouses.includes(father.id))
+          ) {
+            return {
+              canDelete: false,
+              message: `${personName} is the only connection between two family branches. Deleting would disconnect parts of the family tree.`,
+              dialogType: 'error',
+            };
+          }
+        }
 
-  //       // Case 5: Spouse has children with this person
-  //       if (spouseHasChildrenWithPerson) {
-  //         return {
-  //           canDelete: false,
-  //           message: `${person.data.name} has children with ${spouse.data.name}. Please remove these connections first.`,
-  //           dialogType: 'warning',
-  //         };
-  //       }
+        // Check if person is the only child of either parent
+        if (
+          father &&
+          father.rels.children &&
+          father.rels.children.length === 1
+        ) {
+          // If father has no other connections (spouses)
+          if (!father.rels.spouses || father.rels.spouses.length === 0) {
+            return {
+              canDelete: false,
+              message: `${personName} is the only child of ${father.data.name}. Deleting would leave a disconnected person in the tree.`,
+              dialogType: 'error',
+            };
+          }
+        }
 
-  //       // Case 6: Spouse has another spouse but no children with this person
-  //       if (spouseHasOtherSpouses && !spouseHasChildrenWithPerson) {
-  //         return { canDelete: true, message: '', dialogType: 'warning' };
-  //       }
-  //     }
+        if (
+          mother &&
+          mother.rels.children &&
+          mother.rels.children.length === 1
+        ) {
+          // If mother has no other connections (spouses)
+          if (!mother.rels.spouses || mother.rels.spouses.length === 0) {
+            return {
+              canDelete: false,
+              message: `${personName} is the only child of ${mother.data.name}. Deleting would leave a disconnected person in the tree.`,
+              dialogType: 'error',
+            };
+          }
+        }
+      }
 
-  //     // Default - allow deletion
-  //     return { canDelete: true, message: '', dialogType: 'warning' };
-  //   },
-  //   [familyData, treeContext]
-  // );
+      // SCENARIO 5: Spouse relationships (various cases)
+      // Check if person has spouses
+      const hasSpouses = person.rels.spouses && person.rels.spouses.length > 0;
+
+      if (!hasSpouses) {
+        // No spouse, no children - safe to delete
+        return {
+          canDelete: true,
+          message: `Are you sure you want to delete ${personName}? This action cannot be undone.`,
+          dialogType: 'warning',
+        };
+      }
+
+      // Check each spouse relationship
+      for (const spouseId of person.rels.spouses || []) {
+        const spouse = familyData.find(p => p.id === spouseId);
+        if (!spouse) {
+          continue;
+        }
+
+        // Check if spouse has other spouses besides this person
+        const spouseHasOtherSpouses =
+          spouse.rels.spouses &&
+          spouse.rels.spouses.filter(id => id !== personId).length > 0;
+
+        // Check if spouse has any children
+        const spouseHasChildren =
+          spouse.rels.children && spouse.rels.children.length > 0;
+
+        // Check if spouse has children with current person
+        let spouseHasChildrenWithPerson = false;
+        if (spouseHasChildren && person.data.gender && spouse.data.gender) {
+          const childrenWithPerson = familyData.filter(
+            p =>
+              spouse.rels.children?.includes(p.id) &&
+              ((person.data.gender === 'M' && p.rels.father === personId) ||
+                (person.data.gender === 'F' && p.rels.mother === personId))
+          );
+          spouseHasChildrenWithPerson = childrenWithPerson.length > 0;
+        }
+
+        // If spouse has children with this person - block deletion
+        if (spouseHasChildrenWithPerson) {
+          return {
+            canDelete: false,
+            message: `${personName} has children with ${spouse.data.name}. Please remove these connections first.`,
+            dialogType: 'error',
+          };
+        }
+
+        // If spouse would be left isolated after deletion - warn or block
+        if (!spouseHasOtherSpouses && !spouseHasChildren) {
+          // Spouse has no other connections - would leave isolated node
+          if (
+            (!spouse.rels.father && !spouse.rels.mother) ||
+            spouse.isPhantom
+          ) {
+            // If spouse is a phantom node or has no parents - allow with warning
+            return {
+              canDelete: true,
+              message: `${personName} is ${spouse.data.name}'s only connection. ${spouse.data.name} may become isolated in the tree. Continue?`,
+              dialogType: 'warning',
+            };
+          } else {
+            // Spouse has parents - warn but allow
+            return {
+              canDelete: true,
+              message: `${personName} is connected to ${spouse.data.name}. Are you sure you want to delete?`,
+              dialogType: 'warning',
+            };
+          }
+        }
+
+        // Spouse has children (not with this person) - warn but allow
+        if (!spouseHasChildrenWithPerson && spouseHasChildren) {
+          return {
+            canDelete: true,
+            message: `${spouse.data.name} has children, but not with ${personName}. Are you sure you want to delete?`,
+            dialogType: 'warning',
+          };
+        }
+
+        // Spouse has other spouses - warn but allow
+        if (spouseHasOtherSpouses) {
+          return {
+            canDelete: true,
+            message: `${spouse.data.name} has other connections. Are you sure you want to delete ${personName}?`,
+            dialogType: 'warning',
+          };
+        }
+      }
+
+      // If we reach here, there are no blocking conditions
+      return {
+        canDelete: true,
+        message: `Are you sure you want to delete ${personName}? This action cannot be undone.`,
+        dialogType: 'warning',
+      };
+    },
+    [familyData, treeContext]
+  );
 
   const handlePersonDelete = useCallback(
     (personId: string) => {
@@ -358,33 +494,27 @@ const App: React.FC = () => {
         console.error('Cannot delete: missing tree context');
         return;
       }
+      setPersonToDelete(personId);
+      const result = checkDeletionConditions(personId);
+      setDialogProps({
+        title: result.canDelete ? 'Delete Person' : 'Warning',
+        content: result.message,
+        dialogType: result.dialogType,
+      });
+      setDeleteDialogOpen(true);
+    },
+    [treeContext]
+  );
 
-      // const person = familyData.find(p => p.id === personId);
-      // if (!person) {
-      //   return;
-      // }
+  const performDelete = useCallback(() => {
+    if (!personToDelete || !treeContext) {
+      console.error('Cannot delete: missing person ID or tree context');
+      return;
+    }
 
-      // setPersonToDelete(personId);
+    const result = checkDeletionConditions(personToDelete);
 
-      // const result = checkDeletionConditions(personId);
-
-      // if (result.message) {
-      //   setDialogProps({
-      //     title: result.canDelete ? 'Confirm Deletion' : 'Warning',
-      //     content:
-      //       result.message ||
-      //       `Are you sure you want to delete ${person.data.name || 'this person'}? This action cannot be undone.`,
-      //     dialogType: result.dialogType || 'warning',
-      //   });
-      // } else {
-      //   setDialogProps({
-      //     title: 'Confirm Deletion',
-      //     content: `Are you sure you want to delete ${person.data.name || 'this person'}? This action cannot be undone.`,
-      //     dialogType: 'warning',
-      //   });
-      // }
-
-      // setDeleteDialogOpen(true);
+    if (result.canDelete) {
       try {
         treeContext.removePerson(personToDelete);
         const updatedFamilyData = familyData.filter(
@@ -397,41 +527,11 @@ const App: React.FC = () => {
         }
       } catch (error) {
         console.error(`Error deleting person ${personToDelete}:`, error);
-      } finally {
-        setPersonToDelete(null);
-        setDeleteDialogOpen(false);
       }
-    },
-    [treeContext, familyData]
-  );
-
-  // const performDelete = useCallback(() => {
-  //   if (!personToDelete || !treeContext) {
-  //     console.error('Cannot delete: missing person ID or tree context');
-  //     return;
-  //   }
-
-  //   const result = checkDeletionConditions(personToDelete);
-
-  //   if (result.canDelete) {
-  //     try {
-  //       treeContext.removePerson(personToDelete);
-  //       const updatedFamilyData = familyData.filter(
-  //         p => p.id !== personToDelete
-  //       );
-  //       setFamilyData(updatedFamilyData);
-  //       if (!updatedFamilyData.length) {
-  //         setRootMember(null);
-  //         setShowInitialDialog(true);
-  //       }
-  //     } catch (error) {
-  //       console.error(`Error deleting person ${personToDelete}:`, error);
-  //     }
-  //   }
-
-  //   setPersonToDelete(null);
-  //   setDeleteDialogOpen(false);
-  // }, [personToDelete, treeContext, familyData, checkDeletionConditions]);
+    }
+    setPersonToDelete(null);
+    setDeleteDialogOpen(false);
+  }, [personToDelete, treeContext, familyData, checkDeletionConditions]);
 
   const handleMemberChange = useCallback(
     (action: 'add' | 'remove', memberId: string, updatedData: PersonData[]) => {
@@ -481,8 +581,7 @@ const App: React.FC = () => {
           initialRelationshipType={relationshipType}
         />
       )}
-
-      {/* {deleteDialogOpen && (
+      {deleteDialogOpen && (
         <ConfirmationDialog
           open={deleteDialogOpen}
           title={dialogProps.title}
@@ -491,9 +590,12 @@ const App: React.FC = () => {
           confirmText={dialogProps.dialogType === 'error' ? 'OK' : 'Delete'}
           cancelText="Cancel"
           onConfirm={performDelete}
-          onCancel={() => setDeleteDialogOpen(false)}
+          onCancel={() => {
+            setDeleteDialogOpen(false);
+            setPersonToDelete(null);
+          }}
         />
-      )} */}
+      )}
       {(loading || isLoadingContacts) && (
         <OverlayLoader open loadingText="Loading..." />
       )}

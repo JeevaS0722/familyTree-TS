@@ -6,7 +6,7 @@ export interface PersonData {
     contactId?: number;
     fileId?: number;
     gender: 'M' | 'F' | 'O' | '';
-    first_ame: string;
+    first_name: string;
     last_name: string;
     name: string;
     relationship?: string | null;
@@ -31,8 +31,6 @@ export interface PersonData {
       offer_type?: string | null;
       grantors?: string | null;
     };
-    altNames?: string[];
-    tittles?: string[];
   };
   rels: {
     father?: string;

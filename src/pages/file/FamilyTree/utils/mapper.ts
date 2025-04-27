@@ -130,7 +130,7 @@ export const contactsToFamilyTreemapper = (
     fileId: Number(fileId),
     contactId: rootContact.contactID,
     gender: determineGender(rootContact),
-    first_ame: rootContact.firstName || '',
+    first_name: rootContact.firstName || '',
     last_name: rootContact.lastName || '',
     name: [rootContact.firstName, rootContact.lastName]
       .filter(Boolean)
@@ -159,7 +159,7 @@ export const contactsToFamilyTreemapper = (
     ownership: rootContact?.ownership || '0',
     division_of_interest: 'Interest',
     offer: formatOffer(rootContact?.OffersModels || []),
-    altNames: formatAltNames(rootContact?.AlternativeNamesModels || []),
+    alt_names: formatAltNames(rootContact?.AlternativeNamesModels || []),
     titles: formatTitles(rootContact?.TitlesModels || []),
   },
   rels: {},
@@ -233,7 +233,7 @@ export const mapFamilyTreeAndContactToTree = (
             fileId: Number(fileId),
             contactId: contact.contactID,
             gender: determineGender(contact),
-            first_ame: contact.firstName || '',
+            first_name: contact.firstName || '',
             last_name: contact.lastName || '',
             name: [contact.firstName, contact.lastName]
               .filter(Boolean)

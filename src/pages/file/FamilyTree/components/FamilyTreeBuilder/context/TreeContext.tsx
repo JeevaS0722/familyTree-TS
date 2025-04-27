@@ -291,6 +291,14 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       if (parentIndex === -1) {
         return state;
       }
+      updatedData.map(p => {
+        if (p.id === parentId) {
+          p.main = true;
+        } else {
+          p.main = false;
+        }
+        return p;
+      });
 
       const parent = updatedData[parentIndex];
 
@@ -327,7 +335,6 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         if (!parent.rels.children.includes(person.id)) {
           parent.rels.children.push(person.id);
         }
-
         if (parent.data.gender === 'M') {
           person.rels.father = parent.id;
 
@@ -342,7 +349,6 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
           }
         } else {
           person.rels.mother = parent.id;
-
           if (otherParent && otherParent.data.gender === 'M') {
             person.rels.father = otherParent.id;
             if (!otherParent.rels.children) {
@@ -354,20 +360,64 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
           }
         }
       } else if (relationship === 'father') {
-        person.rels.father = parent.id;
-        if (!parent.rels.children) {
-          parent.rels.children = [];
+        parent.rels.father = person.id;
+        if (!person?.rels?.children) {
+          person.rels.children = [];
         }
-        if (!parent.rels.children.includes(person.id)) {
-          parent.rels.children.push(person.id);
+        if (!person.rels.children.includes(parent.id)) {
+          person.rels.children.push(parent.id);
+        }
+        if (parent?.rels?.mother) {
+          const motherIndex = updatedData.findIndex(
+            p => p.id === parent.rels.mother
+          );
+          if (motherIndex !== -1) {
+            if (
+              Array.isArray(updatedData[motherIndex]?.rels?.spouses) &&
+              !updatedData[motherIndex]?.rels?.spouses?.includes(person.id)
+            ) {
+              updatedData[motherIndex]?.rels?.spouses?.push(person.id);
+              parent.rels.mother = updatedData[motherIndex]?.id;
+            } else if (!updatedData[motherIndex]?.rels?.spouses) {
+              updatedData[motherIndex].rels.spouses = [];
+              updatedData[motherIndex].rels.spouses.push(person.id);
+              parent.rels.mother = updatedData[motherIndex]?.id;
+            }
+            if (!person?.rels.spouses) {
+              person.rels.spouses = [];
+            }
+            person.rels.spouses.push(updatedData[motherIndex]?.id);
+          }
         }
       } else if (relationship === 'mother') {
-        person.rels.mother = parent.id;
-        if (!parent.rels.children) {
-          parent.rels.children = [];
+        parent.rels.mother = person.id;
+        if (!person.rels.children) {
+          person.rels.children = [];
         }
-        if (!parent.rels.children.includes(person.id)) {
-          parent.rels.children.push(person.id);
+        if (!person.rels.children.includes(parent.id)) {
+          person.rels.children.push(parent.id);
+        }
+        if (parent?.rels?.father) {
+          const fatherIndex = updatedData.findIndex(
+            p => p.id === parent.rels.father
+          );
+          if (fatherIndex !== -1) {
+            if (
+              Array.isArray(updatedData[fatherIndex]?.rels?.spouses) &&
+              !updatedData[fatherIndex]?.rels?.spouses?.includes(person.id)
+            ) {
+              updatedData[fatherIndex]?.rels?.spouses?.push(person.id);
+              parent.rels.father = updatedData[fatherIndex]?.id;
+            } else if (!updatedData[fatherIndex]?.rels?.spouses) {
+              updatedData[fatherIndex].rels.spouses = [];
+              updatedData[fatherIndex].rels.spouses.push(person.id);
+              parent.rels.father = updatedData[fatherIndex]?.id;
+            }
+            if (!person?.rels?.spouses) {
+              person.rels.spouses = [];
+            }
+            person.rels.spouses.push(updatedData[fatherIndex]?.id);
+          }
         }
       }
 
@@ -380,12 +430,12 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         level_separation: state.config.levelSeparation,
         is_horizontal: state.config.isHorizontal,
       });
-
       return {
         ...state,
         data: updatedData,
         treeData,
         isInitialRender: false,
+        mainId: parentId,
       };
     }
 

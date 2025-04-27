@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CardHeaderProps } from '../types';
 
 const CardHeader: React.FC<CardHeaderProps> = ({

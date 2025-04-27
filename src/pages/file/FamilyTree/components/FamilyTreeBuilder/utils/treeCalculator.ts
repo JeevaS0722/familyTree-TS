@@ -212,7 +212,9 @@ export function calculateTree({
             sx:
               i > 0
                 ? d.x - node_separation * (i + 1) * side
-                : d.x - (node_separation / 2) * side,
+                : d.x -
+                  node_separation * (i + 1) * side +
+                  (node_separation / 2) * side,
             sy: i > 0 ? d.y : d.y + (node_separation / 2) * side,
             depth: d.depth,
             spouse: d,
@@ -253,29 +255,53 @@ export function calculateTree({
       const m = findDatum(d.data.rels.mother);
       const f = findDatum(d.data.rels.father);
 
+      // Single parent cases
       if (m && !f) {
-        d.psx = m.x;
-        d.psy = m.y;
+        // Has only mother
+        m.sx = m.x; // Ensure sx is set
+        m.sy = m.y; // Ensure sy is set
+        setupParentPos(d, m);
       } else if (f && !m) {
-        d.psx = f.x;
-        d.psy = f.y;
+        // Has only father
+        f.sx = f.x; // Ensure sx is set
+        f.sy = f.y; // Ensure sy is set
+        setupParentPos(d, f);
       } else if (m && f) {
-        const added_spouse = m.added ? m : f;
-        setupParentPos(d, added_spouse);
-      }
+        // Has both parents
+        // Find which parent is the "added spouse" (has added=true)
+        if (!m.added && !f.added) {
+          console.error(
+            'Child has two parents but neither is marked as added:',
+            d
+          );
+        }
 
-      function setupParentPos(d: TreeNode, p: TreeNode): void {
-        d.psx = !is_horizontal ? p.sx : p.y;
-        d.psy = !is_horizontal ? p.y : p.sx;
+        // Use the "added spouse" parent for positioning
+        const added_spouse = m.added ? m : f;
+
+        // Make sure sx/sy are properly set
+        if (added_spouse.sx === undefined) {
+          added_spouse.sx = added_spouse.x;
+        }
+        if (added_spouse.sy === undefined) {
+          added_spouse.sy = added_spouse.y;
+        }
+
+        setupParentPos(d, added_spouse);
       }
     });
 
-    function findDatum(id?: string): TreeNode | undefined {
-      if (!id) {
-        return undefined;
-      }
-      return tree.find(d => d.data.id === id);
+    function setupParentPos(d: TreeNode, p: TreeNode): void {
+      d.psx = !is_horizontal ? p.sx : p.y;
+      d.psy = !is_horizontal ? p.y : p.sx;
     }
+  }
+
+  function findDatum(id?: string): TreeNode | undefined {
+    if (!id) {
+      return undefined;
+    }
+    return tree.find(d => d.data.id === id);
   }
 
   function setupChildrenAndParents({ tree }: { tree: TreeNode[] }): void {

@@ -67,7 +67,7 @@ const Card: React.FC<CardProps> = ({
     hasNotes: !!data?.has_new_notes,
     displayName:
       data?.name ||
-      `${data?.first_ame || ''} ${data?.last_name || ''}`.trim() ||
+      `${data?.first_name || ''} ${data?.last_name || ''}`.trim() ||
       'Unknown',
     age: data?.age || '-',
     birthDate: data?.dOB || '-',
@@ -78,7 +78,7 @@ const Card: React.FC<CardProps> = ({
     ownership: data?.ownership || '0',
     isMale: data?.gender === 'M',
     offer: data?.offer || {},
-    altNames: data?.altNames || [],
+    altNames: data?.alt_names || [],
     titles: data?.titles || [],
   };
 
