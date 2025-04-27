@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { RightContainerProps } from '../types';
 import { useTreeContext } from '../../../context/TreeContext';
 
 const RightContainer: React.FC<RightContainerProps> = data => {
-  const { state } = useTreeContext();
+  const { state, updateConfig } = useTreeContext();
+  const initionalNodeSperation = useRef(state.config.nodeSeparation);
   const [offerIconHovered, setOfferIconHovered] = useState(false);
   // Add state for ownership popup
   const [ownershipPopupOpen, setOwnershipPopupOpen] = useState(false);
@@ -25,13 +26,40 @@ const RightContainer: React.FC<RightContainerProps> = data => {
       ? '#00BF0A'
       : '#838383';
 
-  // Toggle function for ownership popup
+  // Toggle function for ownership popup - FIXED
   const toggleOwnershipPopup = () => {
+    if (!ownershipPopupOpen) {
+      // Opening the popup - increase separation
+      const newConfig = {
+        nodeSeparation: 540,
+      };
+      updateConfig(newConfig);
+    } else {
+      // Closing the popup - restore original separation
+      const newConfig = {
+        nodeSeparation: initionalNodeSperation.current,
+      };
+      updateConfig(newConfig);
+    }
     setOwnershipPopupOpen(!ownershipPopupOpen);
     setOfferIconHovered(false);
   };
 
+  // Toggle function for offer popup - Updated for consistency
   const toggleOfferPopup = () => {
+    if (!offerIconHovered) {
+      // Opening the popup - increase separation
+      const newConfig = {
+        nodeSeparation: 450,
+      };
+      updateConfig(newConfig);
+    } else {
+      // Closing the popup - restore original separation
+      const newConfig = {
+        nodeSeparation: initionalNodeSperation.current,
+      };
+      updateConfig(newConfig);
+    }
     setOfferIconHovered(!offerIconHovered);
     setOwnershipPopupOpen(false);
   };
@@ -402,7 +430,7 @@ const RightContainer: React.FC<RightContainerProps> = data => {
             textAnchor="middle"
             fill="#000000"
           >
-            $ {amount || '0.00'}
+            {amount || '0.00'}
           </text>
           <text
             x={80}

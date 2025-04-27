@@ -57,7 +57,7 @@ const ParentSelectionMenu: React.FC<ParentSelectionMenuProps> = ({
     left: `${position.x + 180}px`,
     top: `${position.y - 100}px`,
     width: '280px',
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: '#000',
     borderRadius: '10px',
     boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
     padding: '15px',

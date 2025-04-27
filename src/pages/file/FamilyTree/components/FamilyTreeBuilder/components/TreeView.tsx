@@ -376,7 +376,12 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
             </g>
           </g>
         </svg>
-        <Toolbar zoomIn={zoomIn} zoomOut={zoomOut} fitTree={fitTree} />
+        <Toolbar
+          zoomIn={zoomIn}
+          zoomOut={zoomOut}
+          fitTree={fitTree}
+          svgRef={svgRef}
+        />
         {selectedNode && (
           <RelationshipMenu
             node={selectedNode}

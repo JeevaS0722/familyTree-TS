@@ -7,9 +7,15 @@ interface ToolbarProps {
   zoomIn: () => void;
   zoomOut: () => void;
   fitTree: () => void;
+  svgRef?: React.RefObject<SVGSVGElement>;
 }
 
-const Toolbar: React.FC<ToolbarProps> = ({ zoomIn, zoomOut, fitTree }) => {
+const Toolbar: React.FC<ToolbarProps> = ({
+  zoomIn,
+  zoomOut,
+  fitTree,
+  svgRef,
+}) => {
   const { state, updateConfig } = useTreeContext();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -21,6 +27,130 @@ const Toolbar: React.FC<ToolbarProps> = ({ zoomIn, zoomOut, fitTree }) => {
 
   const toggleConfigPanel = () => {
     setIsOpen(!isOpen);
+  };
+  const exportSvgToPng = () => {
+    if (!svgRef?.current) {
+      console.error('SVG reference is not available');
+      return;
+    }
+    const svg = svgRef.current;
+
+    // Get the SVG data
+    const svgData = new XMLSerializer().serializeToString(svg);
+
+    // Create a copy of the SVG to modify before export
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(svgData, 'image/svg+xml');
+    const svgElement = svgDoc.documentElement;
+
+    // Create a background rect with the same color as the app background
+    const backgroundRect = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'rect'
+    );
+    backgroundRect.setAttribute('width', '100%');
+    backgroundRect.setAttribute('height', '100%');
+    backgroundRect.setAttribute('fill', 'rgb(33, 33, 33)'); // Match app background color
+
+    // Insert the background rect as the first child of the SVG
+    if (svgElement.firstChild) {
+      svgElement.insertBefore(backgroundRect, svgElement.firstChild);
+    } else {
+      svgElement.appendChild(backgroundRect);
+    }
+
+    // Get the modified SVG data
+    const modifiedSvgData = new XMLSerializer().serializeToString(svgDoc);
+    const svgBlob = new Blob([modifiedSvgData], {
+      type: 'image/svg+xml;charset=utf-8',
+    });
+
+    const DOMURL = window.URL || window.webkitURL || window;
+    const url = DOMURL.createObjectURL(svgBlob);
+
+    // Create canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      console.error('Could not create canvas context');
+      return;
+    }
+
+    // Get SVG dimensions and set canvas size
+    const bbox = svg.getBBox();
+    const svgWidth = svg.width.baseVal.value || bbox.width;
+    const svgHeight = svg.height.baseVal.value || bbox.height;
+
+    // Create image from SVG
+    const img = new Image();
+
+    img.onload = () => {
+      // Quality enhancement: Scale factor for higher resolution
+      const scaleFactor = 4; // Double the resolution
+
+      // Set canvas size with the scale factor
+      canvas.width = Math.max(svgWidth, 800) * scaleFactor;
+      canvas.height = Math.max(svgHeight, 600) * scaleFactor;
+
+      // Apply high-quality rendering settings
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Account for device pixel ratio for high-DPI displays
+      const pixelRatio = window.devicePixelRatio || 1;
+      canvas.style.width = Math.max(svgWidth, 800) + 'px';
+      canvas.style.height = Math.max(svgHeight, 600) + 'px';
+
+      // Scale the context according to our quality settings
+      ctx.scale(scaleFactor * pixelRatio, scaleFactor * pixelRatio);
+
+      // Draw SVG on canvas at higher quality
+      ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
+
+      // Convert canvas to Blob instead of data URL with max quality
+      canvas.toBlob(
+        blob => {
+          if (!blob) {
+            console.error('Failed to create blob from canvas');
+            return;
+          }
+
+          // Create download link with Blob URL instead of data URL
+          const blobUrl = DOMURL.createObjectURL(blob);
+          const downloadLink = document.createElement('a');
+          downloadLink.href = blobUrl;
+          downloadLink.download = `family-tree-${new Date().toISOString().slice(0, 10)}.png`;
+
+          // Trigger download
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+          // Cleanup
+          DOMURL.revokeObjectURL(blobUrl);
+        },
+        'image/png',
+        1.0
+      ); // 1.0 is max quality
+
+      // Cleanup SVG URL
+      DOMURL.revokeObjectURL(url);
+    };
+
+    img.onerror = error => {
+      console.error('Error loading SVG for export:', error);
+      DOMURL.revokeObjectURL(url);
+    };
+
+    img.src = url;
+  };
+
+  const exportAsPng = () => {
+    fitTree();
+    setTimeout(() => {
+      exportSvgToPng();
+    }, 1050);
   };
 
   return (
@@ -72,6 +202,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ zoomIn, zoomOut, fitTree }) => {
                 <path d="M18 3l-3 3V4H6C4.9 4 4 4.9 4 6v12c0 1.1.9 2 2 2h9v-2H6V6h9v2l3-3-3-3-3 3z" />
               </svg>
             )}
+          </button>
+          <button
+            className="f3-toolbar-button"
+            onClick={exportAsPng}
+            title="Export as PNG"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+            </svg>
           </button>
           <button
             className="f3-toolbar-button"

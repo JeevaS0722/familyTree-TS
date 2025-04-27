@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { CardHeaderProps } from '../types';
+import { useTreeContext } from '../../../context/TreeContext';
 
 const CardHeader: React.FC<CardHeaderProps> = ({
   data,
@@ -7,6 +8,8 @@ const CardHeader: React.FC<CardHeaderProps> = ({
   onPersonDelete,
   cardWidth,
 }) => {
+  const { state, updateConfig } = useTreeContext();
+  const initionalNodeSperation = useRef(state.config.nodeSeparation);
   const { displayName, personId, altNames, titles } = data;
   const [nameHovered, setNameHovered] = useState(false);
   const [infoPopupsOpen, setInfoPopupsOpen] = useState(false);
@@ -20,6 +23,11 @@ const CardHeader: React.FC<CardHeaderProps> = ({
 
   // Toggle function for info popups
   const toggleInfoPopups = () => {
+    if (infoPopupsOpen === false) {
+      updateConfig({ nodeSeparation: 825 });
+    } else {
+      updateConfig({ nodeSeparation: initionalNodeSperation.current });
+    }
     setInfoPopupsOpen(!infoPopupsOpen);
   };
 

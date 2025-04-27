@@ -43,6 +43,11 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setIsOpen(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (node.data.isPhantom) {
     onClose();
     return null;
@@ -57,11 +62,6 @@ const RelationshipMenu: React.FC<RelationshipMenuProps> = ({
   });
 
   const hasSpouses = nonPhantomSpouses.length > 0;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsOpen(true), 50);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleRelationSelect = (relationType: string) => {
     if ((relationType === 'son' || relationType === 'daughter') && hasSpouses) {

@@ -335,16 +335,28 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         if (!parent.rels.children.includes(person.id)) {
           parent.rels.children.push(person.id);
         }
+        console.log('otherParent', otherParent);
+        console.log('current member', parent);
+        console.log('New member', person);
         if (parent.data.gender === 'M') {
           person.rels.father = parent.id;
 
           if (otherParent && otherParent.data.gender === 'F') {
             person.rels.mother = otherParent.id;
+            console.log("update new member's mother", person.rels.mother);
             if (!otherParent.rels.children) {
               otherParent.rels.children = [];
+              console.log(
+                "update other member's children 00",
+                otherParent.rels.children
+              );
             }
             if (!otherParent.rels.children.includes(person.id)) {
               otherParent.rels.children.push(person.id);
+              console.log(
+                "update other member's children 01",
+                otherParent.rels.children
+              );
             }
           }
         } else {
@@ -422,6 +434,7 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       }
 
       updatedData.push(person);
+      console.log('updatedData', updatedData);
 
       const treeData = calculateTree({
         data: updatedData,

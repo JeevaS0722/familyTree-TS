@@ -1,4 +1,4 @@
-/* src/components/FamilyTree/FamilyTree.css */
+/* Family Tree Component Styles */
 .family-tree-container {
     position: absolute;
     width: 100%;
@@ -6,6 +6,7 @@
     max-height: calc(100% - 55px);
 }
 
+/* Base variables and container styling */
 .f3 {
     --female-primary-color: #FF96BC;
     --female-secondary-color: #FFC8DC;
@@ -29,7 +30,6 @@
     height: 100%;
     background-color: var(--background-color);
     color: #fff;
-    position: relative;
     overflow: hidden;
 }
 
@@ -45,56 +45,11 @@
 }
 
 /* Card styling */
-.f3 .card-male .card-body-rect {
-    fill: var(--male-secondary-color);
-}
-
-.f3 .card-female .card-body-rect {
-    fill: var(--female-secondary-color);
-}
-
-.f3 .card-genderless .card-body-rect {
-    fill: lightgray;
-}
-
-.f3 .card-outline {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.2);
-    stroke-width: 1px;
-}
-
-.f3 .card-main-outline {
-    stroke: currentColor;
-    stroke-width: 3px;
-}
-
-.f3 .card-new-outline {
-    stroke-dasharray: 5, 3;
-    stroke: currentColor;
-    stroke-width: 2px;
-}
-
-.f3 .card-deceased .card-outline {
-    stroke: var(--deceased-border-color);
-    stroke-width: 3px;
-}
-
-.f3 .card_family_tree {
-    transition: transform 0.3s ease;
-}
-
-.f3 .card_family_tree:hover {
-    transform: scale(1.1);
-}
-
-/* Link styling */
-.f3 .link {
-    pointer-events: none;
-    will-change: d, opacity;
-    transition: stroke-width 0.1s ease-in-out;
-    stroke: #fff;
-    stroke-width: 1px;
-    fill: none;
+.f3 .card_cont {
+    transform-origin: center center;
+    will-change: transform, opacity;
+    transition: opacity 0.3s ease;
+    cursor: auto;
 }
 
 .f3 .card-inner {
@@ -108,10 +63,200 @@
     outline: 4px solid white;
 }
 
+.f3 .card-body-rect {
+    fill: #D9D9D9;
+    stroke: rgba(0, 0, 0, 0.2);
+    stroke-width: 1px;
+}
+
+/* Card gender-specific styling */
+.f3 .card-male .left-column rect {
+    fill: #7EADFF;
+}
+
+.f3 .card-male .right-column rect:first-child {
+    fill: #C8DCFF;
+}
+
+.f3 .card-female .left-column rect {
+    fill: #FF96BC;
+}
+
+.f3 .card-female .right-column rect:first-child {
+    fill: #FFC8DC;
+}
+
+/* Card header styling */
+.f3 .card-header rect {
+    fill: white;
+}
+
+.f3 .card-header text,
+.f3 .relationship-badge-text {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+}
+
+.f3 .header-tooltip rect {
+    fill: #000 !important;
+    opacity: 0.8;
+}
+
+.f3 .file-name {
+    font-weight: 600;
+    font-size: 16px;
+    fill: #000;
+    max-width: 75%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Card content styling */
+.f3 .card-details {
+    font-size: 14px;
+    fill: #000;
+}
+
+.f3 .card-details text {
+    font-family: 'Roboto', sans-serif;
+}
+
+.f3 .card-icon {
+    cursor: pointer;
+    transition: transform 0.5s ease;
+}
+
+.f3 .heir-icon {
+    cursor: default;
+}
+
+.f3 .division-interest-rect,
+.f3 .percentage-rect {
+    fill: transparent;
+    stroke: black;
+    stroke-width: 1.5px;
+    rx: 5;
+    ry: 5;
+}
+
+.f3 .division-interest-text,
+.f3 .percentage-text {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 600;
+    fill: black;
+}
+
+/* Relationship badge styling */
+.f3 .relationship-batch,
+.f3 .relationship-badge {
+    fill: var(--relationship-badge-color);
+    stroke: rgba(0, 0, 0, 0.2);
+    stroke-width: 1px;
+}
+
+.f3 .relationship-batch-text,
+.f3 .relationship-badge-text {
+    fill: #000;
+}
+
+/* Deceased styling */
+.f3 .card-deceased .relationship-badge,
+.f3 .card-deceased .card-body-rect {
+    stroke: #FF0000;
+    stroke-width: 2px;
+}
+
+/* Phantom card styling */
+.phantom-card {
+    pointer-events: none;
+}
+
+.phantom-card rect {
+    stroke-dasharray: 5, 5;
+    opacity: 0.7;
+}
+
+.phantom-card text {
+    pointer-events: none;
+    user-select: none;
+}
+
+g.card_cont.phantom-card {
+    opacity: 0.5 !important;
+}
+
+/* Bottom bar styling */
+.f3 .bottom-bar path {
+    transition: transform 0.3s ease;
+}
+
+.f3 .bottom-bar path.rotated {
+    transform: rotate(180deg);
+}
+
+.f3 .bottom-bar-rect {
+    rx: 0 0 16px 16px;
+    ry: 0 0 16px 16px;
+}
+
+/* Link styling */
+.f3 .link {
+    pointer-events: none;
+    will-change: d, opacity;
+    transition: stroke-width 0.1s ease-in-out;
+    stroke: #fff;
+    stroke-width: 1px;
+    fill: none;
+}
+
 .f3 .link.f3-path-to-main {
     stroke: white;
     stroke-width: 4px;
-    transition: stroke-width 0.1s ease-in-out;
+}
+
+.spouse-link {
+    stroke-dasharray: none;
+}
+
+.ancestry-link {
+    stroke-width: 1px;
+}
+
+.single-parent-link {
+    stroke-width: 1.5px;
+}
+
+/* Popup and dropdown styling */
+.f3 .offer-popup,
+.ownership-popup {
+    filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1));
+    pointer-events: none;
+    z-index: 100;
+    position: absolute;
+}
+
+.f3 .offer-popup text[style*="cursor: pointer"] {
+    pointer-events: auto;
+}
+
+/* Scrollbar styling for popups */
+.ownership-popup foreignObject div::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ownership-popup foreignObject div::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.ownership-popup foreignObject div::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.ownership-popup foreignObject div::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
 }
 
 /* Toolbar styles */
@@ -221,6 +366,7 @@
     width: 100%;
 }
 
+/* Switch styling */
 .f3-switch {
     position: relative;
     display: inline-block;
@@ -362,106 +508,36 @@ input:checked+.f3-slider:before {
 }
 
 .f3-result-gender-indicator.male {
-    background-color: var(--male-color);
+    background-color: var(--male-primary-color);
 }
 
 .f3-result-gender-indicator.female {
-    background-color: var(--female-color);
+    background-color: var(--female-primary-color);
 }
 
-/* Edit form styles */
-.f3-edit-form-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.f3-edit-form {
-    background-color: var(--background-color);
-    border-radius: 8px;
-    padding: 20px;
-    width: 400px;
-    max-width: 90vw;
-    position: relative;
-    color: white;
-}
-
-.f3-edit-form-close {
+/* Relationship menu styles */
+.f3 .relationship-dropdown {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 24px;
+    z-index: 200;
     cursor: pointer;
-    color: white;
+    will-change: transform;
 }
 
-.f3-form-section {
-    margin-bottom: 15px;
+.f3 .relationship-option:hover .option-bg {
+    fill: rgba(0, 0, 0, 0.08);
 }
 
-.f3-form-section label {
-    display: block;
-    margin-bottom: 5px;
+.f3 .relationship-option:active .option-bg {
+    fill: rgba(25, 118, 210, 0.12);
 }
 
-.f3-form-section input[type="text"],
-.f3-form-section select {
-    width: 100%;
-    padding: 8px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    color: white;
+/* Notes panel styling */
+.f3 .notes-panel {
+    transform-origin: top;
+    will-change: transform, opacity;
 }
 
-.f3-radio-group {
-    display: flex;
-    gap: 15px;
-}
-
-.f3-form-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.f3-submit-btn,
-.f3-cancel-btn,
-.f3-delete-btn {
-    padding: 8px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    border: none;
-}
-
-.f3-submit-btn {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.f3-cancel-btn {
-    background-color: #555;
-    color: white;
-}
-
-.f3-delete-btn {
-    background-color: transparent;
-    border: 1px solid #f44336;
-    color: #f44336;
-    margin-right: auto;
-}
-
-/* Add relation buttons */
+/* Button styles for relationship management */
 .f3-add-relation-buttons {
     position: absolute;
     top: 20px;
@@ -486,296 +562,7 @@ input:checked+.f3-slider:before {
     background-color: rgba(50, 50, 50, 0.9);
 }
 
-/* Relationship batch styling */
-.f3 .relationship-batch {
-    fill: var(--relationship-badge-color);
-}
-
-.f3 .relationship-batch-text {
-    fill: #000;
-}
-
-.f3 .relationship-dropdown {
-    position: absolute;
-    z-index: 200;
-    cursor: pointer;
-    will-change: transform;
-    animation: fadeIn 0.3s ease-out forwards;
-}
-
-.f3 .relationship-option:hover .option-bg {
-    fill: rgba(0, 0, 0, 0.08);
-}
-
-.f3 .relationship-option:active .option-bg {
-    fill: rgba(25, 118, 210, 0.12);
-}
-
-.f3 .relationship-batch-container.pulse {
-    animation: pulse 1s ease infinite;
-}
-
-/* Card header styling */
-
-.f3 .file-name {
-    font-weight: 600;
-    font-size: 16px;
-    fill: #000;
-    max-width: 75%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Card details styling */
-.f3 .card-details {
-    font-size: 14px;
-    fill: #000;
-}
-
-/* Notes panel styling */
-.f3 .notes-panel {
-    transform-origin: top;
-    will-change: transform, opacity;
-}
-
-.f3 .notes-panel.open {
-    animation: slideDown 0.3s ease-out forwards;
-}
-
-.f3 .notes-panel.closing {
-    animation: slideUp 0.3s ease-out forwards;
-}
-
-
-
-/* Offer popup styling */
-.f3 .offer-popup {
-    position: absolute;
-    z-index: 100;
-    pointer-events: none;
-    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2));
-}
-
-.f3 .offer-popup text[style*="cursor: pointer"] {
-    pointer-events: auto;
-}
-
-/* Bottom bar styling */
-.f3 .bottom-bar-rect {
-    rx: 0 0 16px 16px;
-    ry: 0 0 16px 16px;
-}
-
-/* New Card styles */
-
-/* Add these styles to your FamilyTree.css file */
-
-.f3 .card-body-rect {
-    fill: #D9D9D9;
-    stroke: rgba(0, 0, 0, 0.2);
-    stroke-width: 1px;
-}
-
-.f3 .card-male .left-column rect {
-    fill: #7EADFF;
-}
-
-.f3 .card-male .right-column rect:first-child {
-    fill: #C8DCFF;
-}
-
-.f3 .card-female .left-column rect {
-    fill: #FF96BC;
-}
-
-.f3 .card-female .right-column rect:first-child {
-    fill: #FFC8DC;
-}
-
-.f3 .card-header rect {
-    fill: white;
-}
-
-.f3 .header-tooltip rect {
-    fill: #000 !important;
-    opacity: 0.8;
-}
-
-.f3 .card-header text {
-    font-family: 'Roboto', sans-serif;
-    font-weight: 700;
-}
-
-.f3 .card-details text {
-    font-family: 'Roboto', sans-serif;
-}
-
-.f3 .relationship-badge {
-    fill: #E2E2E2;
-    stroke: rgba(0, 0, 0, 0.2);
-    stroke-width: 1px;
-}
-
-.f3 .relationship-badge-text {
-    font-family: 'Roboto', sans-serif;
-    font-weight: 600;
-    fill: black;
-}
-
-.f3 .card-deceased .relationship-badge {
-    stroke: #FF0000;
-    stroke-width: 2px;
-}
-
-.f3 .card-deceased .card-body-rect {
-    stroke: #FF0000;
-    stroke-width: 2px;
-}
-
-.f3 .division-interest-rect,
-.f3 .percentage-rect {
-    fill: transparent;
-    stroke: black;
-    stroke-width: 1.5px;
-    rx: 5;
-    ry: 5;
-}
-
-.f3 .division-interest-text,
-.f3 .percentage-text {
-    font-family: 'Roboto', sans-serif;
-    font-weight: 600;
-    fill: black;
-}
-
-.f3 .bottom-bar path {
-    transition: transform 0.3s ease;
-}
-
-.f3 .bottom-bar path.rotated {
-    transform: rotate(180deg);
-}
-
-.f3 .card-icon {
-    cursor: pointer;
-    transition: transform 0.5s ease;
-}
-
-.f3 .heir-icon {
-    cursor: default;
-}
-
-/* .f3 .card-icon:hover {
-    transform: scale(1.1);
-}
-
-.f3 .bottom-arrow-icon:hover {
-    transform: scale(1.1);
-} */
-
-
-.f3 .offer-popup {
-    filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1));
-    pointer-events: none;
-}
-
-/* Animation for card entry/exit */
-.f3 .card_cont {
-    transform-origin: center center;
-    will-change: transform, opacity;
-    transition: opacity 0.3s ease;
-    cursor: auto;
-}
-
-/* Hover effects */
-.f3 .card:hover {
-    filter: brightness(1.03);
-}
-
-/* Add to your existing styles */
-.placeholder-card rect.card-outline {
-    stroke-dasharray: 5, 5;
-}
-
-.card-male.placeholder-card text {
-    fill: #7EADFF;
-}
-
-.card-female.placeholder-card text {
-    fill: #FF96BC;
-}
-
-.placeholder-card {
-    cursor: pointer;
-}
-
-/* Styles for phantom parent nodes */
-.phantom-card {
-    pointer-events: none;
-    /* Prevent interactions with phantom nodes */
-}
-
-.phantom-card rect {
-    stroke-dasharray: 5, 5;
-    opacity: 0.7;
-}
-
-.phantom-card text {
-    pointer-events: none;
-    user-select: none;
-}
-
-/* Ensure phantom cards are visible but clearly distinguished */
-g.card_cont.phantom-card {
-    opacity: 0.5 !important;
-}
-
-/* Styles for different types of links */
-.link {
-    stroke: #fff;
-    stroke-width: 1px;
-}
-
-.spouse-link {
-    stroke-dasharray: none;
-}
-
-.ancestry-link {
-    stroke-width: 1px;
-}
-
-/* Special styling for single parent links */
-.single-parent-link {
-    stroke-width: 1.5px;
-    /* Make slightly thicker */
-}
-
-/* Ownership popup styles */
-.ownership-popup foreignObject div::-webkit-scrollbar {
-    width: 6px;
-}
-
-.ownership-popup foreignObject div::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-}
-
-.ownership-popup foreignObject div::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
-}
-
-.ownership-popup foreignObject div::-webkit-scrollbar-thumb:hover {
-    background: #a1a1a1;
-}
-
-/* Custom styling for the ownership popup */
-.ownership-popup {
-    filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.15));
-}
-
-/* Enhanced 3D Close Button */
+/* Utility classes */
 .close-button {
     transform-origin: center center;
     transition: transform 0.2s ease-out;
@@ -786,7 +573,6 @@ g.card_cont.phantom-card {
     transition: all 0.2s ease;
 }
 
-/* Improve toggle button 3D effect */
 .toggle-button {
     transition: transform 0.2s ease-out;
 }

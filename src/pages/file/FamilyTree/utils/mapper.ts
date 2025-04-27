@@ -263,6 +263,8 @@ export const mapFamilyTreeAndContactToTree = (
             ownership: contact.ownership || '0',
             division_of_interest: 'Interest',
             offer: formatOffer(contact?.OffersModels || []),
+            alt_names: formatAltNames(contact?.AlternativeNamesModels || []),
+            titles: formatTitles(contact?.TitlesModels || []),
           },
         };
       }
