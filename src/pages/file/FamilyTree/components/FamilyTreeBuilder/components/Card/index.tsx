@@ -9,6 +9,7 @@ import LeftContainer from './components/LeftContainer';
 import RightContainer from './components/RightContainer';
 import CardFooter from './components/CardFooter';
 import MiniTree from './components/MIniTree';
+import LinkBreakIcon from './components/LinkBreakIcon';
 
 const Card: React.FC<CardProps> = ({
   node,
@@ -106,6 +107,7 @@ const Card: React.FC<CardProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
+      <LinkBreakIcon node={node} position={{ x: 0, y: cardHeight - 70 }} />
       {!isPhantom && (
         <RelationshipBadge
           relationshipType={formatedData.relationshipType}

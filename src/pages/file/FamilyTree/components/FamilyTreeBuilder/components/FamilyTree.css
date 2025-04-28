@@ -576,3 +576,20 @@ input:checked+.f3-slider:before {
 .toggle-button {
     transition: transform 0.2s ease-out;
 }
+
+
+/* Link break icon styling */
+.link-break-icon,
+.toggle-visibility-icon {
+    transition: transform 0.3s ease;
+}
+
+.link-break-icon.closed path,
+.toggle-visibility-icon.closed path {
+    transform: rotate(45deg);
+}
+
+/* .link-break-icon:hover,
+.toggle-visibility-icon:hover {
+    transform: scale(1.1);
+} */

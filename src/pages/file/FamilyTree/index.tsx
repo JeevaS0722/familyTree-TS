@@ -176,11 +176,19 @@ const App: React.FC = () => {
   const updateGender = useCallback(
     async (contactId?: number, gender?: string | null) => {
       if (contactId && gender) {
-        const selectedContact = contactsData.find(
-          contactId => contactId === contactId
+        console.log(
+          'Updating gender for contactId:',
+          contactId,
+          'gender:',
+          gender
         );
+        const selectedContact = contactsData.find(
+          c => c.contactID === contactId
+        );
+        console.log('Selected contact:', selectedContact);
         if (!selectedContact?.gender) {
           const formatedGender = gender === 'M' ? 'male' : 'female';
+          console.log('Updating gender to:', formatedGender);
           try {
             await updateContactDetails({
               contactId: Number(contactId),
@@ -261,6 +269,7 @@ const App: React.FC = () => {
       }
 
       const person = familyData.find(p => p.id === personId);
+      console.log('Checking deletion conditions for person:', personId, person);
       if (!person) {
         return {
           canDelete: false,
@@ -494,6 +503,7 @@ const App: React.FC = () => {
         console.error('Cannot delete: missing tree context');
         return;
       }
+      console.log('Deleting person with ID:', personId);
       setPersonToDelete(personId);
       const result = checkDeletionConditions(personId);
       setDialogProps({

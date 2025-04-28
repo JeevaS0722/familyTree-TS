@@ -49,7 +49,8 @@ type TreeAction =
       };
     }
   | { type: 'REMOVE_PERSON_AND_UPDATE'; payload: string }
-  | { type: 'SET_CONTACTS'; payload: Contact[] }; // Add new action type
+  | { type: 'SET_CONTACTS'; payload: Contact[] }
+  | { type: 'TOGGLE_NODE_VISIBILITY'; payload: string };
 
 const initialConfig: TreeConfig = {
   nodeSeparation: 400,
@@ -261,9 +262,114 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
       };
     }
 
+    case 'TOGGLE_NODE_VISIBILITY': {
+      const nodeId = action.payload;
+      // Find the node in tree data
+      const node = state.treeData?.data.find(n => n.data.id === nodeId);
+
+      if (node && state.data) {
+        // Create a deep copy of data to avoid mutation
+        const updatedData = JSON.parse(JSON.stringify(state.data));
+        const updatedNode = updatedData.find(d => d.id === nodeId);
+
+        if (updatedNode) {
+          // Toggle visibility flag
+          updatedNode.hide_rels = !updatedNode.hide_rels;
+
+          // Apply the relationships toggle
+          const dataWithToggledRels = updatedData.map(d => {
+            if (d.id === nodeId) {
+              // Move relationships between rels and _rels based on hide_rels flag
+              if (d.hide_rels) {
+                // Hide relationships - move from rels to _rels
+                if (!d._rels) {
+                  d._rels = {};
+                }
+
+                // Handle father/mother for ancestry nodes
+                if ((node.is_ancestry || node.data.main) && d.rels.father) {
+                  d._rels.father = d.rels.father;
+                  delete d.rels.father;
+                }
+                if ((node.is_ancestry || node.data.main) && d.rels.mother) {
+                  d._rels.mother = d.rels.mother;
+                  delete d.rels.mother;
+                }
+
+                // Handle children for non-ancestry nodes
+                if (
+                  !node.is_ancestry &&
+                  !node.data.main &&
+                  d.rels.children?.length
+                ) {
+                  if (!d._rels.children) {
+                    d._rels.children = [];
+                  }
+                  d.rels.children.forEach(childId => {
+                    d._rels.children!.push(childId);
+                  });
+                  d.rels.children = [];
+                }
+              } else {
+                // Show relationships - move from _rels to rels
+                if (!d._rels) {
+                  return d;
+                }
+
+                // Handle father/mother
+                if (d._rels.father) {
+                  d.rels.father = d._rels.father;
+                  delete d._rels.father;
+                }
+                if (d._rels.mother) {
+                  d.rels.mother = d._rels.mother;
+                  delete d._rels.mother;
+                }
+
+                // Handle children
+                if (d._rels.children?.length) {
+                  if (!d.rels.children) {
+                    d.rels.children = [];
+                  }
+                  d._rels.children.forEach(childId => {
+                    d.rels.children!.push(childId);
+                  });
+                  d._rels.children = [];
+                }
+              }
+            }
+            return d;
+          });
+
+          // Recalculate tree with toggled relationships
+          const updatedTreeData = calculateTree({
+            data: dataWithToggledRels,
+            main_id: state.mainId,
+            node_separation: state.config.nodeSeparation,
+            level_separation: state.config.levelSeparation,
+            is_horizontal: state.config.isHorizontal,
+          });
+
+          return {
+            ...state,
+            data: dataWithToggledRels,
+            treeData: updatedTreeData,
+            isInitialRender: false,
+          };
+        }
+      }
+
+      return state;
+    }
+
     case 'UPDATE_TREE': {
+      // Get the current visible data (after any toggling)
+      const visibleData = state.data.map(d => {
+        // Make sure any hidden relationships (_rels) are not included in calculation
+        return { ...d };
+      });
       const treeData = calculateTree({
-        data: state.data,
+        data: visibleData,
         main_id: state.mainId,
         node_separation: state.config.nodeSeparation,
         level_separation: state.config.levelSeparation,
@@ -550,7 +656,8 @@ interface TreeContextValue {
     otherParentId?: string
   ) => void;
   removePerson: (personId: string) => void;
-  setContactsList: (contacts: Contact[]) => void; // Add the new function to the context value
+  setContactsList: (contacts: Contact[]) => void;
+  toggleNodeVisibility: (nodeId: string) => void;
 }
 
 const TreeContext = createContext<TreeContextValue | undefined>(undefined);
@@ -693,7 +800,10 @@ export function TreeProvider({
       setInitialRenderComplete,
       addPerson,
       removePerson,
-      setContactsList, // Add the new function to the context value
+      setContactsList,
+      toggleNodeVisibility: (nodeId: string) => {
+        dispatch({ type: 'TOGGLE_NODE_VISIBILITY', payload: nodeId });
+      },
     }),
     [
       state,

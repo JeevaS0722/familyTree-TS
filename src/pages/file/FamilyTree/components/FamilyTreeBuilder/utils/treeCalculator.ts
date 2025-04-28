@@ -131,15 +131,16 @@ export function calculateTree({
     }
 
     function hierarchyGetterChildren(d: PersonData): PersonData[] {
-      return [...(d.rels.children || [])].map(
-        id => data_stash.find(d => d.id === id)!
-      );
+      return [...(d.rels.children || [])]
+        .map(id => data_stash.find(d => d.id === id)!)
+        .filter(Boolean);
     }
 
     function hierarchyGetterParents(d: PersonData): PersonData[] {
       return [d.rels.father, d.rels.mother]
         .filter(Boolean)
-        .map(id => data_stash.find(d => d.id === id)!);
+        .map(id => data_stash.find(d => d.id === id)!)
+        .filter(Boolean);
     }
 
     function offsetOnPartners(

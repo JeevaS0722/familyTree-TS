@@ -19,6 +19,7 @@ import Toolbar from './controls/Toolbar';
 import { findPathToMain } from '../utils/pathFinder';
 import RelationshipMenu from './RelationshipMenu';
 import { safeCloneNodes } from '../utils/general';
+import { toggleAllRels } from '../utils/relationshipUtils';
 
 interface TreeViewProps {
   svgRef: React.RefObject<SVGSVGElement>;
@@ -33,7 +34,7 @@ interface TreeViewProps {
 
 const TreeView: React.FC<TreeViewProps> = React.memo(
   ({ svgRef, onPersonAdd, onPersonDelete }: TreeViewProps) => {
-    const { state, setInitialRenderComplete } = useTreeContext();
+    const { state, setInitialRenderComplete, updateTree } = useTreeContext();
     const viewRef = useRef<SVGGElement>(null);
     const cardsViewRef = useRef<SVGGElement>(null);
     const linksViewRef = useRef<SVGGElement>(null);
@@ -194,6 +195,10 @@ const TreeView: React.FC<TreeViewProps> = React.memo(
       }
       if (onPersonAdd && selectedNode?.data?.id) {
         onPersonAdd(selectedNode.data.id, relationType, otherParentId);
+        if (state.treeData?.data) {
+          toggleAllRels(state.treeData.data, false);
+          updateTree();
+        }
       }
       setSelectedNode(null);
     };

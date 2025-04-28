@@ -39,6 +39,12 @@ export interface PersonData {
     children?: string[];
   };
   main?: boolean;
+  _rels?: {
+    father?: string;
+    mother?: string;
+    spouses?: string[];
+    children?: string[];
+  };
   hide_rels?: boolean;
   to_add?: boolean;
   relation_type?: string;

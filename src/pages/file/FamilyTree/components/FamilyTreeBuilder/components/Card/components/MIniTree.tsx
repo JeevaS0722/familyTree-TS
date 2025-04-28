@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTreeContext } from '../../../context/TreeContext';
 import { TreeNode } from '../../../types/familyTree';
+import { toggleAllRels } from '../../../utils/relationshipUtils';
 
 interface MiniTreeProps {
   node: TreeNode;
@@ -12,7 +13,7 @@ interface MiniTreeProps {
  * When clicked, it changes the main node to the current node, centering the tree view on it.
  */
 const MiniTree: React.FC<MiniTreeProps> = ({ node, visible }) => {
-  const { updateMainId, updateTree } = useTreeContext();
+  const { updateMainId, updateTree, state } = useTreeContext();
 
   if (!visible) {
     return null;
@@ -20,7 +21,16 @@ const MiniTree: React.FC<MiniTreeProps> = ({ node, visible }) => {
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click from firing
+
+    // First, make all relationships visible
+    if (state.treeData?.data) {
+      toggleAllRels(state.treeData.data, false);
+    }
+
+    // Then update main ID
     updateMainId(node.data.id);
+
+    // Finally update the tree
     updateTree();
   };
 

@@ -109,6 +109,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
       setNewContactForm(prev => ({
         ...prev,
         relationship: formatRelationship,
+        gender,
       }));
     }
   }, []);
@@ -165,7 +166,8 @@ const EditDialog: React.FC<EditDialogProps> = ({
       fileId,
       false
     );
-
+    console.log('newMember in dialog', newMember);
+    console.log('gender in dialog', gender);
     onSave(newMember, 'exsisting_contact');
   };
 
@@ -233,7 +235,9 @@ const EditDialog: React.FC<EditDialogProps> = ({
         );
         onSave(newMember, 'new_contact');
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('Error creating contact:');
+    }
   };
 
   const handleSave = () => {
